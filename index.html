@@ -45,7 +45,7 @@
         
         <div id="welcome" style="background:white;padding:6px 14px;border-radius:4px;font-family:sans-serif;"></div>
         
-        <input type="file" id="imageInput" accept="image/*,application/pdf" style="display:none;">
+        <input type="file" id="imageInput" style="display:none;">
         <label for="imageInput" style="background:white;padding:6px 14px;border-radius:4px;font-family:sans-serif;font-weight:bold;cursor:pointer;min-height:44px;display:flex;align-items:center;">Upload photo</label>
             
         <button id="closeResult" style="display:none">Close result</button>
@@ -59,6 +59,13 @@
     <script>
 
         document.getElementById("welcome").textContent = "Welcome ! Please upload a photo to find out the exact location it was taken in.";
+
+        var fileInput = document.getElementById('imageInput');
+        if (/Android/i.test(navigator.userAgent)) {
+            fileInput.accept = 'image/*,model/gltf+json';
+        } else {
+            fileInput.accept = 'image/*';
+        }
 
         var map = L.map('map').setView([0, 0], 2);
 
