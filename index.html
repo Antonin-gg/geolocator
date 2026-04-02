@@ -128,7 +128,9 @@
 
                     photoMarker = L.marker([photoLatLng.latitude, photoLatLng.longitude],{icon:blueIcon}).addTo(map);
 
-                    map.flyTo([photoLatLng.latitude, photoLatLng.longitude],13);
+                    map.flyTo([photoLatLng.latitude, photoLatLng.longitude], 13, {
+                        paddingTopLeft: [0, 120]
+                    });
 
                     document.getElementById("closeResult").style.display = "block";
 
