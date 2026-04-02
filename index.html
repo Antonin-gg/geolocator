@@ -82,11 +82,6 @@
 
             var image = input.files[0];
 
-            var photoLatLng = await exifr.parse(image, {
-                gps: true,
-                translateValues: false
-            });
-
             var photoLatLng = await new Promise(function(resolve) {
                 var reader = new FileReader();
                 reader.onload = function(e) {
