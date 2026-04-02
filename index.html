@@ -82,10 +82,13 @@
 
             var image = input.files[0];
 
-            var exifData = await exifr.parse(image);
-            console.log("Full EXIF:", JSON.stringify(exifData));
+            var photoLatLng = await exifr.parse(image, {
+                gps: true,
+                translateValues: false
+            });
+            console.log(photoLatLng.GPSLatitude, photoLatLng.GPSLongitude);
             
-            var photoLatLng = await exifr.gps(image);
+            //var photoLatLng = await exifr.gps(image);
             
             if (photoLatLng) {
 
