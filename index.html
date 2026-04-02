@@ -45,15 +45,15 @@
         
         <div id="welcome" style="background:white;padding:6px 14px;border-radius:4px;font-family:sans-serif;"></div>
         
-        <input type="file" id="imageInput" style="display:none;">
+        <input type="file" id="imageInput" accept="image/*,application/pdf" style="display:none;">
         <label for="imageInput" style="background:white;padding:6px 14px;border-radius:4px;font-family:sans-serif;font-weight:bold;cursor:pointer;min-height:44px;display:flex;align-items:center;">Upload photo</label>
             
         <button id="closeResult" style="display:none">Close result</button>
 
         <div id="noData" style="background:white;padding:6px 14px;border-radius:4px;font-family:sans-serif;font-weight:bold;display:none;"></div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
@@ -81,22 +81,8 @@
         async function showImage (input) {
 
             var image = input.files[0];
-
-            var buffer = await image.arrayBuffer();
-            var tags = ExifReader.load(buffer);
-            console.log("ExifReader GPS:", JSON.stringify(tags['GPSLatitude']), JSON.stringify(tags['GPSLongitude']));
-
-            var lat = tags['GPSLatitude'] ? tags['GPSLatitude'].description : null;
-            var lng = tags['GPSLongitude'] ? tags['GPSLongitude'].description : null;
-            var latRef = tags['GPSLatitudeRef'] ? tags['GPSLatitudeRef'].value[0] : 'N';
-            var lngRef = tags['GPSLongitudeRef'] ? tags['GPSLongitudeRef'].value[0] : 'E';
-
-            var photoLatLng = (lat && lng) ? {
-                latitude: latRef === 'S' ? -parseFloat(lat) : parseFloat(lat),
-                longitude: lngRef === 'W' ? -parseFloat(lng) : parseFloat(lng)
-            } : null;
-
-            console.log("final coords:", JSON.stringify(photoLatLng));
+            
+            var photoLatLng = await exifr.gps(image);
             
             if (photoLatLng) {
 
