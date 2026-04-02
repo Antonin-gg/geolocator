@@ -94,6 +94,7 @@
                 async function getPlaceName() {
                     var response = await fetch("https://api.opencagedata.com/geocode/v1/json?q="+encodeURIComponent(photoLatLng.latitude+","+photoLatLng.longitude)+"&key=49b47c25108242779832267ff8062473");
                     var data = await response.json();
+                    console.log(JSON.stringify(data));
                 
                     var placeName = data.results.length > 0 ? data.results[0].formatted : "Unknown location";
 
