@@ -58,7 +58,11 @@
 
     <script>
 
-        document.getElementById("welcome").textContent = "Welcome ! Please upload a photo to find out the exact location it was taken in.";
+        if (/Android/i.test(navigator.userAgent)) {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken. Tip: choose 'Files' 📁✅ and not 'Photos' 📷❌ to preserve location data.";
+        } else {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken.";
+        }
 
         var fileInput = document.getElementById('imageInput');
         if (/Android/i.test(navigator.userAgent)) {
