@@ -106,7 +106,9 @@
         var isAndroid = /Android/i.test(navigator.userAgent);
         var isFirefox = /Firefox/i.test(navigator.userAgent);
 
-        if (isAndroid && isFirefox) {
+        if (/WhatsApp/.test(navigator.userAgent) && isAndroid) {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken. ⚠️ Please open this page in Chrome for full functionality.";
+        } else if (isAndroid && isFirefox) {
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken. ⚠️ Firefox on Android doesn't support location data. Try Chrome or desktop for best results.";
         } else if (isAndroid) {
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken. Tip: choose 'Files' 📁✅ and not 'Camera' 📷❌";
