@@ -52,8 +52,8 @@
 
         <div id="noData" style="background:white;padding:6px 14px;border-radius:4px;font-family:sans-serif;font-weight:bold;display:none;"></div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
@@ -82,7 +82,21 @@
 
             var image = input.files[0];
 
-            var photoLatLng = await exifr.gps(image);
+            var buffer = await image.arrayBuffer();
+            var tags = ExifReader.load(buffer);
+            console.log("ExifReader GPS:", JSON.stringify(tags['GPSLatitude']), JSON.stringify(tags['GPSLongitude']));
+
+            var lat = tags['GPSLatitude'] ? tags['GPSLatitude'].description : null;
+            var lng = tags['GPSLongitude'] ? tags['GPSLongitude'].description : null;
+            var latRef = tags['GPSLatitudeRef'] ? tags['GPSLatitudeRef'].value[0] : 'N';
+            var lngRef = tags['GPSLongitudeRef'] ? tags['GPSLongitudeRef'].value[0] : 'E';
+
+            var photoLatLng = (lat && lng) ? {
+                latitude: latRef === 'S' ? -parseFloat(lat) : parseFloat(lat),
+                longitude: lngRef === 'W' ? -parseFloat(lng) : parseFloat(lng)
+            } : null;
+
+            console.log("final coords:", JSON.stringify(photoLatLng));
             
             if (photoLatLng) {
 
