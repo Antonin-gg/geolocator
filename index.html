@@ -134,7 +134,7 @@
 
                     var photoPopup = L.popup().setContent("<center>This photo was taken in " + placeName + ".</center>" + "</br> <center>"+ photoImgHtml + "</center>");
 
-                    photoMarker = L.marker([photoLatLng.latitude, photoLatLng.longitude],{icon:blueIcon}).addTo(map);;
+                    photoMarker = L.marker([photoLatLng.latitude, photoLatLng.longitude],{icon:blueIcon}).addTo(map);
 
                     map.flyTo([photoLatLng.latitude, photoLatLng.longitude], 13);
 
