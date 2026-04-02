@@ -111,7 +111,7 @@
             
             var photoLatLng = await exifr.gps(image);
             
-            if (photoLatLng) {
+            if (photoLatLng && photoLatLng.latitude !== null && photoLatLng.longitude !== null) {
 
                 if (photoMarker) map.removeLayer(photoMarker);
 
