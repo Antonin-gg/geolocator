@@ -58,8 +58,15 @@
 
     <script>
 
-        if (/Android/i.test(navigator.userAgent)) {
+        var isAndroid = /Android/i.test(navigator.userAgent);
+        var isFirefox = /Firefox/i.test(navigator.userAgent);
+
+        if (isAndroid && isFirefox) {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken. ⚠️ Firefox on Android doesn't support location data. Try Chrome or desktop for best results.";
+        } else if (isAndroid) {
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken. Tip: choose 'Files' 📁✅ and not 'Camera' 📷❌";
+        } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken. ⚠️ iOS doesn't support location data in browser uploads. Try on desktop for best results.";
         } else {
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to find where it was taken.";
         }
