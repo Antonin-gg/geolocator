@@ -128,15 +128,16 @@
 
                     photoMarker = L.marker([photoLatLng.latitude, photoLatLng.longitude],{icon:blueIcon}).addTo(map);
 
-                    map.flyTo([photoLatLng.latitude, photoLatLng.longitude], 13, {
-                        paddingTopLeft: [0, 120]
-                    });
+                    map.flyTo([photoLatLng.latitude, photoLatLng.longitude], 13,);
 
                     document.getElementById("closeResult").style.display = "block";
 
                     document.getElementById("welcome").style.display = "none";
 
-                    map.once("moveend",function(){photoMarker.bindPopup(photoPopup).openPopup()});
+                    map.once("moveend",function(){
+                        map.panBy([0, -80]);           
+                        photoMarker.bindPopup(photoPopup).openPopup();         
+                    });
 
 
                 }
