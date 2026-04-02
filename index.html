@@ -86,9 +86,16 @@
                 gps: true,
                 translateValues: false
             });
-            console.log(photoLatLng.GPSLatitude, photoLatLng.GPSLongitude);
+
+            var photoLatLng = await new Promise(function(resolve) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    exifr.gps(e.target.result).then(resolve);
+                };
+                reader.readAsArrayBuffer(image);
+            });
             
-            //var photoLatLng = await exifr.gps(image);
+            var photoLatLng = await exifr.gps(image);
             
             if (photoLatLng) {
 
