@@ -83,6 +83,7 @@
             var image = input.files[0];
             
             var photoLatLng = await exifr.gps(image);
+            console.log(JSON.stringify(photoLatLng));
             
             if (photoLatLng) {
 
