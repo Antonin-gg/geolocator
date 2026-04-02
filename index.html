@@ -62,7 +62,7 @@
 
         var map = L.map('map').setView([0, 0], 2);
 
-        L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 18,
             attribution: '© Esri'
         }).addTo(map);
@@ -95,7 +95,7 @@
                     var response = await fetch("https://api.opencagedata.com/geocode/v1/json?q="+encodeURIComponent(photoLatLng.latitude+","+photoLatLng.longitude)+"&key=49b47c25108242779832267ff8062473");
                     var data = await response.json();
                 
-                    var placeName = data.results[0].formatted;
+                    var placeName = data.results.length > 0 ? data.results[0].formatted : "Unknown location";
 
                     var photoPopup = L.popup().setContent("<center>This photo was taken in " + placeName + ".</center>" + "</br> <center>"+ photoImgHtml + "</center>");
 
