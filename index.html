@@ -99,6 +99,15 @@
         async function showImage (input) {
 
             var image = input.files[0];
+
+            if (!image || !image.type.startsWith('image/')) {
+                document.getElementById("noData").style.display = "block";
+                document.getElementById("noData").textContent = "Please upload an image file.";
+                setTimeout(() => {
+                    document.getElementById("noData").style.display = "none";
+                }, 3000);
+                return;
+            }
             
             var photoLatLng = await exifr.gps(image);
             
