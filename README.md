@@ -1,5 +1,7 @@
-# geotagger
+# Geolocator
+Upload a photo and find out where it was taken, using GPS metadata 
+or AI vision as a fallback.
 
-Upload a photo and find out where it was taken.
+Built with Leaflet.js, Exifr, OpenCage Geocoding API and OpenAI Vision API.
 
-Built with Leaflet.js, Exifr, and OpenCage Geocoding API.
+Live demo: https://antonin-gg.github.io/geolocator
