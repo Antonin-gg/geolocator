@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <title>🌍 Photo geolocator</title>
     <style>
@@ -35,11 +36,11 @@
     flex-direction:column;
     gap:6px;
     align-items:stretch;
-    width:280px;
+    width:250px;
     }
 
     #welcome {
-    max-width: 280px;
+    max-width: 250px;
     text-align: center;
     font-size: 0.9rem;
     }
@@ -63,17 +64,20 @@
     }
 
     .leaflet-popup-content {
+    font-family: 'DM Sans', sans-serif;
     font-size: 0.95rem;
     text-align: center;
     }
 
-    #welcome, #noData, #imageInputLabel, #searching, button {
-    background:white;
+    .box, .leaflet-control-zoom a  {
+    background: rgba(255,255,255,0.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     border: 1px solid rgba(0,0,0,0.15);
-    border-radius: 6px;
+    border-radius: 10px;
     padding:6px 14px;
-    font-family:sans-serif;
+    font-family:'DM Sans',sans-serif;
     }
 
     #noData {
@@ -87,24 +91,65 @@
     display:none;
     }
 
-    #wrapperView {
+    #wrapperToggles {
     position:absolute;
     top:14px;
     right:14px;
     z-index: 1000;
     display:flex;
     flex-direction:column;
-    gap:0px;
+    gap:6px;
     align-items:stretch;
-    width:84px;
+    width:88px;
     }
 
-    #viewToggle {
+    #wrapperView, #wrapperTheme {
+    display:flex;
+    flex-direction:column;
+    gap:0px;
+    }
+
+    #viewToggleView, #viewToggleTheme {
     font-weight:bold;
     }
 
-    .hidden { 
+    .hidden-view { 
     display: none;
+    }
+
+    .hidden-theme { 
+    display: none;
+    }
+
+    .leaflet-control-zoom a {
+    padding:0 0;
+    }
+
+    .leaflet-control-zoom {
+    margin-top: 14px;
+    margin-left: 14px;
+    }
+
+    .leaflet-popup-content-wrapper {
+    background: rgba(255,255,255,0.3) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    border: 1px solid rgba(0,0,0,0.15) !important;
+    border-radius: 10px !important;
+    }
+
+    .leaflet-popup-tip {
+    background: rgba(255,255,255,0.85) !important;
+    }
+
+    .leaflet-control-attribution {
+    background: rgba(255,255,255,0.3) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #000;
+    font-size: 0.7rem;
+    border-radius: 6px 0 0 0;
     }
     </style>
 </head>
@@ -113,22 +158,27 @@
 
     <div id="wrapper">
         
-        <button id="closeResult">Close result</button>
+        <button id="closeResult" class="box">Close result</button>
 
-        <div id="noData"></div>
+        <div id="noData" class="box"></div>
 
-        <div id="searching">Identifying location...</div>
+        <div id="searching" class="box">Identifying location...</div>
        
-        <div id="welcome"></div>
+        <div id="welcome" class="box"></div>
         
         <input type="file" id="imageInput">
-        <label for="imageInput" id="imageInputLabel">Upload photo</label>
+        <label for="imageInput" id="imageInputLabel" class="box">Upload photo</label>
 
     </div>
-
-    <div id="wrapperView">
-        <button id="viewToggle">View ▼</button>
-        <button id="toggleLayer" class="hidden">Satellite</button>
+    <div id="wrapperToggles">
+        <div id="wrapperView">
+            <button id="viewToggleView" class="box">View ▼</button>
+            <button id="toggleLayer" class="hidden-view box">Satellite</button>
+        </div>
+        <div id="wrapperTheme">
+            <button id="viewToggleTheme" class="box">Theme ▼</button>
+            <button id="toggleTheme" class="hidden-theme box">Dark</button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
@@ -143,8 +193,6 @@
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ Please open this page in Chrome for full functionality.";
         } else if (isAndroid && isFirefox) {
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ Firefox on Android doesn't support location data. Try Chrome or desktop for best results.";
-        } else if (isAndroid) {
-            document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. Tip: choose 'Files' 📁✅ and not 'Camera' 📷❌";
         } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ iOS doesn't support location data in browser uploads. Try on desktop for best results.";
         } else {
@@ -160,7 +208,12 @@
 
         var map = L.map('map').setView([0, 0], 2);
 
-        var streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        var streetLayerLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap © CARTO'
+        });
+
+        var streetLayerDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap © CARTO'
         });
@@ -170,43 +223,180 @@
             attribution: '© Esri'
         });
 
-        streetLayer.addTo(map);
-        var isSatellite = false;
+        map.attributionControl.setPrefix('© A.G.');
 
-        document.getElementById("viewToggle").addEventListener("click", function() {
-            document.getElementById("toggleLayer").classList.toggle("hidden");
+        streetLayerLight.addTo(map);
+        var isSatellite = false;
+        var isDark = false;
+
+        var darkPopupStyle = document.createElement("style");
+        darkPopupStyle.textContent = `
+            .leaflet-popup-content-wrapper {
+                background: rgba(15, 15, 25, 0.6) !important;
+                color: #f0f0f0 !important;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;
+            }
+            .leaflet-popup-tip {
+                background: rgba(15, 15, 25, 0.6) !important;
+            }
+        `;
+
+        document.getElementById("viewToggleView").addEventListener("click", function() {
+            if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
+                document.getElementById("toggleTheme").classList.add("hidden-theme");
+                document.getElementById("viewToggleTheme").textContent = "Theme ▼";
+            }
+            document.getElementById("toggleLayer").classList.toggle("hidden-view");
             this.textContent = this.textContent === "View ▼" ? "View ▲" : "View ▼";
         });
 
         document.getElementById("toggleLayer").addEventListener("click", function() {
+            
+            if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
+                document.getElementById("toggleTheme").classList.add("hidden-theme");
+                document.getElementById("viewToggleTheme").textContent = "Theme ▼";
+            }
+
             if (isSatellite) {
                 map.removeLayer(satelliteLayer);
-                streetLayer.addTo(map);
+                if (isDark) {
+                    streetLayerDark.addTo(map);
+                }
+                else {
+                    streetLayerLight.addTo(map);
+                }
                 this.textContent = "Satellite";
                 isSatellite = false;
             } else {
-                map.removeLayer(streetLayer);
+                if (isDark) {
+                    map.removeLayer(streetLayerDark);
+                }
+                else {
+                    map.removeLayer(streetLayerLight);
+                }
                 satelliteLayer.addTo(map);
                 this.textContent = "Street";
                 isSatellite = true;
             }
-            this.classList.toggle("hidden");
-            document.getElementById("viewToggle").textContent="View ▼";
+            this.classList.toggle("hidden-view");
+            document.getElementById("viewToggleView").textContent="View ▼";
         });
 
+        function toDarkTheme () {
+
+            const elements = document.getElementsByClassName("box");
+
+            for (let el of elements) {
+              el.style.background = "rgba(15, 15, 25, 0.75)";
+              el.style.color = "#f0f0f0";
+              el.style.border = "1px solid rgba(255, 255, 255, 0.12)";
+              el.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.5)";
+            }
+
+            var zoomButtons = document.querySelectorAll(".leaflet-control-zoom a");
+
+            zoomButtons.forEach(function(el) {
+              el.style.background = "rgba(15, 15, 25, 0.75)";
+              el.style.color = "#f0f0f0";
+              el.style.border = "1px solid rgba(255, 255, 255, 0.12)";
+              el.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.5)";
+            });
+
+            document.head.appendChild(darkPopupStyle);
+
+            document.querySelector(".leaflet-control-attribution").style.background = "rgba(15,15,25,0.75)";
+            document.querySelector(".leaflet-control-attribution").style.color = "#f0f0f0";
+
+            if (photoMarker) photoMarker.setIcon(cameraIconDark);
+        }
+
+        function toLightTheme () {
+            const elements = document.getElementsByClassName("box");
+
+            for (let el of elements) {
+              el.style.background = "rgba(255,255,255,0.4)";
+              el.style.color = "#000000";
+              el.style.border = "1px solid rgba(0,0,0,0.15)";
+              el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+            }
+
+            var zoomButtons = document.querySelectorAll(".leaflet-control-zoom a");
+
+            zoomButtons.forEach(function(el) {
+              el.style.background = "rgba(255,255,255,0.4)";
+              el.style.color = "#000000";
+              el.style.border = "1px solid rgba(0,0,0,0.15)";
+              el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+            });
+
+            darkPopupStyle.remove();
+
+            document.querySelector(".leaflet-control-attribution").style.background = "rgba(255,255,255,0.4)";
+            document.querySelector(".leaflet-control-attribution").style.color = "#000";
+
+            if (photoMarker) photoMarker.setIcon(cameraIconLight);
+        }
+
+
+        document.getElementById("viewToggleTheme").addEventListener("click", function() {
+            if (!document.getElementById("toggleLayer").classList.contains("hidden-view")) {
+                document.getElementById("toggleLayer").classList.add("hidden-view");
+                document.getElementById("viewToggleView").textContent = "View ▼";
+            }
+            document.getElementById("toggleTheme").classList.toggle("hidden-theme");
+            this.textContent = this.textContent === "Theme ▼" ? "Theme ▲" : "Theme ▼";
+        });
+        
+        document.getElementById("toggleTheme").addEventListener("click", function() {
+            if (isDark) {
+                toLightTheme();
+                this.textContent = "Dark";
+                isDark = false;
+                if (!isSatellite){
+                    map.removeLayer(streetLayerDark);
+                    streetLayerLight.addTo(map);
+                }
+            } else {
+                toDarkTheme();
+                this.textContent = "Light";
+                isDark = true;
+                if (!isSatellite) {
+                    map.removeLayer(streetLayerLight);
+                    streetLayerDark.addTo(map);
+                }
+            }
+            this.classList.toggle("hidden-theme");
+            document.getElementById("viewToggleTheme").textContent="Theme ▼";
+        });
+
+
+
         map.on("click", function() {
-            if (!document.getElementById("toggleLayer").classList.contains("hidden")) {
-                document.getElementById("toggleLayer").classList.add("hidden");
-                document.getElementById("viewToggle").textContent = "View ▼";
+            if (!document.getElementById("toggleLayer").classList.contains("hidden-view")) {
+                document.getElementById("toggleLayer").classList.add("hidden-view");
+                document.getElementById("viewToggleView").textContent = "View ▼";
+            }
+            if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
+                document.getElementById("toggleTheme").classList.add("hidden-theme");
+                document.getElementById("viewToggleTheme").textContent = "Theme ▼";
             }
         });
- 
-        var blueIcon = new L.Icon({
-         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+
+        var cameraIconLight = new L.Icon({
+         iconUrl: 'https://antonin-gg.github.io/geolocator/cameraIconLight.png',
          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-         iconSize: [25, 41],
-         iconAnchor: [12, 41],
-         popupAnchor: [1, -34],
+         iconSize: [31, 41],
+         iconAnchor: [15, 41],
+         popupAnchor: [1, -41],
+         shadowSize: [41, 41]
+        });
+
+        var cameraIconDark = new L.Icon({
+         iconUrl: 'https://antonin-gg.github.io/geolocator/cameraIconDark.png',
+         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+         iconSize: [31, 41],
+         iconAnchor: [15, 41],
+         popupAnchor: [1, -41],
          shadowSize: [41, 41]
         });
 
@@ -288,7 +478,7 @@
 
                     var photoPopup = L.popup().setContent("This photo was taken in " + placeName + ".<br>"+ photoImgHtml);
 
-                    photoMarker = L.marker([photoLatLng.latitude, photoLatLng.longitude],{icon:blueIcon}).addTo(map);
+                    photoMarker = L.marker([photoLatLng.latitude, photoLatLng.longitude],{icon: isDark ? cameraIconDark : cameraIconLight}).addTo(map);
 
                     map.flyTo([photoLatLng.latitude, photoLatLng.longitude], 13);
 
@@ -393,7 +583,7 @@
                         else zoomLevel = 10;
                     }
 
-                    photoMarker = L.marker([lat, lng],{icon:blueIcon}).addTo(map);
+                    photoMarker = L.marker([lat, lng],{icon: isDark ? cameraIconDark : cameraIconLight}).addTo(map);
 
                     map.flyTo([lat, lng], zoomLevel);
 
