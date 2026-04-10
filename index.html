@@ -215,8 +215,6 @@
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ Please open this page in Chrome for full functionality.";
         } else if (isAndroid && isFirefox) {
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ Firefox on Android doesn't support location data. Try Chrome or desktop for best results.";
-        } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-            document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ iOS doesn't support location data in browser uploads. Try on desktop for best results.";
         } else {
             document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken.";
         }
