@@ -50,7 +50,7 @@
     font-size: 1rem;
     display: none;
     width: 100%;
-    font-family:sans-serif;
+    font-family:'DM Sans',sans-serif;
     }
 
     #imageInputLabel {
@@ -82,11 +82,6 @@
 
     #noData {
     font-weight:bold;
-    text-align: center;
-    display:none;
-    }
-
-    #searching {
     text-align: center;
     display:none;
     }
@@ -151,6 +146,33 @@
     font-size: 0.7rem;
     border-radius: 6px 0 0 0;
     }
+
+    #searchingGlobe {
+    display: inline-block;
+    }
+
+    .globe-active {
+    animation: spin 1.5s linear infinite;
+    }
+
+    #searching {
+    text-align: center;
+    display: none;
+    }
+
+    .searching-active {
+    animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+    }
     </style>
 </head>
 <body>
@@ -162,7 +184,7 @@
 
         <div id="noData" class="box"></div>
 
-        <div id="searching" class="box">Identifying location...</div>
+        <div id="searching" class="box"><span id="searchingGlobe">🌍</span> Identifying location...</div>
        
         <div id="welcome" class="box"></div>
         
@@ -498,6 +520,8 @@
             else {
 
                 document.getElementById("searching").style.display = "block";
+                document.getElementById("searching").classList.add("searching-active");
+                document.getElementById("searchingGlobe").classList.add("globe-active");
                 document.getElementById("welcome").style.display = "none";
 
                 var aiResult = await aiLocator(image);
@@ -507,6 +531,8 @@
                 if (aiLocation == "unknown"){
 
                     document.getElementById("searching").style.display = "none";
+                    document.getElementById("searching").classList.remove("searching-active");
+                    document.getElementById("searchingGlobe").classList.remove("globe-active");
 
                     if (photoMarker) document.getElementById("closeResult").click();
 
@@ -528,6 +554,8 @@
                     var data = await response.json();
 
                     document.getElementById("searching").style.display = "none";
+                    document.getElementById("searching").classList.remove("searching-active");
+                    document.getElementById("searchingGlobe").classList.remove("globe-active");
 
                     if (data.results.length==0){
 
