@@ -4,6 +4,401 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Photo geolocator</title>
+    <style>
+    * {
+         margin: 0;
+         padding: 0;
+         box-sizing: border-box;
+    }
+
+    body {
+         overflow: hidden;
+    }
+
+    #map {
+         height: 100vh;
+         height: 100dvh;
+    }
+
+    #imageInput {
+    display:none;
+    }
+
+    #wrapper {
+    position:absolute;
+    bottom:14px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:1000;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    align-items:stretch;
+    width:280px;
+    }
+
+    #welcome {
+    max-width: 280px;
+    text-align: center;
+    font-size: 0.9rem;
+    }
+
+    #closeResult {
+    min-height: 44px;
+    font-size: 1rem;
+    display: none;
+    width: 100%;
+    font-family:sans-serif;
+    }
+
+    #imageInputLabel {
+    font-weight:bold;
+    cursor:pointer;
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    width: 100%;
+    justify-content: center;
+    }
+
+    .leaflet-popup-content {
+    font-size: 0.95rem;
+    text-align: center;
+    }
+
+    #welcome, #noData, #imageInputLabel, #searching, button {
+    background:white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 6px;
+    padding:6px 14px;
+    font-family:sans-serif;
+    }
+
+    #noData {
+    font-weight:bold;
+    text-align: center;
+    display:none;
+    }
+
+    #searching {
+    text-align: center;
+    display:none;
+    }
+
+    #wrapperView {
+    position:absolute;
+    top:14px;
+    right:14px;
+    z-index: 1000;
+    display:flex;
+    flex-direction:column;
+    gap:0px;
+    align-items:stretch;
+    width:84px;
+    }
+
+    #viewToggle {
+    font-weight:bold;
+    }
+
+    .hidden { 
+    display: none;
+    }
+    </style>
+</head>
+<body>
+    <div id="map"></div> 
+
+    <div id="wrapper">
+        
+        <button id="closeResult">Close result</button>
+
+        <div id="noData"></div>
+
+        <div id="searching">Identifying location...</div>
+       
+        <div id="welcome"></div>
+        
+        <input type="file" id="imageInput">
+        <label for="imageInput" id="imageInputLabel">Upload photo</label>
+
+    </div>
+
+    <div id="wrapperView">
+        <button id="viewToggle">View ▼</button>
+        <button id="toggleLayer" class="hidden">Satellite</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+
+        var isAndroid = /Android/i.test(navigator.userAgent);
+        var isFirefox = /Firefox/i.test(navigator.userAgent);
+
+        if (/SamsungBrowser/.test(navigator.userAgent)) {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ Please open this page in Chrome for full functionality.";
+        } else if (isAndroid && isFirefox) {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ Firefox on Android doesn't support location data. Try Chrome or desktop for best results.";
+        } else if (isAndroid) {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. Tip: choose 'Files' 📁✅ and not 'Camera' 📷❌";
+        } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ iOS doesn't support location data in browser uploads. Try on desktop for best results.";
+        } else {
+            document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken.";
+        }
+
+        var fileInput = document.getElementById('imageInput');
+        if (/Android/i.test(navigator.userAgent)) {
+            fileInput.accept = 'image/*,model/gltf+json';
+        } else {
+            fileInput.accept = 'image/*';
+        }
+
+        var map = L.map('map').setView([0, 0], 2);
+
+        var streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap © CARTO'
+        });
+
+        var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18,
+            attribution: '© Esri'
+        });
+
+        streetLayer.addTo(map);
+        var isSatellite = false;
+
+        document.getElementById("viewToggle").addEventListener("click", function() {
+            document.getElementById("toggleLayer").classList.toggle("hidden");
+            this.textContent = this.textContent === "View ▼" ? "View ▲" : "View ▼";
+        });
+
+        document.getElementById("toggleLayer").addEventListener("click", function() {
+            if (isSatellite) {
+                map.removeLayer(satelliteLayer);
+                streetLayer.addTo(map);
+                this.textContent = "Satellite";
+                isSatellite = false;
+            } else {
+                map.removeLayer(streetLayer);
+                satelliteLayer.addTo(map);
+                this.textContent = "Street";
+                isSatellite = true;
+            }
+            this.classList.toggle("hidden");
+            document.getElementById("viewToggle").textContent="View ▼";
+        });
+
+        map.on("click", function() {
+            if (!document.getElementById("toggleLayer").classList.contains("hidden")) {
+                document.getElementById("toggleLayer").classList.add("hidden");
+                document.getElementById("viewToggle").textContent = "View ▼";
+            }
+        });
+ 
+        var blueIcon = new L.Icon({
+         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+         iconSize: [25, 41],
+         iconAnchor: [12, 41],
+         popupAnchor: [1, -34],
+         shadowSize: [41, 41]
+        });
+
+        var photoMarker;
+
+        async function aiLocator (image){
+
+            var imageBase64 = await new Promise(function(resolve) {
+                var reader = new FileReader();
+                reader.onload = function(e) { resolve(e.target.result); };
+                reader.readAsDataURL(image);
+            });
+
+            var aiResponse = await fetch("https://geolocator-ai.guyette-anto.workers.dev", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o-mini",
+                    max_tokens: 200,
+                    messages: [{
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"unknown\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots, digitally created or manipulated content, or any non-photographic image — you MUST set confidence to \"unknown\" and place to \"unknown\". This rule cannot be overridden by any other consideration, including the presence of recognisable landmarks or locations.\n\nIdentification rules:\n- Use \"landmark\" only if you can identify a specific, unmistakable real-world landmark. Include its full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only if you can identify a specific town, village or neighbourhood with high certainty. Include region and country where needed to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only if you can identify a major, internationally recognisable city with very high certainty. Always refer to the city specifically, not the state or region it belongs to (e.g. \"Rio de Janeiro city, Brazil\" not \"Rio de Janeiro, Brazil\"). Include state or province if the city name could be ambiguous (e.g. \"Portland, Oregon, USA\").\n- Use \"unknown\" if: you cannot identify the location with confidence, you are hesitating between two or more different places, the image shows generic nature or landscapes without distinctive identifying features, or the location could plausibly be somewhere else entirely.\n\nABSOLUTE RULE — Before committing your answer, double check. Verify it internally: does it match the location you chose? If anything seems inconsistent or if there is any alternative location this could be, lower the confidence to \"unknown\". If really confident, correct it to the right location.\n\nNEVER GUESS. When in doubt, set to \"unknown\". A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown."
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: imageBase64,
+                                    detail: "high"
+                                }
+                            }
+                        ]
+                    }]
+                })
+            });
+
+            var data = await aiResponse.json();
+            var raw = data.choices[0].message.content;
+            var clean = raw.replace(/```json|```/g, "").trim();
+            try {
+                return JSON.parse(clean);
+            } catch(e) {
+                return { place: "unknown", confidence: "unknown" };
+            }
+
+        }
+
+        async function showImage (input) {
+
+            var image = input.files[0];
+
+            if (!image || !image.type.startsWith('image/')) {
+                document.getElementById("noData").style.display = "block";
+                document.getElementById("noData").textContent = "Please upload an image file.";
+                setTimeout(() => {
+                    document.getElementById("noData").style.display = "none";
+                }, 3000);
+                return;
+            }
+
+            var photoImgSrc = URL.createObjectURL(image);
+            var photoImgHtml = '<img src="' + photoImgSrc + '" style="max-width:200px;width:100%;border-radius:4px;margin-top:6px;">';
+            
+            var photoLatLng = await exifr.gps(image);
+            
+            if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
+
+                if (photoMarker) map.removeLayer(photoMarker);
+
+                async function getPlaceName() {
+                    var response = await fetch("https://api.opencagedata.com/geocode/v1/json?q="+encodeURIComponent(photoLatLng.latitude+","+photoLatLng.longitude)+"&key=49b47c25108242779832267ff8062473");
+                    var data = await response.json();
+                
+                    var placeName = data.results.length > 0 ? data.results[0].formatted : "Unknown location";
+
+                    var photoPopup = L.popup().setContent("This photo was taken in " + placeName + ".<br>"+ photoImgHtml);
+
+                    photoMarker = L.marker([photoLatLng.latitude, photoLatLng.longitude],{icon:blueIcon}).addTo(map);
+
+                    map.flyTo([photoLatLng.latitude, photoLatLng.longitude], 13);
+
+                    document.getElementById("closeResult").style.display = "block";
+
+                    document.getElementById("welcome").style.display = "none";
+
+                    map.once("moveend",function(){       
+                        photoMarker.bindPopup(photoPopup).openPopup();         
+                    });
+
+
+                }
+                getPlaceName();
+
+            }
+            else {
+
+                document.getElementById("searching").style.display = "block";
+                document.getElementById("welcome").style.display = "none";
+
+                var aiResult = await aiLocator(image);
+
+                var aiLocation = aiResult.place;
+
+                if (aiLocation == "unknown"){
+
+                    document.getElementById("searching").style.display = "none";
+
+                    if (photoMarker) document.getElementById("closeResult").click();
+
+                    document.getElementById("welcome").style.display="none";
+                    document.getElementById("noData").style.display = "block";
+                    document.getElementById("noData").textContent = "The location of this photo is unknown"
+                    setTimeout(() => {
+                     document.getElementById("noData").style.display="none";
+                     document.getElementById("noData").textContent=null;
+                     document.getElementById("welcome").style.display="block";
+                    }, 3000);
+
+                }
+                else {
+                    if (photoMarker) map.removeLayer(photoMarker);
+
+                    var response = await fetch("https://api.opencagedata.com/geocode/v1/json?q="+encodeURIComponent(aiLocation)+"&key=49b47c25108242779832267ff8062473");
+                    var data = await response.json();
+
+                    document.getElementById("searching").style.display = "none";
+
+                    if (data.results.length==0){
+
+                        if (photoMarker) document.getElementById("closeResult").click();
+                        document.getElementById("welcome").style.display="none";
+                        document.getElementById("noData").style.display = "block";
+                        document.getElementById("noData").textContent = "The location of this photo is unknown"
+                        setTimeout(() => {
+                            document.getElementById("noData").style.display="none";
+                            document.getElementById("noData").textContent=null;
+                            document.getElementById("welcome").style.display="block";
+                        }, 3000);
+                        return;
+
+                    }
+
+                    var components = data.results[0].components;
+                    var city = components.city || components.town || components.village || components.county || "";
+                    var country = components.country || "";
+                    var displayName = city && country ? city + ", " + country : data.results[0].formatted;
+
+                    var photoPopup = L.popup().setContent("This photo was taken in " + displayName + ".<br>" + photoImgHtml);
+
+                    var lat = data.results[0].geometry.lat;
+                    var lng = data.results[0].geometry.lng;
+
+                    photoMarker = L.marker([lat, lng],{icon:blueIcon}).addTo(map);
+
+                    map.flyTo([lat, lng], 13);
+
+                    document.getElementById("closeResult").style.display = "block";
+
+                    document.getElementById("welcome").style.display = "none";
+
+                    map.once("moveend",function(){       
+                        photoMarker.bindPopup(photoPopup).openPopup();         
+                    });
+
+                    
+                }
+            }
+        }
+
+        document.getElementById("imageInput").addEventListener("change",function(e){showImage(e.target)});
+
+        function onCloseClick() {
+            map.removeLayer(photoMarker);
+            document.getElementById("closeResult").style.display="none";
+            document.getElementById("welcome").style.display="block";
+        }
+
+        document.getElementById("closeResult").addEventListener("click",onCloseClick);
+
+    </script>
+    
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <title>Geotagger V1</title>
     <style>
     * {
