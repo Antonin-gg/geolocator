@@ -233,7 +233,7 @@
                         content: [
                             {
                                 type: "text",
-                                text: "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"unknown\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots, digitally created or manipulated content, or any non-photographic image — you MUST set confidence to \"unknown\" and place to \"unknown\". This rule cannot be overridden by any other consideration, including the presence of recognisable landmarks or locations.\n\nIdentification rules:\n- Use \"landmark\" only if you can identify a specific, unmistakable real-world landmark. Include its full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only if you can identify a specific town, village or neighbourhood with high certainty. Include region and country where needed to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only if you can identify a major, internationally recognisable city with very high certainty. Always refer to the city specifically, not the state or region it belongs to (e.g. \"Rio de Janeiro city, Brazil\" not \"Rio de Janeiro, Brazil\"). Include state or province if the city name could be ambiguous (e.g. \"Portland, Oregon, USA\").\n- Use \"unknown\" if: you cannot identify the location with confidence, you are hesitating between two or more different places, the image shows generic nature or landscapes without distinctive identifying features, or the location could plausibly be somewhere else entirely.\n\nABSOLUTE RULE — Before committing your answer, double check. Verify it internally: does it match the location you chose? If anything seems inconsistent or if there is any alternative location this could be, lower the confidence to \"unknown\". If really confident, correct it to the right location.\n\nNEVER GUESS. When in doubt, set to \"unknown\". A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown."
+                                text: "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"country\" | \"unknown\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots, digitally created or manipulated content, or any non-photographic image — you MUST set confidence to \"unknown\" and place to \"unknown\". This rule cannot be overridden by any other consideration, including the presence of recognisable landmarks or locations.\n\nIdentification rules:\n- Use \"landmark\" only if you can identify a specific, unmistakable real-world landmark. Include its full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only if you can identify a specific town, village or neighbourhood with high certainty. Include region and country where needed to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only if you can identify a major, internationally recognisable city with very high certainty. Always refer to the city specifically, not the state or region it belongs to (e.g. \"Rio de Janeiro city, Brazil\" not \"Rio de Janeiro, Brazil\"). Include state or province if the city name could be ambiguous (e.g. \"Portland, Oregon, USA\").\n- Use \"country\" only if you can identify the country with high certainty but cannot identify a specific city or area. Set place to the country name only (e.g. \"Norway\").\n- Use \"unknown\" if: you cannot identify the location with confidence, you are hesitating between two or more different places, the image shows generic nature or landscapes without distinctive identifying features, or the location could plausibly be somewhere else entirely.\n\nABSOLUTE RULE — Before committing your answer, double check. Verify it internally: does it match the location you chose? If anything seems inconsistent or if there is any alternative location this could be, lower the confidence to \"unknown\". If really confident, correct it to the right location.\n\nNEVER GUESS. When in doubt, set to \"unknown\". A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown."
                             },
                             {
                                 type: "image_url",
@@ -333,7 +333,8 @@
                 else {
                     if (photoMarker) map.removeLayer(photoMarker);
 
-                    var response = await fetch("https://api.opencagedata.com/geocode/v1/json?q="+encodeURIComponent(aiLocation)+"&key=49b47c25108242779832267ff8062473");
+                    var queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
+                    var response = await fetch("https://api.opencagedata.com/geocode/v1/json?q="+encodeURIComponent(queryLocation)+"&key=49b47c25108242779832267ff8062473");
                     var data = await response.json();
 
                     document.getElementById("searching").style.display = "none";
@@ -353,19 +354,35 @@
 
                     }
 
-                    var components = data.results[0].components;
+                    var result;
+                    if (aiResult.confidence === "city" || aiResult.confidence === "area") {
+                        var cityResult = data.results.find(function(r) {
+                            return r.components._type === "city" || r.components._type === "town";
+                        });
+                        result = cityResult || data.results[0];
+                    } else {
+                    result = data.results[0];
+                    }
+
+                    var components = result.components;
                     var city = components.city || components.town || components.village || components.county || "";
                     var country = components.country || "";
-                    var displayName = city && country ? city + ", " + country : data.results[0].formatted;
+                    var displayName = city && country ? city + ", " + country : result.formatted;
+
+                    var lat = result.geometry.lat;
+                    var lng = result.geometry.lng;
 
                     var photoPopup = L.popup().setContent("This photo was taken in " + displayName + ".<br>" + photoImgHtml);
 
-                    var lat = data.results[0].geometry.lat;
-                    var lng = data.results[0].geometry.lng;
+                    var zoomLevel;
+                    if (aiResult.confidence === "landmark") zoomLevel = 16;
+                    else if (aiResult.confidence === "area") zoomLevel = 13;
+                    else if (aiResult.confidence === "city") zoomLevel = 11;
+                    else if (aiResult.confidence === "country") zoomLevel = 5;
 
                     photoMarker = L.marker([lat, lng],{icon:blueIcon}).addTo(map);
 
-                    map.flyTo([lat, lng], 13);
+                    map.flyTo([lat, lng], zoomLevel);
 
                     document.getElementById("closeResult").style.display = "block";
 
