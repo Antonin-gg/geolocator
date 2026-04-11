@@ -118,11 +118,27 @@
 
     .leaflet-control-zoom a {
     padding:0 0;
+    border-radius: 0 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+    box-shadow: none !important;
+    }
+
+    .leaflet-control-zoom-in {
+    border-radius: 10px 10px 0 0 !important;
+    }
+
+    .leaflet-control-zoom-out {
+    border-radius: 0 0 10px 10px !important;
+    border-bottom: none !important;
     }
 
     .leaflet-control-zoom {
     margin-top: 14px;
     margin-left: 14px;
+    border: none !important;
+    border-radius: 10px !important;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
     }
 
     .leaflet-popup-content-wrapper {
