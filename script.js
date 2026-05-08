@@ -369,6 +369,12 @@ window.addEventListener("resize", function () {
             }
         }
 
+        document.getElementById("resultPanel").classList.remove("open");
+
+        requestAnimationFrame(() => {
+            document.getElementById("resultPanel").classList.add("open");
+        });
+
     }
 
     map.invalidateSize();
