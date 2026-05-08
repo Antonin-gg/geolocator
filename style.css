@@ -31,7 +31,7 @@ body {
     transition: transform 0.3s ease;
     background: rgba(255, 255, 255, 0.95);
     font-family: 'DM Sans', sans-serif;
-    box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
     border-radius: 0;
     padding: 60px 16px 60px 16px;
     display: flex;
@@ -96,11 +96,14 @@ body {
     position: relative;
 }
 
-#panelClose, #panelToggle, #stripClose, #stripToggle {
+#panelClose,
+#panelToggle,
+#stripClose,
+#stripToggle {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(0,0,0,0.08);
+    background: rgba(0, 0, 0, 0.08);
     border: none;
     cursor: pointer;
     display: flex;
@@ -108,7 +111,8 @@ body {
     justify-content: center;
 }
 
-#stripClose, #stripToggle {
+#stripClose,
+#stripToggle {
     width: 28px;
     height: 28px;
 }
@@ -117,8 +121,11 @@ body {
     font-size: 0.8rem;
 }
 
-#panelClose:hover, #panelToggle:hover, #stripClose:hover, #stripToggle:hover {
-    background: rgba(0,0,0,0.15);
+#panelClose:hover,
+#panelToggle:hover,
+#stripClose:hover,
+#stripToggle:hover {
+    background: rgba(0, 0, 0, 0.15);
 }
 
 #panelClose {
@@ -158,12 +165,13 @@ body {
     flex-shrink: 0;
 }
 
-#panelPlaceName, #panelMethod {
+#panelPlaceName,
+#panelMethod {
     flex-shrink: 0;
 }
 
 #imageInputLabelPanel {
-    display:none;
+    display: none;
 }
 
 #panelSearching {
@@ -390,7 +398,7 @@ body {
 
 
 @media (max-width: 768px) and (orientation: portrait) {
-    
+
     #resultPanel {
         top: auto;
         bottom: 0;
@@ -431,9 +439,9 @@ body {
     #imageInputLabelPanel {
         position: absolute;
         bottom: 14px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 250px;
+        left: 16px;
+        right: 16px;
+        width: auto;
         text-align: center;
         justify-content: center;
         font-weight: bold;
@@ -442,9 +450,11 @@ body {
     #panelSearching {
         position: absolute;
         bottom: 14px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 250px;
+        left: 16px;
+        right: 16px;
+        width: auto;
+        text-align: center;
+        font-family: 'DM Sans', sans-serif;
     }
 
     #panelSearchingGlobe {
@@ -462,7 +472,8 @@ body {
         justify-content: space-between;
         border-radius: 10px 10px 0 0;
         padding: 0 16px;
-        writing-mode: horizontal-tb; /* cancel vertical text */
+        writing-mode: horizontal-tb;
+        /* cancel vertical text */
     }
 
     #stripPlaceName {
@@ -471,7 +482,8 @@ body {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        flex: 1; /* takes up remaining space between buttons */
+        flex: 1;
+        /* takes up remaining space between buttons */
         text-align: center;
     }
 
