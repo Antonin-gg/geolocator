@@ -201,6 +201,7 @@ body {
     transform: rotate(180deg);
     text-overflow: ellipsis;
     overflow: hidden;
+    min-width: 0;
 }
 
 #imageInput {
@@ -499,6 +500,10 @@ body {
 
     #panelPhoto img {
         max-height: 70dvh;
+    }
+
+    #resultStrip {
+        bottom: 14px;
     }
 
 }
