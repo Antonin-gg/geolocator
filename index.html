@@ -4,25 +4,26 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css" />
     <title>🌍 Photo geolocator</title>
 </head>
 
 <body>
-    <div id="map"></div> 
+    <div id="map"></div>
 
     <div id="wrapper">
-        
-        <button id="closeResult" class="box">Close result</button>
+
+        <!-- <button id="closeResult" class="box">Close result</button> -->
 
         <div id="noData" class="box"></div>
 
         <div id="searching" class="box"><span id="searchingGlobe">🌍</span> Identifying location...</div>
-       
+
         <div id="welcome" class="box"></div>
-        
+
         <input type="file" id="imageInput">
         <label for="imageInput" id="imageInputLabel" class="box">Upload photo</label>
 
@@ -39,10 +40,33 @@
         </div>
     </div>
 
+    <div id="resultPanel">
+        <button id="panelClose">✕</button>
+        <div id="panelPhoto"></div>
+        <div id="panelPlaceName"></div>
+        <div id="panelMethod"></div>
+        <label for="imageInput" id="imageInputLabelPanel" class="box">Upload photo</label>
+        <button id="panelToggle">
+            <span class="arrow-desktop">←</span>
+            <span class="arrow-mobile">↓</span>
+        </button>
+    </div>
+
+    <div id="resultStrip" class="box">
+        <button id="stripClose">✕</button>
+
+        <div id="stripPlaceName"></div>
+        
+        <button id="stripToggle">
+            <span class="arrow-desktop">→</span>
+            <span class="arrow-mobile">↑</span>
+        </button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
-    
+
 </body>
 
 </html>
