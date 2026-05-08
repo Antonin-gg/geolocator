@@ -95,7 +95,7 @@ function toLightTheme() {
         el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
     });
 
-    //darkPopupStyle.remove();
+    darkPopupStyle.remove();
 
     document.querySelector(".leaflet-control-attribution").style.background = "rgba(255,255,255,0.4)";
     document.querySelector(".leaflet-control-attribution").style.color = "#000";
@@ -111,7 +111,7 @@ function toLightTheme() {
     document.getElementById("stripClose").style.color = "#000000";
     document.getElementById("stripToggle").style.background = "rgba(0,0,0,0.08)";
     document.getElementById("stripToggle").style.color = "#000000";
-    
+
 
     if (photoMarker && !isSatellite) photoMarker.setIcon(cameraIconLight);
 }
@@ -136,7 +136,7 @@ function toDarkTheme() {
         el.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.5)";
     });
 
-    //document.head.appendChild(darkPopupStyle);
+    document.head.appendChild(darkPopupStyle);
 
     document.querySelector(".leaflet-control-attribution").style.background = "rgba(15,15,25,0.75)";
     document.querySelector(".leaflet-control-attribution").style.color = "#f0f0f0";
@@ -285,6 +285,26 @@ function showError(message) {
     }, 3000);
 }
 
+function closeResult() {
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
+    if (document.getElementById("resultPanel").classList.contains("open")) {
+        document.getElementById("resultPanel").classList.remove("open");
+        document.getElementById("map").classList.remove("panel-open");
+        document.getElementById("wrapper").classList.remove("panel-open");
+        setTimeout(function () { map.invalidateSize(); }, 300);
+    }
+    if (document.getElementById("resultStrip").style.display === "flex") {
+        document.getElementById("resultStrip").style.display = "none";
+    }
+    if (window.innerWidth <= 768) {
+        document.getElementById("imageInputLabel").style.display = "block";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+    }
+}
+
 /*function onCloseClick() {
     map.removeLayer(photoMarker);
     document.getElementById("closeResult").style.display = "none";
@@ -301,8 +321,10 @@ function openPanel(placeName, photoHtml, method) {
     currentPhotoHtml = photoHtml;
     currentMethod = method;
 
+    if (photoMarker) photoMarker.closePopup();
+
     document.getElementById("panelPhoto").innerHTML = photoHtml;
-    document.getElementById("panelPlaceName").innerHTML = "This photo was taken in <strong>" + placeName + "</strong>";    document.getElementById("panelMethod").textContent = method;
+    document.getElementById("panelPlaceName").innerHTML = "This photo was taken in <strong>" + placeName + "</strong>"; document.getElementById("panelMethod").textContent = method;
     document.getElementById("resultPanel").classList.add('open');
     document.getElementById("map").classList.add('panel-open');
     document.getElementById("wrapper").classList.add('panel-open');
@@ -324,7 +346,7 @@ function openPanel(placeName, photoHtml, method) {
     }, 300);
 }
 
-function closePanel () {
+function closePanel() {
     document.getElementById("resultPanel").classList.remove('open');
     document.getElementById("map").classList.remove('panel-open');
     document.getElementById("wrapper").classList.remove('panel-open');
@@ -353,6 +375,10 @@ function minimizePanel() {
 
     setTimeout(function () {
         map.invalidateSize();
+        var popupWidth = Math.round(window.innerWidth * 0.35);
+        var miniPopup = L.popup({ closeButton: false, maxWidth: popupWidth })
+            .setContent(currentPhotoHtml);
+        photoMarker.bindPopup(miniPopup).openPopup();
     }, 300);
 }
 
@@ -369,10 +395,10 @@ function closeStrip() {
     document.getElementById("welcome").style.display = "block";
 }
 
-document.getElementById("panelClose").addEventListener("click",closePanel);
-document.getElementById("stripClose").addEventListener("click",closeStrip);
-document.getElementById("panelToggle").addEventListener("click",minimizePanel);
-document.getElementById("stripToggle").addEventListener("click", function() {
+document.getElementById("panelClose").addEventListener("click", closePanel);
+document.getElementById("stripClose").addEventListener("click", closeStrip);
+document.getElementById("panelToggle").addEventListener("click", minimizePanel);
+document.getElementById("stripToggle").addEventListener("click", function () {
     openPanel(currentPlaceName, currentPhotoHtml, currentMethod);
 });
 
@@ -431,13 +457,14 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     var response = await fetch(OPENCAGE_URL + encodeURIComponent(photoCoordinates.latitude + "," + photoCoordinates.longitude) + "&key=" + OPENCAGE_KEY);
     var data = await response.json();
 
-    if (photoMarker) map.removeLayer(photoMarker);
-
     var placeName = data.results.length > 0 ? data.results[0].formatted : "Unknown location";
 
     //var photoPopup = L.popup().setContent("This photo was taken in " + placeName + ".<br>" + photoHtml);
-
-    openPanel(placeName,photoHtml,method);
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
+    openPanel(placeName, photoHtml, method);
 
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
@@ -465,8 +492,9 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     if (aiLocation == "unknown") {
 
-        if (photoMarker) document.getElementById("closeResult").click();
         hideSearching();
+
+        closeResult();
 
         showError("The location of this photo is unknown");
 
@@ -478,10 +506,11 @@ async function placeMarkerFromAI(image, photoHtml) {
         var response = await fetch(OPENCAGE_URL + encodeURIComponent(queryLocation) + "&key=" + OPENCAGE_KEY);
         var data = await response.json();
 
-        if (photoMarker) document.getElementById("closeResult").click();
         hideSearching();
 
         if (data.results.length == 0) {
+
+            closeResult();
 
             showError("The location of this photo is unknown");
 
@@ -508,7 +537,11 @@ async function placeMarkerFromAI(image, photoHtml) {
         var lng = result.geometry.lng;
 
         //var photoPopup = L.popup().setContent("This photo was taken in " + displayName + ".<br>" + photoHtml);
-        openPanel(displayName,photoHtml,method);
+        if (photoMarker) {
+            map.removeLayer(photoMarker);
+            photoMarker = null;
+        }
+        openPanel(displayName, photoHtml, method);
 
         var zoomLevel = getZoomLevel(result.components._type, aiResult.confidence);
 
