@@ -355,7 +355,7 @@ body {
         width: 100%;
         height: 50dvh;
         transform: translateY(100%);
-        border-radius: 12px 12px 0 0;
+        border-radius: 0;
     }
 
     #resultPanel.open {
@@ -375,14 +375,13 @@ body {
     }
 
     #imageInputLabelPanel {
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
         width: 250px;
-        align-self: center;
         text-align: center;
-        font-family: 'DM Sans', sans-serif;
-        font-weight: bold;
         justify-content: center;
-        margin-top: auto;
-
     }
 
     #resultStrip {
