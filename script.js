@@ -400,8 +400,15 @@ function openPanel(placeName, photoHtml, method) {
     document.getElementById("welcome").style.display = "none";
 
     if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+
         document.getElementById("imageInputLabel").style.display = "none";
         document.getElementById("imageInputLabelPanel").style.display = "flex";
+
+    } else {
+
+        document.getElementById("imageInputLabel").style.display = "flex";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+
     }
 
     setTimeout(function () {
