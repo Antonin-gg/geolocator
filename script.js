@@ -344,11 +344,15 @@ function closeResult() {
     }
 }
 
+var resizeTimeout;
+
 window.addEventListener("resize", function () {
 
-    if (document.getElementById("resultPanel").classList.contains("open")) {
+    clearTimeout(resizeTimeout);
 
-        requestAnimationFrame(() => {
+    resizeTimeout = setTimeout(function () {
+
+        if (document.getElementById("resultPanel").classList.contains("open")) {
 
             openPanel(currentPlaceName, currentPhotoHtml, currentMethod);
 
@@ -362,9 +366,11 @@ window.addEventListener("resize", function () {
 
             }
 
-        });
+        }
 
-    }
+        map.invalidateSize();
+
+    }, 150);
 
 });
 
