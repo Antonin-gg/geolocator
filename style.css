@@ -370,6 +370,7 @@ body {
     #panelToggle {
         top: 16px;
         bottom: auto;
+        left: 16px;
     }
 
     #imageInputLabelPanel {
