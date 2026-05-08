@@ -498,12 +498,24 @@ body {
 
 @media (max-width: 768px) and (orientation: landscape) {
 
-    #panelPhoto img {
-        max-height: 70dvh;
+    #panelContent {
+        min-height: 0;
     }
 
-    #resultStrip {
-        bottom: 14px;
+    #panelPhoto {
+        flex: 1;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    #panelPhoto img {
+        max-height: 55dvh;
+        width: auto;
+        object-fit: contain;
+    }
+
+    #stripPlaceName {
+        display: none;
     }
 
 }
