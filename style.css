@@ -50,6 +50,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    gap: 14px;
 }
 
 #panelClose, #panelToggle {
@@ -414,7 +415,7 @@ body {
         justify-content: space-between;
         border-radius: 10px 10px 0 0;
         padding: 0 16px;
-        writing-mode: horizontal-tb;
+        writing-mode: horizontal-tb; /* cancel vertical text */
     }
 
     #stripPlaceName {
@@ -423,7 +424,7 @@ body {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        flex: 1;
+        flex: 1; /* takes up remaining space between buttons */
         text-align: center;
     }
 
