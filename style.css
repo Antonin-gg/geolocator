@@ -415,7 +415,6 @@ body {
 
     #panelPhoto img {
         max-height: 25dvh;
-        object-fit: contain;
     }
 
     #panelToggle {
@@ -492,6 +491,34 @@ body {
         height: 50dvh;
         margin-left: 0;
         width: 100%;
+    }
+
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+
+    #panelPhoto img {
+        max-height: 70dvh;
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    #panelPhoto {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        min-height: 0;
+    }
+
+    #panelPhoto img {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        object-fit: contain;
+        display: block;
     }
 
 }
