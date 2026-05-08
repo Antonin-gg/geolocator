@@ -10,6 +10,10 @@ var AI_PROMPT = "Look at this image and identify where in the world it was taken
 var isSatellite = false;
 var isDark = false;
 var photoMarker;
+var currentPlaceName = null;
+var currentPhotoHtml = null;
+var currentMethod = null;
+var method = "Located with AI";
 
 
 
@@ -91,12 +95,25 @@ function toLightTheme() {
         el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
     });
 
-    darkPopupStyle.remove();
+    //darkPopupStyle.remove();
 
     document.querySelector(".leaflet-control-attribution").style.background = "rgba(255,255,255,0.4)";
     document.querySelector(".leaflet-control-attribution").style.color = "#000";
 
-    if (photoMarker&&!isSatellite) photoMarker.setIcon(cameraIconLight);
+    document.getElementById("resultPanel").style.background = "rgba(255, 255, 255, 0.95)";
+    document.getElementById("resultPanel").style.color = "#000000";
+    document.getElementById("panelMethod").style.color = "#666666";
+    document.getElementById("panelClose").style.background = "rgba(0,0,0,0.08)";
+    document.getElementById("panelToggle").style.background = "rgba(0,0,0,0.08)";
+    document.getElementById("panelClose").style.color = "#000000";
+    document.getElementById("panelToggle").style.color = "#000000";
+    document.getElementById("stripClose").style.background = "rgba(0,0,0,0.08)";
+    document.getElementById("stripClose").style.color = "#000000";
+    document.getElementById("stripToggle").style.background = "rgba(0,0,0,0.08)";
+    document.getElementById("stripToggle").style.color = "#000000";
+    
+
+    if (photoMarker && !isSatellite) photoMarker.setIcon(cameraIconLight);
 }
 
 function toDarkTheme() {
@@ -119,12 +136,24 @@ function toDarkTheme() {
         el.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.5)";
     });
 
-    document.head.appendChild(darkPopupStyle);
+    //document.head.appendChild(darkPopupStyle);
 
     document.querySelector(".leaflet-control-attribution").style.background = "rgba(15,15,25,0.75)";
     document.querySelector(".leaflet-control-attribution").style.color = "#f0f0f0";
 
-    if (photoMarker&&!isSatellite) photoMarker.setIcon(cameraIconDark);
+    document.getElementById("resultPanel").style.background = "rgba(15, 15, 25, 0.95)";
+    document.getElementById("resultPanel").style.color = "#f0f0f0";
+    document.getElementById("panelMethod").style.color = "#aaaaaa";
+    document.getElementById("panelClose").style.background = "rgba(255,255,255,0.12)";
+    document.getElementById("panelToggle").style.background = "rgba(255,255,255,0.12)";
+    document.getElementById("panelClose").style.color = "#f0f0f0";
+    document.getElementById("panelToggle").style.color = "#f0f0f0";
+    document.getElementById("stripClose").style.background = "rgba(255,255,255,0.12)";
+    document.getElementById("stripClose").style.color = "#f0f0f0";
+    document.getElementById("stripToggle").style.background = "rgba(255,255,255,0.12)";
+    document.getElementById("stripToggle").style.color = "#f0f0f0";
+
+    if (photoMarker && !isSatellite) photoMarker.setIcon(cameraIconDark);
 }
 
 var cameraIconLight = new L.Icon({
@@ -196,7 +225,7 @@ document.getElementById("toggleView").addEventListener("click", function () {
         map.removeLayer(satelliteLayer);
         if (isDark) {
             streetLayerDark.addTo(map);
-            if(photoMarker) photoMarker.setIcon(cameraIconDark);
+            if (photoMarker) photoMarker.setIcon(cameraIconDark);
         }
         else {
             streetLayerLight.addTo(map);
@@ -206,7 +235,7 @@ document.getElementById("toggleView").addEventListener("click", function () {
     } else {
         if (isDark) {
             map.removeLayer(streetLayerDark);
-            if(photoMarker) photoMarker.setIcon(cameraIconLight);
+            if (photoMarker) photoMarker.setIcon(cameraIconLight);
         }
         else {
             map.removeLayer(streetLayerLight);
@@ -256,12 +285,96 @@ function showError(message) {
     }, 3000);
 }
 
-function onCloseClick() {
+/*function onCloseClick() {
     map.removeLayer(photoMarker);
     document.getElementById("closeResult").style.display = "none";
     document.getElementById("welcome").style.display = "block";
 }
-document.getElementById("closeResult").addEventListener("click", onCloseClick);
+document.getElementById("closeResult").addEventListener("click", onCloseClick);*/
+
+
+
+// ── PANEL CONTROLS ─────────────────────────────────────────────────
+function openPanel(placeName, photoHtml, method) {
+
+    currentPlaceName = placeName;
+    currentPhotoHtml = photoHtml;
+    currentMethod = method;
+
+    document.getElementById("panelPhoto").innerHTML = photoHtml;
+    document.getElementById("panelPlaceName").innerHTML = "This photo was taken in <strong>" + placeName + "</strong>";    document.getElementById("panelMethod").textContent = method;
+    document.getElementById("resultPanel").classList.add('open');
+    document.getElementById("map").classList.add('panel-open');
+    document.getElementById("wrapper").classList.add('panel-open');
+
+    var strip = document.getElementById("resultStrip");
+    if (strip.style.display === "flex") {
+        strip.style.display = "none";
+    }
+
+    document.getElementById("welcome").style.display = "none";
+
+    if (window.innerWidth <= 768) {
+        document.getElementById("imageInputLabel").style.display = "none";
+        document.getElementById("imageInputLabelPanel").style.display = "block";
+    }
+
+    setTimeout(function () {
+        map.invalidateSize();
+    }, 300);
+}
+
+function closePanel () {
+    document.getElementById("resultPanel").classList.remove('open');
+    document.getElementById("map").classList.remove('panel-open');
+    document.getElementById("wrapper").classList.remove('panel-open');
+
+    map.removeLayer(photoMarker);
+    photoMarker = null;
+
+    if (window.innerWidth <= 768) {
+        document.getElementById("imageInputLabel").style.display = "block";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+    }
+
+    setTimeout(function () {
+        map.invalidateSize();
+        document.getElementById("welcome").style.display = "block";
+    }, 300);
+}
+
+function minimizePanel() {
+    document.getElementById("resultPanel").classList.remove('open');
+    document.getElementById("map").classList.remove('panel-open');
+    document.getElementById("wrapper").classList.remove('panel-open');
+
+    document.getElementById("resultStrip").style.display = "flex";
+    document.getElementById("stripPlaceName").textContent = currentPlaceName;
+
+    setTimeout(function () {
+        map.invalidateSize();
+    }, 300);
+}
+
+function closeStrip() {
+    document.getElementById("resultStrip").style.display = "none";
+    map.removeLayer(photoMarker);
+    photoMarker = null;
+
+    if (window.innerWidth <= 768) {
+        document.getElementById("imageInputLabel").style.display = "block";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+    }
+
+    document.getElementById("welcome").style.display = "block";
+}
+
+document.getElementById("panelClose").addEventListener("click",closePanel);
+document.getElementById("stripClose").addEventListener("click",closeStrip);
+document.getElementById("panelToggle").addEventListener("click",minimizePanel);
+document.getElementById("stripToggle").addEventListener("click", function() {
+    openPanel(currentPlaceName, currentPhotoHtml, currentMethod);
+});
 
 
 
@@ -322,19 +435,21 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     var placeName = data.results.length > 0 ? data.results[0].formatted : "Unknown location";
 
-    var photoPopup = L.popup().setContent("This photo was taken in " + placeName + ".<br>" + photoHtml);
+    //var photoPopup = L.popup().setContent("This photo was taken in " + placeName + ".<br>" + photoHtml);
+
+    openPanel(placeName,photoHtml,method);
 
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
     map.flyTo([photoCoordinates.latitude, photoCoordinates.longitude], 13);
 
-    document.getElementById("closeResult").style.display = "block";
+    //document.getElementById("closeResult").style.display = "block";
 
     document.getElementById("welcome").style.display = "none";
 
-    map.once("moveend", function () {
+    /*map.once("moveend", function () {
         photoMarker.bindPopup(photoPopup).openPopup();
-    });
+    });*/
 
 }
 
@@ -392,7 +507,8 @@ async function placeMarkerFromAI(image, photoHtml) {
         var lat = result.geometry.lat;
         var lng = result.geometry.lng;
 
-        var photoPopup = L.popup().setContent("This photo was taken in " + displayName + ".<br>" + photoHtml);
+        //var photoPopup = L.popup().setContent("This photo was taken in " + displayName + ".<br>" + photoHtml);
+        openPanel(displayName,photoHtml,method);
 
         var zoomLevel = getZoomLevel(result.components._type, aiResult.confidence);
 
@@ -400,13 +516,13 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         map.flyTo([lat, lng], zoomLevel);
 
-        document.getElementById("closeResult").style.display = "block";
+        //document.getElementById("closeResult").style.display = "block";
 
         document.getElementById("welcome").style.display = "none";
 
-        map.once("moveend", function () {
+        /*map.once("moveend", function () {
             photoMarker.bindPopup(photoPopup).openPopup();
-        });
+        });*/
 
 
     }
@@ -445,7 +561,7 @@ async function locateImage(input) {
     }
 
     var photoImgSrc = URL.createObjectURL(image);
-    var photoImgHtml = '<img src="' + photoImgSrc + '" style="max-width:200px;width:100%;border-radius:4px;margin-top:6px;">';
+    var photoImgHtml = '<img src="' + photoImgSrc + '" style="width:100%;border-radius:4px;margin-top:6px;">';
 
     var photoLatLng = await exifr.gps(image);
 
