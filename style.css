@@ -55,14 +55,16 @@ body {
 
 #panelClose, #panelToggle {
     font-weight: bold;
+    font-size: 1rem;
 }
 
 #panelToggle span,
 #stripToggle span {
     line-height: 1;
-    display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
 #panelClose, #panelToggle, #stripClose, #stripToggle {
@@ -72,7 +74,6 @@ body {
     background: rgba(0,0,0,0.08);
     border: none;
     cursor: pointer;
-    font-size: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -156,7 +157,7 @@ body {
 }
 
 .arrow-mobile { display: none; }
-.arrow-desktop { display: inline; }
+.arrow-desktop { display: flex; }
 
 #stripPlaceName {
     writing-mode: vertical-rl;
@@ -440,7 +441,7 @@ body {
         width: 100%;
     }
 
-    .arrow-mobile { display: inline; }
+    .arrow-mobile { display: flex; }
     .arrow-desktop { display: none; }
 
 }
