@@ -435,13 +435,13 @@ body {
         display: block;
     }
 
-
     #imageInputLabelPanel {
         position: absolute;
         bottom: 14px;
-        left: 16px;
-        right: 16px;
-        width: auto;
+        left: 50%;
+        width: 250px;
+        margin-left: -125px;
+
         text-align: center;
         justify-content: center;
         font-weight: bold;
@@ -450,9 +450,10 @@ body {
     #panelSearching {
         position: absolute;
         bottom: 14px;
-        left: 16px;
-        right: 16px;
-        width: auto;
+        left: 50%;
+        width: 250px;
+        margin-left: -125px;
+
         text-align: center;
         font-family: 'DM Sans', sans-serif;
     }
