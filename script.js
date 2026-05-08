@@ -300,7 +300,7 @@ function closeResult() {
         document.getElementById("resultStrip").style.display = "none";
     }
     if (window.innerWidth <= 768) {
-        document.getElementById("imageInputLabel").style.display = "block";
+        document.getElementById("imageInputLabel").style.display = "flex";
         document.getElementById("imageInputLabelPanel").style.display = "none";
     }
 }
@@ -338,7 +338,7 @@ function openPanel(placeName, photoHtml, method) {
 
     if (window.innerWidth <= 768) {
         document.getElementById("imageInputLabel").style.display = "none";
-        document.getElementById("imageInputLabelPanel").style.display = "block";
+        document.getElementById("imageInputLabelPanel").style.display = "flex";
     }
 
     setTimeout(function () {
@@ -355,7 +355,7 @@ function closePanel() {
     photoMarker = null;
 
     if (window.innerWidth <= 768) {
-        document.getElementById("imageInputLabel").style.display = "block";
+        document.getElementById("imageInputLabel").style.display = "flex";
         document.getElementById("imageInputLabelPanel").style.display = "none";
     }
 
@@ -388,7 +388,7 @@ function closeStrip() {
     photoMarker = null;
 
     if (window.innerWidth <= 768) {
-        document.getElementById("imageInputLabel").style.display = "block";
+        document.getElementById("imageInputLabel").style.display = "flex";
         document.getElementById("imageInputLabelPanel").style.display = "none";
     }
 
