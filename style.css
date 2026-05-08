@@ -362,6 +362,11 @@ body {
         transform: translateY(0);
     }
 
+    #panelToggle {
+        top: 16px;
+        bottom: auto;
+    }
+
     #resultStrip {
         top: auto;
         bottom: 0;
