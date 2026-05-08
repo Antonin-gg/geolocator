@@ -54,9 +54,15 @@ body {
 }
 
 #panelClose, #panelToggle {
-    align-self: flex-end;
-    flex-shrink: 0;
     font-weight: bold;
+}
+
+#panelToggle span,
+#stripToggle span {
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #panelClose, #panelToggle, #stripClose, #stripToggle {
