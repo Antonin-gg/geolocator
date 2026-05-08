@@ -362,9 +362,23 @@ body {
         transform: translateY(0);
     }
 
+    #panelPhoto img {
+        max-height: 25dvh;
+        object-fit: contain;
+    }
+
     #panelToggle {
         top: 16px;
         bottom: auto;
+    }
+
+    #imageInputLabelPanel {
+        width: 250px;
+        align-self: center;
+        text-align: center;
+        font-family: 'DM Sans', sans-serif;
+        font-weight: bold;
+        justify-content: center;
     }
 
     #resultStrip {
@@ -374,7 +388,7 @@ body {
         width: 100%;
         height: 52px;
         transform: none;
-        flex-direction: row;
+        flex-direction: row-reverse;
         justify-content: space-between;
         border-radius: 10px 10px 0 0;
         padding: 0 16px;
