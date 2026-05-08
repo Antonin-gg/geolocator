@@ -348,31 +348,31 @@ window.addEventListener("resize", function () {
 
     if (document.getElementById("resultPanel").classList.contains("open")) {
 
-        if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
-
-            document.getElementById("imageInputLabel").style.display = "none";
-            document.getElementById("imageInputLabelPanel").style.display = "flex";
-
-            if (document.getElementById("searching").style.display === "block") {
-                document.getElementById("searching").style.display = "none";
-                document.getElementById("panelSearching").style.display = "block";
-                document.getElementById("imageInputLabelPanel").style.display = "none";
-            }
-
-        } else {
-
-            document.getElementById("imageInputLabel").style.display = "flex";
-            document.getElementById("imageInputLabelPanel").style.display = "none";
-            if (document.getElementById("panelSearching").style.display === "block") {
-                document.getElementById("searching").style.display = "block";
-                document.getElementById("panelSearching").style.display = "none";
-            }
-        }
-
-        document.getElementById("resultPanel").classList.remove("open");
-
         requestAnimationFrame(() => {
-            document.getElementById("resultPanel").classList.add("open");
+
+            if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+
+                document.getElementById("imageInputLabel").style.display = "none";
+                document.getElementById("imageInputLabelPanel").style.display = "flex";
+
+                if (document.getElementById("searching").style.display === "block") {
+                    document.getElementById("searching").style.display = "none";
+                    document.getElementById("panelSearching").style.display = "block";
+                    document.getElementById("imageInputLabelPanel").style.display = "none";
+                }
+
+            } else {
+
+                document.getElementById("imageInputLabel").style.display = "flex";
+                document.getElementById("imageInputLabelPanel").style.display = "none";
+
+                if (document.getElementById("panelSearching").style.display === "block") {
+                    document.getElementById("searching").style.display = "block";
+                    document.getElementById("panelSearching").style.display = "none";
+                }
+
+            }
+
         });
 
     }
