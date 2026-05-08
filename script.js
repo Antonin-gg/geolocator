@@ -350,34 +350,21 @@ window.addEventListener("resize", function () {
 
         requestAnimationFrame(() => {
 
-            if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+            openPanel(currentPlaceName, currentPhotoHtml, currentMethod);
 
-                document.getElementById("imageInputLabel").style.display = "none";
-                document.getElementById("imageInputLabelPanel").style.display = "flex";
+            if (
+                document.getElementById("searching").classList.contains("searching-active") ||
+                document.getElementById("panelSearching").classList.contains("searching-active")
+            ) {
 
-                if (document.getElementById("searching").style.display === "block") {
-                    document.getElementById("searching").style.display = "none";
-                    document.getElementById("panelSearching").style.display = "block";
-                    document.getElementById("imageInputLabelPanel").style.display = "none";
-                }
-
-            } else {
-
-                document.getElementById("imageInputLabel").style.display = "flex";
-                document.getElementById("imageInputLabelPanel").style.display = "none";
-
-                if (document.getElementById("panelSearching").style.display === "block") {
-                    document.getElementById("searching").style.display = "block";
-                    document.getElementById("panelSearching").style.display = "none";
-                }
+                hideSearching();
+                showSearching();
 
             }
 
         });
 
     }
-
-    map.invalidateSize();
 
 });
 
