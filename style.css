@@ -414,7 +414,7 @@ body {
         justify-content: space-between;
         border-radius: 10px 10px 0 0;
         padding: 0 16px;
-        writing-mode: horizontal-tb; /* cancel vertical text */
+        writing-mode: horizontal-tb;
     }
 
     #stripPlaceName {
@@ -423,7 +423,7 @@ body {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        flex: 1; /* takes up remaining space between buttons */
+        flex: 1;
         text-align: center;
     }
 
