@@ -371,6 +371,7 @@ body {
         top: 16px;
         bottom: auto;
         left: 16px;
+        right: auto;
     }
 
     #imageInputLabelPanel {
@@ -380,6 +381,8 @@ body {
         font-family: 'DM Sans', sans-serif;
         font-weight: bold;
         justify-content: center;
+        margin-top: auto;
+
     }
 
     #resultStrip {
