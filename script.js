@@ -375,7 +375,7 @@ function openPanel(placeName, photoHtml, method) {
 
     document.getElementById("welcome").style.display = "none";
 
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
         document.getElementById("imageInputLabel").style.display = "none";
         document.getElementById("imageInputLabelPanel").style.display = "flex";
     }
@@ -393,7 +393,7 @@ function closePanel() {
     map.removeLayer(photoMarker);
     photoMarker = null;
 
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
         document.getElementById("imageInputLabel").style.display = "flex";
         document.getElementById("imageInputLabelPanel").style.display = "none";
     }
@@ -426,7 +426,7 @@ function closeStrip() {
     map.removeLayer(photoMarker);
     photoMarker = null;
 
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
         document.getElementById("imageInputLabel").style.display = "flex";
         document.getElementById("imageInputLabelPanel").style.display = "none";
     }
