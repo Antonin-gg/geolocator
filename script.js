@@ -367,6 +367,21 @@ window.addEventListener("resize", function () {
             }
 
         }
+        
+        else if (document.getElementById("resultStrip").style.display === "flex") {
+
+            if (window.innerWidth <= 768 &&
+                window.innerHeight > window.innerWidth) {
+
+                document.getElementById("imageInputLabel").style.display = "none";
+
+            } else {
+
+                document.getElementById("imageInputLabel").style.display = "flex";
+
+            }
+
+        }
 
         map.invalidateSize();
 
