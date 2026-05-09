@@ -3,8 +3,7 @@ var OPENCAGE_KEY = "49b47c25108242779832267ff8062473";
 var OPENCAGE_URL = "https://api.opencagedata.com/geocode/v1/json?q=";
 var WORKER_URL = "https://geolocator-ai.guyette-anto.workers.dev";
 var AI_MODEL = "gpt-4o";
-var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"country\" | \"unknown\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots, or any non-photographic image — you MUST set confidence to \"unknown\" and place to \"unknown\". This rule cannot be overridden by any other consideration.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, license plates, road markings, architecture, culturally specific objects.\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n\nIdentification rules:\n- Use \"landmark\" only for a specific, unmistakable real-world landmark. Include full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only for a specific town, village or neighbourhood with high certainty. Include region and country to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only for a major, internationally recognisable city with very high certainty. Refer to the city specifically, not its state or region (e.g. \"Rio de Janeiro city, Brazil\"). Include state if the name is ambiguous (e.g. \"Portland, Oregon, USA\").\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
-
+var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots, or any non-photographic image — you MUST set confidence to \"unknown\", place to \"unknown\", and method to \"This image is not a real photograph.\" This rule cannot be overridden by any other consideration.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, license plates, road markings, architecture, culturally specific objects.\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n\nIdentification rules:\n- Use \"landmark\" only for a specific, unmistakable real-world landmark. Include full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only for a specific town, village or neighbourhood with high certainty. Include region and country to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only for a major, internationally recognisable city with very high certainty. Refer to the city specifically, not its state or region (e.g. \"Rio de Janeiro city, Brazil\"). Include state if the name is ambiguous (e.g. \"Portland, Oregon, USA\").\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples of good method sentences:\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"License plates and road signage in Portuguese, combined with the tropical urban landscape, point to Brazil.\"\n- If confidence is \"unknown\", set method to a single sentence explaining why the location could not be determined (e.g. \"The image shows a generic mountain landscape with no distinctive identifying features.\").\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
 
 // ── STATE ──────────────────────────────────────────────────────────
 var isSatellite = false;
@@ -14,7 +13,6 @@ var currentPlaceName = null;
 var currentPhotoHtml = null;
 var currentMethod = null;
 var currentShortName = null;
-var method = "Located with AI";
 
 
 
@@ -355,8 +353,7 @@ window.addEventListener("resize", function () {
 
         if (document.getElementById("resultPanel").classList.contains("open")) {
 
-            openPanel(currentPlaceName, currentPhotoHtml, currentMethod);
-
+            openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName);
             if (
                 document.getElementById("searching").classList.contains("searching-active") ||
                 document.getElementById("panelSearching").classList.contains("searching-active")
@@ -533,7 +530,7 @@ async function aiLocator(image) {
     try {
         return JSON.parse(clean);
     } catch (e) {
-        return { place: "unknown", confidence: "unknown" };
+        return { place: "unknown", confidence: "unknown", method: "Could not parse the AI response." };
     }
 
 }
@@ -559,8 +556,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         photoMarker = null;
     }
 
-    openPanel(placeName, photoHtml, method, shortName);
-
+    openPanel(placeName, photoHtml, "Location identified using GPS coordinates from photo metadata.", shortName);
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
     map.flyTo([photoCoordinates.latitude, photoCoordinates.longitude], 13);
@@ -629,7 +625,7 @@ async function placeMarkerFromAI(image, photoHtml) {
             map.removeLayer(photoMarker);
             photoMarker = null;
         }
-        openPanel(displayName, photoHtml, method, displayName);
+        openPanel(displayName, photoHtml, aiResult.method, displayName);
 
         var zoomLevel = getZoomLevel(result.components._type, aiResult.confidence);
 
