@@ -367,7 +367,7 @@ window.addEventListener("resize", function () {
             }
 
         }
-        
+
         else if (document.getElementById("resultStrip").style.display === "flex") {
 
             if (window.innerWidth <= 768 &&
@@ -388,13 +388,6 @@ window.addEventListener("resize", function () {
     }, 150);
 
 });
-
-/*function onCloseClick() {
-    map.removeLayer(photoMarker);
-    document.getElementById("closeResult").style.display = "none";
-    document.getElementById("welcome").style.display = "block";
-}
-document.getElementById("closeResult").addEventListener("click", onCloseClick);*/
 
 
 
@@ -550,7 +543,6 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     var placeName = data.results.length > 0 ? data.results[0].formatted : "Unknown location";
 
-    //var photoPopup = L.popup().setContent("This photo was taken in " + placeName + ".<br>" + photoHtml);
     if (photoMarker) {
         map.removeLayer(photoMarker);
         photoMarker = null;
@@ -561,13 +553,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     map.flyTo([photoCoordinates.latitude, photoCoordinates.longitude], 13);
 
-    //document.getElementById("closeResult").style.display = "block";
-
     document.getElementById("welcome").style.display = "none";
-
-    /*map.once("moveend", function () {
-        photoMarker.bindPopup(photoPopup).openPopup();
-    });*/
 
 }
 
@@ -640,14 +626,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         map.flyTo([lat, lng], zoomLevel);
 
-        //document.getElementById("closeResult").style.display = "block";
-
         document.getElementById("welcome").style.display = "none";
-
-        /*map.once("moveend", function () {
-            photoMarker.bindPopup(photoPopup).openPopup();
-        });*/
-
 
     }
 }
