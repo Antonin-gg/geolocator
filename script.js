@@ -13,6 +13,7 @@ var photoMarker;
 var currentPlaceName = null;
 var currentPhotoHtml = null;
 var currentMethod = null;
+var currentShortName = null;
 var method = "Located with AI";
 
 
@@ -397,11 +398,13 @@ function openPanel(placeName, photoHtml, method) {
     currentPlaceName = placeName;
     currentPhotoHtml = photoHtml;
     currentMethod = method;
+    currentShortName = shortName;
 
     if (photoMarker) photoMarker.closePopup();
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
-    document.getElementById("panelPlaceName").innerHTML = "This photo was taken in <strong>" + placeName + "</strong>"; document.getElementById("panelMethod").textContent = method;
+    document.getElementById("panelPlaceName").innerHTML = "This photo was taken in " + placeName.replace(shortName, "<strong>" + shortName + "</strong>");
+    document.getElementById("panelMethod").textContent = method;
     document.getElementById("resultPanel").classList.add('open');
     document.getElementById("map").classList.add('panel-open');
     document.getElementById("wrapper").classList.add('panel-open');
@@ -455,8 +458,7 @@ function minimizePanel() {
     document.getElementById("wrapper").classList.remove('panel-open');
 
     document.getElementById("resultStrip").style.display = "flex";
-    document.getElementById("stripPlaceName").textContent = currentPlaceName;
-
+    document.getElementById("stripPlaceName").textContent = currentShortName;
     setTimeout(function () {
         map.invalidateSize();
         var popupWidth = Math.round(window.innerWidth * 0.35);
@@ -483,7 +485,7 @@ document.getElementById("panelClose").addEventListener("click", closePanel);
 document.getElementById("stripClose").addEventListener("click", closeStrip);
 document.getElementById("panelToggle").addEventListener("click", minimizePanel);
 document.getElementById("stripToggle").addEventListener("click", function () {
-    openPanel(currentPlaceName, currentPhotoHtml, currentMethod);
+    openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName);
 });
 
 
@@ -541,13 +543,23 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     var response = await fetch(OPENCAGE_URL + encodeURIComponent(photoCoordinates.latitude + "," + photoCoordinates.longitude) + "&key=" + OPENCAGE_KEY);
     var data = await response.json();
 
-    var placeName = data.results.length > 0 ? data.results[0].formatted : "Unknown location";
+    var placeName = "Unknown location";
+    var shortName = "Unknown location";
+
+    if (data.results.length > 0) {
+        placeName = data.results[0].formatted;
+        var components = data.results[0].components;
+        var city = components.city || components.town || components.village || components.county || "";
+        var country = components.country || "";
+        shortName = city && country ? city + ", " + country : data.results[0].formatted;
+    }
 
     if (photoMarker) {
         map.removeLayer(photoMarker);
         photoMarker = null;
     }
-    openPanel(placeName, photoHtml, method);
+
+    openPanel(placeName, photoHtml, method, shortName);
 
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
@@ -613,12 +625,11 @@ async function placeMarkerFromAI(image, photoHtml) {
         var lat = result.geometry.lat;
         var lng = result.geometry.lng;
 
-        //var photoPopup = L.popup().setContent("This photo was taken in " + displayName + ".<br>" + photoHtml);
         if (photoMarker) {
             map.removeLayer(photoMarker);
             photoMarker = null;
         }
-        openPanel(displayName, photoHtml, method);
+        openPanel(displayName, photoHtml, method, displayName);
 
         var zoomLevel = getZoomLevel(result.components._type, aiResult.confidence);
 
