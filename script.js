@@ -435,8 +435,10 @@ function closePanel() {
     document.getElementById("map").classList.remove('panel-open');
     document.getElementById("wrapper").classList.remove('panel-open');
 
-    map.removeLayer(photoMarker);
-    photoMarker = null;
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
 
     if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
         document.getElementById("imageInputLabel").style.display = "flex";
@@ -469,8 +471,11 @@ function minimizePanel() {
 
 function closeStrip() {
     document.getElementById("resultStrip").style.display = "none";
-    map.removeLayer(photoMarker);
-    photoMarker = null;
+    
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
 
     if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
         document.getElementById("imageInputLabel").style.display = "flex";
