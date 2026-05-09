@@ -543,12 +543,16 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     var placeName = "Unknown location";
     var shortName = "Unknown location";
 
-    if (data.results.length > 0) {
-        placeName = data.results[0].formatted;
+     if (data.results.length > 0) {
         var components = data.results[0].components;
+        var street = [components.house_number, components.road].filter(Boolean).join(" ");
         var city = components.city || components.town || components.village || components.county || "";
         var country = components.country || "";
+        
         shortName = city && country ? city + ", " + country : data.results[0].formatted;
+        
+        var prefix = street ? street + ", " : "";
+        placeName = prefix + shortName;
     }
 
     if (photoMarker) {
