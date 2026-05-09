@@ -458,10 +458,12 @@ function minimizePanel() {
     document.getElementById("stripPlaceName").textContent = currentShortName;
     setTimeout(function () {
         map.invalidateSize();
-        var popupWidth = Math.round(window.innerWidth * 0.35);
-        var miniPopup = L.popup({ closeButton: false, maxWidth: popupWidth })
-            .setContent(currentPhotoHtml);
-        photoMarker.bindPopup(miniPopup).openPopup();
+        if (photoMarker) {
+            var popupWidth = Math.round(window.innerWidth * 0.35);
+            var miniPopup = L.popup({ closeButton: false, maxWidth: popupWidth })
+                .setContent(currentPhotoHtml);
+            photoMarker.bindPopup(miniPopup).openPopup();
+        }
     }, 300);
 }
 
@@ -543,14 +545,14 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     var placeName = "Unknown location";
     var shortName = "Unknown location";
 
-     if (data.results.length > 0) {
+    if (data.results.length > 0) {
         var components = data.results[0].components;
         var street = [components.house_number, components.road].filter(Boolean).join(" ");
         var city = components.city || components.town || components.village || components.county || "";
         var country = components.country || "";
-        
+
         shortName = city && country ? city + ", " + country : data.results[0].formatted;
-        
+
         var prefix = street ? street + ", " : "";
         placeName = prefix + shortName;
     }
@@ -583,10 +585,19 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         hideSearching();
 
-        closeResult();
+        if (photoMarker) {
+            map.removeLayer(photoMarker);
+            photoMarker = null;
+        }
 
-        showError("The location of this photo is unknown");
+        openPanel(
+            "Unknown location",
+            photoHtml,
+            aiResult.method,
+            "Unknown location"
+        );
 
+        document.getElementById("panelPlaceName").innerHTML = "<strong>The location of this photo could not be identified</strong>";
     }
 
     else {
