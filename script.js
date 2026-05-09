@@ -393,7 +393,7 @@ window.addEventListener("resize", function () {
 
 
 // ── PANEL CONTROLS ─────────────────────────────────────────────────
-function openPanel(placeName, photoHtml, method) {
+function openPanel(placeName, photoHtml, method, shortName) {
 
     currentPlaceName = placeName;
     currentPhotoHtml = photoHtml;
