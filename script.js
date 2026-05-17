@@ -1,10 +1,7 @@
 // ── CONSTANTS & CONFIG ─────────────────────────────────────────────
-var OPENCAGE_KEY = "49b47c25108242779832267ff8062473";
-var OPENCAGE_URL = "https://api.opencagedata.com/geocode/v1/json?q=";
 var WORKER_URL = "https://geolocator-ai.guyette-anto.workers.dev";
 var AI_MODEL = "gpt-4o";
-var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots, or any non-photographic image — you MUST set confidence to \"unknown\", place to \"unknown\", and method to \"This image is not a real photograph.\" This rule cannot be overridden by any other consideration.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, license plates, road markings, architecture, culturally specific objects.\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n\nIdentification rules:\n- Use \"landmark\" only for a specific, unmistakable real-world landmark. Include full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only for a specific town, village or neighbourhood with high certainty. Include region and country to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only for a major, internationally recognisable city with very high certainty. Refer to the city specifically, not its state or region (e.g. \"Rio de Janeiro city, Brazil\"). Include state if the name is ambiguous (e.g. \"Portland, Oregon, USA\").\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples of good method sentences:\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"License plates and road signage in Portuguese, combined with the tropical urban landscape, point to Brazil.\"\n- If confidence is \"unknown\", set method to a single sentence explaining why the location could not be determined (e.g. \"The image shows a generic mountain landscape with no distinctive identifying features.\").\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
-
+var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"region\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots, or any non-photographic image — you MUST set confidence to \"unknown\", place to \"unknown\", and method to \"This image is not a real photograph.\" This rule cannot be overridden by any other consideration.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, license plates, road markings, architecture, culturally specific objects.\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Generic modern architecture (glass facades, clean lines, light wood interiors, minimalist design, contemporary airports, shopping centers, office buildings) is NOT sufficient evidence on its own. These styles are global. Return \"unknown\" for modern buildings unless distinctive non-architectural clues are present (visible signage in a specific language, flags, named branding, identifiable surroundings).\n- Partial views of buildings (close-ups, sections, interiors without clear identifying features) cannot be confidently identified unless they contain a recognisable named element. A glass wall, a staircase, a generic interior — these are not identifiable. Return \"unknown\".\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n\nIdentification rules:\n- Use \"landmark\" only for a specific, unmistakable real-world landmark. Include full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only for a specific town, village or neighbourhood with high certainty. Include region and country to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only for a major, internationally recognisable city with very high certainty. Refer to the city specifically, not its state or region (e.g. \"Rio de Janeiro city, Brazil\"). Include state if the name is ambiguous (e.g. \"Portland, Oregon, USA\").\n- Use \"region\" if you can identify a specific state, province, region, country subdivision, or recognised natural region (like Patagonia, Tuscany, Bavaria, Provence, Cornwall, the Sahara) with high certainty, but cannot pinpoint a specific city or town.\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples of good method sentences:\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"License plates and road signage in Portuguese, combined with the tropical urban landscape, point to Brazil.\"\n- If confidence is \"unknown\", set method to a single sentence explaining why the location could not be determined (e.g. \"The image shows a generic mountain landscape with no distinctive identifying features.\").\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
 // ── STATE ──────────────────────────────────────────────────────────
 var isSatellite = false;
 var isDark = false;
@@ -13,6 +10,7 @@ var currentPlaceName = null;
 var currentPhotoHtml = null;
 var currentMethod = null;
 var currentShortName = null;
+var locationPolygon = null;
 
 
 
@@ -200,6 +198,11 @@ document.getElementById("toggleTheme").addEventListener("click", function () {
             streetLayerDark.addTo(map);
         }
     }
+
+    if (locationPolygon) {
+        locationPolygon.setStyle({ color: getPolygonColor() });
+    }
+
     this.classList.toggle("hidden-theme");
     document.getElementById("showToggleTheme").textContent = "Theme ▼";
 });
@@ -243,6 +246,11 @@ document.getElementById("toggleView").addEventListener("click", function () {
         this.textContent = "Street";
         isSatellite = true;
     }
+
+    if (locationPolygon) {
+        locationPolygon.setStyle({ color: getPolygonColor() });
+    }
+
     this.classList.toggle("hidden-view");
     document.getElementById("showToggleView").textContent = "View ▼";
 });
@@ -323,24 +331,10 @@ function showError(message) {
     }, 3000);
 }
 
-function closeResult() {
-    if (photoMarker) {
-        map.removeLayer(photoMarker);
-        photoMarker = null;
-    }
-    if (document.getElementById("resultPanel").classList.contains("open")) {
-        document.getElementById("resultPanel").classList.remove("open");
-        document.getElementById("map").classList.remove("panel-open");
-        document.getElementById("wrapper").classList.remove("panel-open");
-        setTimeout(function () { map.invalidateSize(); }, 300);
-    }
-    if (document.getElementById("resultStrip").style.display === "flex") {
-        document.getElementById("resultStrip").style.display = "none";
-    }
-    if (window.innerWidth <= 768) {
-        document.getElementById("imageInputLabel").style.display = "flex";
-        document.getElementById("imageInputLabelPanel").style.display = "none";
-    }
+function getPolygonColor() {
+    if (isSatellite) return "#ffdd00";
+    if (isDark) return "#7ab8ff";
+    return "#4a90d9";
 }
 
 var resizeTimeout;
@@ -440,6 +434,11 @@ function closePanel() {
         photoMarker = null;
     }
 
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
+    }
+
     if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
         document.getElementById("imageInputLabel").style.display = "flex";
         document.getElementById("imageInputLabelPanel").style.display = "none";
@@ -471,10 +470,15 @@ function minimizePanel() {
 
 function closeStrip() {
     document.getElementById("resultStrip").style.display = "none";
-    
+
     if (photoMarker) {
         map.removeLayer(photoMarker);
         photoMarker = null;
+    }
+
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
     }
 
     if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
@@ -544,27 +548,39 @@ async function aiLocator(image) {
 
 async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
-    var response = await fetch(OPENCAGE_URL + encodeURIComponent(photoCoordinates.latitude + "," + photoCoordinates.longitude) + "&key=" + OPENCAGE_KEY);
-    var data = await response.json();
+    var url = "https://nominatim.openstreetmap.org/reverse?lat=" +
+        photoCoordinates.latitude + "&lon=" + photoCoordinates.longitude +
+        "&format=json&zoom=14&addressdetails=1";
+
+    var result = await fetch(url, {
+        headers: { "User-Agent": "PhotoGeolocator/1.0" }
+    }).then(r => r.json());
 
     var placeName = "Unknown location";
     var shortName = "Unknown location";
 
-    if (data.results.length > 0) {
-        var components = data.results[0].components;
-        var street = [components.house_number, components.road].filter(Boolean).join(" ");
-        var city = components.city || components.town || components.village || components.county || "";
-        var country = components.country || "";
+    if (result && result.address) {
+        var address = result.address;
+        var city = address.city || address.town || address.village || address.municipality || address.county || "";
+        var country = address.country || "";
+        shortName = city && country ? city + ", " + country : (result.display_name || "Unknown location");
 
-        shortName = city && country ? city + ", " + country : data.results[0].formatted;
-
+        var street = [address.house_number, address.road].filter(Boolean).join(" ");
         var prefix = street ? street + ", " : "";
         placeName = prefix + shortName;
+    } else if (result && result.display_name) {
+        placeName = result.display_name;
+        shortName = result.display_name;
     }
 
     if (photoMarker) {
         map.removeLayer(photoMarker);
         photoMarker = null;
+    }
+
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
     }
 
     openPanel(placeName, photoHtml, "Location identified using GPS coordinates from photo metadata.", shortName);
@@ -574,6 +590,84 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     document.getElementById("welcome").style.display = "none";
 
+}
+
+async function getLocationData(aiPlace, aiConfidence) {
+
+    var queries = generateFallbackQueries(aiPlace);
+
+    for (var i = 0; i < queries.length; i++) {
+        var url = "https://nominatim.openstreetmap.org/search?q=" +
+            encodeURIComponent(queries[i]) +
+            "&format=json&limit=5&polygon_geojson=1";
+
+        var results = await fetch(url, {
+            headers: { "User-Agent": "PhotoGeolocator/1.0" }
+        }).then(r => r.json());
+
+        if (results.length > 0) {
+            var result = pickBestResult(results, queries[i]);
+            var fellBack = i > 0;
+            return {
+                lat: parseFloat(result.lat),
+                lng: parseFloat(result.lon),
+                bounds: result.boundingbox,
+                polygon: result.geojson,
+                displayName: queries[i],
+                showPolygon: showPolygon(aiConfidence, result.geojson, fellBack)
+            };
+        }
+    }
+
+    return null;
+}
+
+function generateFallbackQueries(aiPlace) {
+    var parts = aiPlace.split(",").map(p => p.trim());
+    var queries = [aiPlace];
+
+    for (var skip = 1; skip < parts.length - 1; skip++) {
+        var trimmed = [parts[0]].concat(parts.slice(skip + 1));
+        if (trimmed.length > 1 && trimmed.length < parts.length) {
+            queries.push(trimmed.join(", "));
+        }
+    }
+
+
+    for (var i = 1; i < parts.length; i++) {
+        queries.push(parts.slice(i).join(", "));
+    }
+
+    return queries;
+}
+
+function showPolygon(confidence, polygon, fellBack) {
+    if (!polygon || polygon.type === "Point") return false;
+    if (confidence === "landmark") {
+        return fellBack && (polygon.type === "Polygon" || polygon.type === "MultiPolygon");
+    }
+    if (confidence === "area") return true;
+    if (confidence === "city") return true;
+    if (confidence === "region") return true;
+    if (confidence === "country") return true;
+    return false;
+}
+
+function pickBestResult(results, aiPlace) {
+    var aiPlaceLower = aiPlace.toLowerCase();
+
+    var nameMatch = results.find(function (r) {
+        return r.display_name.toLowerCase().includes(aiPlaceLower);
+    });
+    if (nameMatch) return nameMatch;
+
+    var primaryPart = aiPlace.split(",")[0].trim().toLowerCase();
+    var primaryMatch = results.find(function (r) {
+        return r.display_name.toLowerCase().includes(primaryPart);
+    });
+    if (primaryMatch) return primaryMatch;
+
+    return results[0];
 }
 
 async function placeMarkerFromAI(image, photoHtml) {
@@ -595,6 +689,11 @@ async function placeMarkerFromAI(image, photoHtml) {
             photoMarker = null;
         }
 
+        if (locationPolygon) {
+            map.removeLayer(locationPolygon);
+            locationPolygon = null;
+        }
+
         openPanel(
             "Unknown location",
             photoHtml,
@@ -608,77 +707,42 @@ async function placeMarkerFromAI(image, photoHtml) {
     else {
 
         var queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
-        var response = await fetch(OPENCAGE_URL + encodeURIComponent(queryLocation) + "&key=" + OPENCAGE_KEY);
-        var data = await response.json();
+
+        var location = await getLocationData(queryLocation, aiResult.confidence);
 
         hideSearching();
-
-        if (data.results.length == 0) {
-
-            closeResult();
-
-            showError("The location of this photo is unknown");
-
-            return;
-
-        }
-
-        var result;
-        if (aiResult.confidence === "city" || aiResult.confidence === "area") {
-            var cityResult = data.results.find(function (r) {
-                return r.components._type === "city" || r.components._type === "town";
-            });
-            result = cityResult || data.results[0];
-        } else {
-            result = data.results[0];
-        }
-
-        var components = result.components;
-        var city = components.city || components.town || components.village || components.county || "";
-        var country = components.country || "";
-        var displayName = city && country ? city + ", " + country : result.formatted;
-
-        var lat = result.geometry.lat;
-        var lng = result.geometry.lng;
 
         if (photoMarker) {
             map.removeLayer(photoMarker);
             photoMarker = null;
         }
-        openPanel(displayName, photoHtml, aiResult.method, displayName);
 
-        var zoomLevel = getZoomLevel(result.components._type, aiResult.confidence);
+        if (locationPolygon) {
+            map.removeLayer(locationPolygon);
+            locationPolygon = null;
+        }
 
-        photoMarker = L.marker([lat, lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+        if (!location) {
+            openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location");
+            document.getElementById("panelPlaceName").innerHTML = "<strong>The location of this photo could not be identified.</strong>";
+            return;
+        }
 
-        map.flyTo([lat, lng], zoomLevel);
+        if (location.showPolygon && location.polygon) {
+            locationPolygon = L.geoJSON(location.polygon, {
+                style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
+            }).addTo(map);
+        }
+
+        openPanel(location.displayName, photoHtml, aiResult.method, location.displayName);
+
+        photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+
+        map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]]);
 
         document.getElementById("welcome").style.display = "none";
 
     }
-}
-
-function getZoomLevel(geocodedType, aiConfidence) {
-
-    var zoomLevel;
-
-    if (geocodedType === "attraction" || geocodedType === "place_of_worship" || geocodedType === "building") {
-        zoomLevel = 16;
-    } else if (geocodedType === "city" || geocodedType === "town") {
-        zoomLevel = 11;
-    } else if (geocodedType === "village" || geocodedType === "suburb" || geocodedType === "neighbourhood") {
-        zoomLevel = 13;
-    } else if (geocodedType === "country") {
-        zoomLevel = 5;
-    } else {
-        if (aiConfidence === "landmark") zoomLevel = 15;
-        else if (aiConfidence === "area") zoomLevel = 13;
-        else if (aiConfidence === "city") zoomLevel = 11;
-        else if (aiConfidence === "country") zoomLevel = 5;
-        else zoomLevel = 10;
-    }
-
-    return zoomLevel;
 }
 
 async function locateImage(input) {
