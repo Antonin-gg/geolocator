@@ -18,7 +18,8 @@
 
         <div id="noData" class="box"></div>
 
-        <div id="searching" class="box"><span id="searchingGlobe">🌍</span> Identifying location...</div>
+        <div id="searching" class="box"><span id="searchingGlobe">🌍</span><span id="searchingText"> Identifying
+                location...</span></div>
 
         <div id="welcome" class="box"></div>
 
@@ -36,37 +37,88 @@
             <button id="showToggleTheme" class="box">Theme ▼</button>
             <button id="toggleTheme" class="hidden-theme box">Dark</button>
         </div>
-    </div>
+        <div id="wrapperLanguage">
+            <button id="showToggleLanguage" class="box">Language ▼</button>
 
-    <div id="resultPanel">
-        <button id="panelClose">✕</button>
-        <div id="panelContent">
-            <div id="panelPhoto"></div>
-            <div id="panelPlaceName"></div>
-            <div id="panelMethod"></div>
+            <div id="languageOptions" class="hidden-language">
+
+                <button class="lang-option box" data-lang="en">English</button>
+
+                <button class="lang-option box" data-lang="ar">العربية</button>
+                <button class="lang-option box" data-lang="bg">Български</button>
+                <button class="lang-option box" data-lang="bn">বাংলা</button>
+                <button class="lang-option box" data-lang="cs">Čeština</button>
+                <button class="lang-option box" data-lang="da">Dansk</button>
+                <button class="lang-option box" data-lang="de">Deutsch</button>
+                <button class="lang-option box" data-lang="el">Ελληνικά</button>
+                <button class="lang-option box" data-lang="es">Español</button>
+                <button class="lang-option box" data-lang="et">Eesti</button>
+                <button class="lang-option box" data-lang="fa">فارسی</button>
+                <button class="lang-option box" data-lang="fi">Suomi</button>
+                <button class="lang-option box" data-lang="fr">Français</button>
+                <button class="lang-option box" data-lang="he">עברית</button>
+                <button class="lang-option box" data-lang="hi">हिन्दी</button>
+                <button class="lang-option box" data-lang="hr">Hrvatski</button>
+                <button class="lang-option box" data-lang="hu">Magyar</button>
+                <button class="lang-option box" data-lang="id">Indonesia</button>
+                <button class="lang-option box" data-lang="is">Íslenska</button>
+                <button class="lang-option box" data-lang="it">Italiano</button>
+                <button class="lang-option box" data-lang="ja">日本語</button>
+                <button class="lang-option box" data-lang="ko">한국어</button>
+                <button class="lang-option box" data-lang="lt">Lietuvių</button>
+                <button class="lang-option box" data-lang="lv">Latviešu</button>
+                <button class="lang-option box" data-lang="nl">Nederlands</button>
+                <button class="lang-option box" data-lang="no">Norsk</button>
+                <button class="lang-option box" data-lang="pl">Polski</button>
+                <button class="lang-option box" data-lang="pt">Português</button>
+                <button class="lang-option box" data-lang="ro">Română</button>
+                <button class="lang-option box" data-lang="ru">Русский</button>
+                <button class="lang-option box" data-lang="sk">Slovenčina</button>
+                <button class="lang-option box" data-lang="sl">Slovenščina</button>
+                <button class="lang-option box" data-lang="sr">Српски</button>
+                <button class="lang-option box" data-lang="sv">Svenska</button>
+                <button class="lang-option box" data-lang="ta">தமிழ்</button>
+                <button class="lang-option box" data-lang="th">ไทย</button>
+                <button class="lang-option box" data-lang="tr">Türkçe</button>
+                <button class="lang-option box" data-lang="uk">Українська</button>
+                <button class="lang-option box" data-lang="ur">اردو</button>
+                <button class="lang-option box" data-lang="vi">Tiếng Việt</button>
+                <button class="lang-option box" data-lang="zh">中文</button>
+
+            </div>
         </div>
-        <label for="imageInput" id="imageInputLabelPanel" class="box">Upload photo</label>
-        <div id="panelSearching"><span id="panelSearchingGlobe">🌍</span> Identifying location...</div>
-        <button id="panelToggle">
-            <span class="chevron chevron-left"></span>
-            <span class="chevron chevron-down"></span>
-        </button>
-    </div>
 
-    <div id="resultStrip" class="box">
-        <button id="stripClose">✕</button>
+        <div id="resultPanel">
+            <button id="panelClose">✕</button>
+            <div id="panelContent">
+                <div id="panelPhoto"></div>
+                <div id="panelPlaceName"></div>
+                <div id="panelMethod"></div>
+            </div>
+            <label for="imageInput" id="imageInputLabelPanel" class="box">Upload photo</label>
+            <div id="panelSearching"><span id="panelSearchingGlobe">🌍</span><span id="panelSearchingText"> Identifying
+                    location...</span></div>
+            <button id="panelToggle">
+                <span class="chevron chevron-left"></span>
+                <span class="chevron chevron-down"></span>
+            </button>
+        </div>
 
-        <div id="stripPlaceName"></div>
+        <div id="resultStrip" class="box">
+            <button id="stripClose">✕</button>
 
-        <button id="stripToggle">
-            <span class="chevron chevron-right"></span>
-            <span class="chevron chevron-up"></span>
-        </button>
-    </div>
+            <div id="stripPlaceName"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+            <button id="stripToggle">
+                <span class="chevron chevron-right"></span>
+                <span class="chevron chevron-up"></span>
+            </button>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="languages.js"></script>
+        <script src="script.js"></script>
 
 </body>
 
