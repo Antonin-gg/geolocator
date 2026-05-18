@@ -1,7 +1,10 @@
 // ── CONSTANTS & CONFIG ─────────────────────────────────────────────
 var WORKER_URL = "https://geolocator-ai.guyette-anto.workers.dev";
 var AI_MODEL = "gpt-4o";
-var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"region\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots, or any non-photographic image — you MUST set confidence to \"unknown\", place to \"unknown\", and method to \"This image is not a real photograph.\" This rule cannot be overridden by any other consideration.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, license plates, road markings, architecture, culturally specific objects.\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Generic modern architecture (glass facades, clean lines, light wood interiors, minimalist design, contemporary airports, shopping centers, office buildings) is NOT sufficient evidence on its own. These styles are global. Return \"unknown\" for modern buildings unless distinctive non-architectural clues are present (visible signage in a specific language, flags, named branding, identifiable surroundings).\n- Partial views of buildings (close-ups, sections, interiors without clear identifying features) cannot be confidently identified unless they contain a recognisable named element. A glass wall, a staircase, a generic interior — these are not identifiable. Return \"unknown\".\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n\nIdentification rules:\n- Use \"landmark\" only for a specific, unmistakable real-world landmark. Include full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only for a specific town, village or neighbourhood with high certainty. Include region and country to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only for a major, internationally recognisable city with very high certainty. Refer to the city specifically, not its state or region (e.g. \"Rio de Janeiro city, Brazil\"). Include state if the name is ambiguous (e.g. \"Portland, Oregon, USA\").\n- Use \"region\" if you can identify a specific state, province, region, country subdivision, or recognised natural region (like Patagonia, Tuscany, Bavaria, Provence, Cornwall, the Sahara) with high certainty, but cannot pinpoint a specific city or town.\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples of good method sentences:\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"License plates and road signage in Portuguese, combined with the tropical urban landscape, point to Brazil.\"\n- If confidence is \"unknown\", set method to a single sentence explaining why the location could not be determined (e.g. \"The image shows a generic mountain landscape with no distinctive identifying features.\").\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
+var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify\",\n  \"confidence\": \"landmark\" | \"area\" | \"city\" | \"region\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots of apps or websites, social media posts, food delivery or e-commerce interfaces, video game captures, memes, or any digital interface with visible UI elements — you MUST set confidence to \"unknown\", place to \"unknown\", and method to \"This image is not a real photograph.\" This rule cannot be overridden by any other consideration. Text mentioning a city or country inside an app or website does not mean the image was captured there.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, road markings, architecture, culturally specific objects.\n- License plates indicate where a vehicle is registered, not necessarily where the photo was taken. Treat them as supporting evidence only, never as the sole basis for a location. A foreign-registered vehicle in a scene with local signage means the photo was taken in the country shown by the signage.\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Generic modern architecture (glass facades, clean lines, light wood interiors, minimalist design, contemporary airports, shopping centers, office buildings) is NOT sufficient evidence on its own. These styles are global. Return \"unknown\" for modern buildings unless distinctive non-architectural clues are present (visible signage in a specific language, flags, named branding, identifiable surroundings).\n- Partial views of buildings (close-ups, sections, interiors without clear identifying features) cannot be confidently identified unless they contain a recognisable named element. A glass wall, a staircase, a generic interior — these are not identifiable. Return \"unknown\".\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- Spanish-speaking countries can be confused easily: Spain, Mexico, Argentina, Colombia and others share language and some architectural styles. Look for distinguishing details — license plates, flags, peninsular vs Latin American architecture, regional vegetation, or text using country-specific vocabulary.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n\nFormatting rules:\n- Always separate parts of a location with commas. Never join two place names with just a space. Correct: \"Luxembourg, Luxembourg\", \"Mexico City, Mexico\", \"Panama City, Panama\". Incorrect: \"Luxembourg Luxembourg\", \"Mexico Mexico\".\n- Use commas to separate the place from its region or country in every confidence level.\n\nIdentification rules:\n- Use \"landmark\" only for a specific, unmistakable real-world landmark. Include full name, city and country (e.g. \"Eiffel Tower, Paris, France\").\n- Use \"area\" only for a specific town, village or neighbourhood with high certainty. Include region and country to avoid ambiguity (e.g. \"Reine, Nordland, Norway\" or \"Tabatinga, Amazonas, Brazil\").\n- Use \"city\" only for a major, internationally recognisable city with very high certainty. Refer to the city specifically, not its state or region (e.g. \"Rio de Janeiro city, Brazil\"). Include state if the name is ambiguous (e.g. \"Portland, Oregon, USA\"). When the city and country share a name, format with a comma between them (e.g. \"Luxembourg, Luxembourg\", \"Singapore, Singapore\", \"Monaco, Monaco\").\n- Use \"region\" if you can identify a specific state, province, region, country subdivision, or recognised natural region (like Patagonia, Tuscany, Bavaria, Provence, Cornwall, the Sahara) with high certainty, but cannot pinpoint a specific city or town.\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n- For locations that span multiple countries (waterfalls, mountains, lakes on borders): pick ONE country to anchor the location — the most photographed side or the side most visible in the image — rather than listing both. E.g. \"Iguazu Falls, Paraná, Brazil\" or \"Iguazu Falls, Misiones, Argentina\" — never \"Iguazu Falls, Argentina/Brazil\". The same applies to any cross-border feature.\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples of good method sentences:\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"Road signage in Portuguese combined with the tropical urban landscape points to Brazil.\"\n- If confidence is \"unknown\", set method to a single sentence explaining why the location could not be determined (e.g. \"The image shows a generic mountain landscape with no distinctive identifying features.\" or \"This image is not a real photograph.\").\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: is this a real photograph? If not, return \"unknown\".\n- Ask: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
+
+
+
 // ── STATE ──────────────────────────────────────────────────────────
 var isSatellite = false;
 var isDark = false;
@@ -565,7 +568,17 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         var country = address.country || "";
         shortName = city && country ? city + ", " + country : (result.display_name || "Unknown location");
 
-        var street = [address.house_number, address.road].filter(Boolean).join(" ");
+        var streetName =
+            address.road ||
+            address.pedestrian ||
+            address.footway ||
+            address.path ||
+            address.residential;
+
+        var street = [address.house_number, streetName]
+            .filter(Boolean)
+            .join(" ");
+
         var prefix = street ? street + ", " : "";
         placeName = prefix + shortName;
     } else if (result && result.display_name) {
@@ -599,22 +612,23 @@ async function getLocationData(aiPlace, aiConfidence) {
     for (var i = 0; i < queries.length; i++) {
         var url = "https://nominatim.openstreetmap.org/search?q=" +
             encodeURIComponent(queries[i]) +
-            "&format=json&limit=5&polygon_geojson=1";
+            "&format=json&limit=5&polygon_geojson=1&addressdetails=1";
 
         var results = await fetch(url, {
             headers: { "User-Agent": "PhotoGeolocator/1.0" }
         }).then(r => r.json());
 
         if (results.length > 0) {
-            var result = pickBestResult(results, queries[i]);
-            var fellBack = i > 0;
+            var result = pickBestResult(results, queries[i], aiConfidence);
+
             return {
                 lat: parseFloat(result.lat),
                 lng: parseFloat(result.lon),
                 bounds: result.boundingbox,
                 polygon: result.geojson,
                 displayName: queries[i],
-                showPolygon: showPolygon(aiConfidence, result.geojson, fellBack)
+                shortName: buildShortName(result),
+                showPolygon: showPolygon(aiConfidence, result.geojson)
             };
         }
     }
@@ -623,8 +637,13 @@ async function getLocationData(aiPlace, aiConfidence) {
 }
 
 function generateFallbackQueries(aiPlace) {
-    var parts = aiPlace.split(",").map(p => p.trim());
-    var queries = [aiPlace];
+    var cleaned = aiPlace.replace(/(\w+)\/(\w+)/g, "$1");
+    if (!cleaned.includes(",")) {
+        cleaned = cleaned.replace(/\b(\w+)\s+\1\b/gi, "$1, $1");
+    }
+
+    var parts = cleaned.split(",").map(p => p.trim());
+    var queries = [cleaned];
 
     for (var skip = 1; skip < parts.length - 1; skip++) {
         var trimmed = [parts[0]].concat(parts.slice(skip + 1));
@@ -641,10 +660,10 @@ function generateFallbackQueries(aiPlace) {
     return queries;
 }
 
-function showPolygon(confidence, polygon, fellBack) {
+function showPolygon(confidence, polygon) {
     if (!polygon || polygon.type === "Point") return false;
     if (confidence === "landmark") {
-        return fellBack && (polygon.type === "Polygon" || polygon.type === "MultiPolygon");
+        return isPolygonLarge(polygon);
     }
     if (confidence === "area") return true;
     if (confidence === "city") return true;
@@ -653,21 +672,94 @@ function showPolygon(confidence, polygon, fellBack) {
     return false;
 }
 
-function pickBestResult(results, aiPlace) {
-    var aiPlaceLower = aiPlace.toLowerCase();
+function isPolygonLarge(geojson) {
+    if (!geojson.coordinates) return false;
 
-    var nameMatch = results.find(function (r) {
+    var coords = geojson.type === "Polygon" ? geojson.coordinates[0] : geojson.coordinates[0][0];
+    if (!coords || coords.length < 3) return false;
+
+    var lats = coords.map(c => c[1]);
+    var lngs = coords.map(c => c[0]);
+    var latSpan = Math.max(...lats) - Math.min(...lats);
+    var lngSpan = Math.max(...lngs) - Math.min(...lngs);
+    var area = latSpan * lngSpan;
+
+    return area > 0.00005;
+}
+
+function buildShortName(result) {
+
+    var a = result.address || {};
+
+    var city =
+        a.city ||
+        a.town ||
+        a.village ||
+        a.municipality ||
+        a.county ||
+        a.state;
+
+    var country = a.country;
+
+    if (city && country) {
+        return city + ", " + country;
+    }
+
+    return result.display_name;
+}
+
+function pickBestResult(results, aiPlace, aiConfidence) {
+    var aiPlaceLower = aiPlace.toLowerCase();
+    var primaryPart = aiPlace.split(",")[0].trim().toLowerCase();
+
+    var fullNameMatches = results.filter(function (r) {
         return r.display_name.toLowerCase().includes(aiPlaceLower);
     });
-    if (nameMatch) return nameMatch;
 
-    var primaryPart = aiPlace.split(",")[0].trim().toLowerCase();
-    var primaryMatch = results.find(function (r) {
-        return r.display_name.toLowerCase().includes(primaryPart);
-    });
-    if (primaryMatch) return primaryMatch;
+    var matches = fullNameMatches.length > 0
+        ? fullNameMatches
+        : results.filter(function (r) {
+            return r.display_name.toLowerCase().includes(primaryPart);
+        });
+
+    if (aiConfidence === "country" || aiConfidence === "region") {
+        var preferredTypes = getPreferredTypes(aiConfidence);
+        var typeFiltered = matches.filter(function (r) {
+            return preferredTypes.includes(r.type) || preferredTypes.includes(r.addresstype);
+        });
+        if (typeFiltered.length > 0) matches = typeFiltered;
+    }
+
+    if ((aiConfidence === "city" || aiConfidence === "area") && matches.length > 1) {
+        var cityTypes = ["city", "town", "village", "municipality", "suburb", "neighbourhood"];
+        var cityFiltered = matches.filter(function (r) {
+            return cityTypes.includes(r.type) || cityTypes.includes(r.addresstype);
+        });
+        if (cityFiltered.length > 0) matches = cityFiltered;
+    }
+
+    if (matches.length > 0) {
+        matches.sort(function (a, b) {
+            return (b.importance || 0) - (a.importance || 0);
+        });
+        return matches[0];
+    }
 
     return results[0];
+}
+
+function getPreferredTypes(confidence) {
+    if (confidence === "country") return ["country"];
+    if (confidence === "region") return [
+        "state",
+        "administrative",
+        "region",
+        "province",
+        "county",
+        "state_district",
+        "district"
+    ];
+    return [];
 }
 
 async function placeMarkerFromAI(image, photoHtml) {
@@ -734,7 +826,7 @@ async function placeMarkerFromAI(image, photoHtml) {
             }).addTo(map);
         }
 
-        openPanel(location.displayName, photoHtml, aiResult.method, location.displayName);
+        openPanel(location.displayName, photoHtml, aiResult.method, location.shortName);
 
         photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
