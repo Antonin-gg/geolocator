@@ -779,8 +779,6 @@ var languageInstructions = {
     vi: "Trả lời với các giá trị trường chỉ bằng tiếng Việt. Không chuyển sang bất kỳ ngôn ngữ nào khác bất kể văn bản, biển báo hay ngữ cảnh hình ảnh xuất hiện trong ảnh. Người dùng đã chọn tiếng Việt.",
 
     zh: "请仅使用中文填写字段值。无论图片中出现什么文字、标识或视觉内容，都不要切换到其他语言。用户已选择中文。",
-
-    "zh-TW": "請僅使用繁體中文填寫欄位值。無論圖片中出現什麼文字、標誌或視覺內容，都不要切換到其他語言。使用者已選擇繁體中文。"
 };
 
 function translate(key) {
@@ -804,7 +802,7 @@ function changeLanguage() {
     document.getElementById("showToggleView").innerHTML = translate("view") + " ▼";
 
     if (!isSatellite) document.getElementById("toggleView").textContent = translate("satellite");
-    else document.getElementById("toggleTheme").textContent = translate("street");
+    else document.getElementById("toggleView").textContent = translate("street");
 
     document.getElementById("showToggleTheme").innerHTML = translate("theme") + " ▼";
 
