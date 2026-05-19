@@ -400,57 +400,25 @@ map.on("click", function () {
 function showSearching() {
     isSearching = true;
 
-    if (window.innerWidth <= 768 &&
-        document.getElementById("resultPanel").classList.contains("open")) {
+    document.getElementById("searching").style.display = "block";
 
-        document.getElementById("imageInputLabelPanel").style.display = "none";
+    document.getElementById("searchingText")
+        .classList.add("searching-active");
 
-        document.getElementById("panelSearching").style.display = "block";
-
-        document.getElementById("panelSearchingText")
-            .classList.add("searching-active");
-
-        document.getElementById("panelSearchingGlobe")
-            .classList.add("globe-active");
-
-    } else {
-
-        document.getElementById("panelSearching").style.display = "none";
-
-        document.getElementById("searching").style.display = "block";
-
-        document.getElementById("searchingText")
-            .classList.add("searching-active");
-
-        document.getElementById("searchingGlobe")
-            .classList.add("globe-active");
-    }
+    document.getElementById("searchingGlobe")
+        .classList.add("globe-active");
 }
 
 function hideSearching() {
     isSearching = false;
 
     document.getElementById("searching").style.display = "none";
+
     document.getElementById("searchingText")
         .classList.remove("searching-active");
 
     document.getElementById("searchingGlobe")
         .classList.remove("globe-active");
-
-    document.getElementById("panelSearching").style.display = "none";
-
-    document.getElementById("panelSearchingText")
-        .classList.remove("searching-active");
-
-    document.getElementById("panelSearchingGlobe")
-        .classList.remove("globe-active");
-
-    if (
-        window.innerWidth <= 768 &&
-        document.getElementById("resultPanel").classList.contains("open")
-    ) {
-        document.getElementById("imageInputLabelPanel").style.display = "flex";
-    }
 }
 
 function showError(message) {
@@ -1057,6 +1025,8 @@ async function rerunSearch() {
     } else {
         placeMarkerFromAI(currentImageFile, currentPhotoHtml);
     }
+
+    hideSearching();
 }
 
 async function locateImage(input) {
@@ -1092,6 +1062,10 @@ async function locateImage(input) {
 
         placeMarkerFromAI(image, photoImgHtml);
 
+    }
+
+    if (panelOpen || stripOpen) {
+        hideSearching();
     }
 }
 
