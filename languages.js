@@ -875,8 +875,6 @@ function changeLanguage() {
 
     document.getElementById("searchingText").innerHTML = " " + translate("searching");
 
-    document.getElementById("panelSearchingText").innerHTML = " " + translate("searching");
-
     document.getElementById("imageInputLabel").textContent = translate("upload");
 
     document.getElementById("imageInputLabelPanel").textContent = translate("upload");
