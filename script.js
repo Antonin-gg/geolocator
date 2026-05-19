@@ -12,6 +12,7 @@ var photoMarker;
 var currentPlaceName = null;
 var currentSentence = null;
 var currentPhotoHtml = null;
+var currentImageFile = null;
 var currentMethod = null;
 var currentShortName = null;
 var currentIsAI = false;
@@ -357,6 +358,13 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
         document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
 
         localStorage.setItem("currentLang", currentLang);
+
+        var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+        var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+        
+        if ((panelOpen || stripOpen) && currentImageFile) {
+            rerunSearch();
+        }
     });
 
 });
@@ -973,6 +981,23 @@ async function placeMarkerFromAI(image, photoHtml) {
     }
 }
 
+async function rerunSearch() {
+    if (!currentImageFile) return;
+    
+    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    if (stripOpen) {
+        openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
+    }
+    
+    var photoLatLng = await exifr.gps(currentImageFile);
+    
+    if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
+        placeMarkerFromEXIF(photoLatLng, currentPhotoHtml);
+    } else {
+        placeMarkerFromAI(currentImageFile, currentPhotoHtml);
+    }
+}
+
 async function locateImage(input) {
 
     var image = input.files[0];
@@ -981,6 +1006,8 @@ async function locateImage(input) {
         showError("Please upload an image file.");
         return;
     }
+
+    currentImageFile = image;
 
     var photoImgSrc = URL.createObjectURL(image);
     var photoImgHtml = '<img src="' + photoImgSrc + '" style="width:100%;border-radius:4px;margin-top:6px;">';
