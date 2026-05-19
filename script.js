@@ -722,6 +722,8 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     }
 
     document.getElementById("panelPlaceName").classList.remove("loading");
+    document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+    document.getElementById("panelSearchingGlobe").style.display = "none";
 
     openPanel(placeName, photoHtml, translate("methodGPS"), shortName, false);
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
@@ -904,6 +906,8 @@ async function placeMarkerFromAI(image, photoHtml) {
         hideSearching();
 
         document.getElementById("panelPlaceName").classList.remove("loading");
+        document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+        document.getElementById("panelSearchingGlobe").style.display = "none";
 
         if (photoMarker) {
             map.removeLayer(photoMarker);
@@ -936,6 +940,8 @@ async function placeMarkerFromAI(image, photoHtml) {
         hideSearching();
 
         document.getElementById("panelPlaceName").classList.remove("loading");
+        document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+        document.getElementById("panelSearchingGlobe").style.display = "none";
 
         if (photoMarker) {
             map.removeLayer(photoMarker);
@@ -984,8 +990,10 @@ function showPanelLoading(photoHtml) {
     }
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
-    document.getElementById("panelPlaceName").innerHTML = "<strong>" + translate("searching") + "</strong>";
+    document.getElementById("panelPlaceName").innerHTML = "<strong> " + translate("searching") + "</strong>";
     document.getElementById("panelPlaceName").classList.add("loading");
+    document.getElementById("panelSearchingGlobe").style.display = "block";
+    document.getElementById("panelSearchingGlobe").classList.add("globe-active");
     document.getElementById("panelMethod").textContent = "";
 
     var strip = document.getElementById("resultStrip");
