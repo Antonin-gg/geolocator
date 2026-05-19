@@ -12,8 +12,10 @@ var TRANSLATIONS = {
         dark: "Dark",
         light: "Light",
         unknownLocation: "The location of this photo could not be identified",
-        photoTakenIn: "This photo was taken in",
+        unknownLocationShort: "Unknown location",
+        photoTakenIn: "This photo was taken in {place}",
         methodGPS: "Location identified using GPS coordinates from photo metadata.",
+        moreInformation: "Learn more",
     },
 
     ar: {
@@ -29,8 +31,10 @@ var TRANSLATIONS = {
         dark: "داكن",
         light: "فاتح",
         unknownLocation: "تعذر تحديد موقع هذه الصورة",
-        photoTakenIn: "تم التقاط هذه الصورة في",
+        unknownLocationShort: "موقع غير معروف",
+        photoTakenIn: "تم التقاط هذه الصورة في {place}",
         methodGPS: "تم تحديد الموقع باستخدام إحداثيات GPS من بيانات الصورة.",
+        moreInformation: "مزيد من المعلومات",
     },
 
     bg: {
@@ -46,8 +50,10 @@ var TRANSLATIONS = {
         dark: "Тъмна",
         light: "Светла",
         unknownLocation: "Местоположението на тази снимка не можа да бъде определено",
-        photoTakenIn: "Тази снимка е направена в",
+        unknownLocationShort: "Неизвестно местоположение",
+        photoTakenIn: "Тази снимка е направена в {place}",
         methodGPS: "Местоположението е определено чрез GPS координатите в метаданните на снимката.",
+        moreInformation: "Научете повече",
     },
 
     bn: {
@@ -63,8 +69,10 @@ var TRANSLATIONS = {
         dark: "ডার্ক",
         light: "লাইট",
         unknownLocation: "এই ছবির অবস্থান শনাক্ত করা যায়নি",
-        photoTakenIn: "এই ছবিটি তোলা হয়েছে",
+        unknownLocationShort: "অজানা অবস্থান",
+        photoTakenIn: "এই ছবিটি {place}-এ তোলা হয়েছে",
         methodGPS: "ছবির মেটাডেটার GPS স্থানাঙ্ক ব্যবহার করে অবস্থান শনাক্ত করা হয়েছে।",
+        moreInformation: "আরও জানুন",
     },
 
     cs: {
@@ -80,8 +88,10 @@ var TRANSLATIONS = {
         dark: "Tmavý",
         light: "Světlý",
         unknownLocation: "Místo této fotografie se nepodařilo určit",
-        photoTakenIn: "Tato fotografie byla pořízena v",
+        unknownLocationShort: "Neznámé místo",
+        photoTakenIn: "Tato fotografie byla pořízena v {place}",
         methodGPS: "Poloha byla určena pomocí GPS souřadnic z metadat fotografie.",
+        moreInformation: "Zjistit více",
     },
 
     da: {
@@ -97,8 +107,10 @@ var TRANSLATIONS = {
         dark: "Mørk",
         light: "Lys",
         unknownLocation: "Placeringen af dette billede kunne ikke identificeres",
-        photoTakenIn: "Dette billede blev taget i",
+        unknownLocationShort: "Ukendt placering",
+        photoTakenIn: "Dette billede blev taget i {place}",
         methodGPS: "Placeringen blev identificeret ved hjælp af GPS-koordinater fra billedets metadata.",
+        moreInformation: "Læs mere",
     },
 
     de: {
@@ -114,8 +126,10 @@ var TRANSLATIONS = {
         dark: "Dunkel",
         light: "Hell",
         unknownLocation: "Der Ort dieses Fotos konnte nicht identifiziert werden",
-        photoTakenIn: "Dieses Foto wurde aufgenommen in",
+        unknownLocationShort: "Unbekannter Ort",
+        photoTakenIn: "Dieses Foto wurde in {place} aufgenommen",
         methodGPS: "Der Standort wurde mithilfe der GPS-Koordinaten aus den Fotometadaten identifiziert.",
+        moreInformation: "Mehr erfahren",
     },
 
     el: {
@@ -131,8 +145,10 @@ var TRANSLATIONS = {
         dark: "Σκούρο",
         light: "Ανοιχτό",
         unknownLocation: "Δεν ήταν δυνατός ο εντοπισμός της τοποθεσίας αυτής της φωτογραφίας",
-        photoTakenIn: "Αυτή η φωτογραφία τραβήχτηκε στο",
+        unknownLocationShort: "Άγνωστη τοποθεσία",
+        photoTakenIn: "Αυτή η φωτογραφία τραβήχτηκε στο {place}",
         methodGPS: "Η τοποθεσία εντοπίστηκε χρησιμοποιώντας τις συντεταγμένες GPS από τα μεταδεδομένα της φωτογραφίας.",
+        moreInformation: "Μάθετε περισσότερα",
     },
 
     es: {
@@ -148,8 +164,10 @@ var TRANSLATIONS = {
         dark: "Oscuro",
         light: "Claro",
         unknownLocation: "No se pudo identificar la ubicación de esta foto",
-        photoTakenIn: "Esta foto fue tomada en",
+        unknownLocationShort: "Ubicación desconocida",
+        photoTakenIn: "Esta foto fue tomada en {place}",
         methodGPS: "Ubicación identificada usando las coordenadas GPS de los metadatos de la foto.",
+        moreInformation: "Más información",
     },
 
     et: {
@@ -165,8 +183,10 @@ var TRANSLATIONS = {
         dark: "Tume",
         light: "Hele",
         unknownLocation: "Selle foto asukohta ei õnnestunud tuvastada",
-        photoTakenIn: "See foto tehti",
+        unknownLocationShort: "Tundmatu asukoht",
+        photoTakenIn: "See foto tehti kohas {place}",
         methodGPS: "Asukoht tuvastati foto metaandmete GPS-koordinaatide abil.",
+        moreInformation: "Lisateave",
     },
 
     fa: {
@@ -182,12 +202,14 @@ var TRANSLATIONS = {
         dark: "تیره",
         light: "روشن",
         unknownLocation: "موقعیت این عکس قابل شناسایی نبود",
-        photoTakenIn: "این عکس در این مکان گرفته شده است",
+        unknownLocationShort: "موقعیت نامشخص",
+        photoTakenIn: "این عکس در {place} گرفته شده است",
         methodGPS: "موقعیت با استفاده از مختصات GPS موجود در فراداده عکس شناسایی شد.",
+        moreInformation: "اطلاعات بیشتر",
     },
 
     fi: {
-        title: "Kuvien paikannin",
+        title: "Valokuvien paikannin",
         welcome: "Tervetuloa! Lataa kuva tunnistaaksesi, missä se otettiin.",
         upload: "Lataa kuva",
         searching: "Sijaintia tunnistetaan...",
@@ -199,8 +221,10 @@ var TRANSLATIONS = {
         dark: "Tumma",
         light: "Vaalea",
         unknownLocation: "Tämän kuvan sijaintia ei voitu tunnistaa",
-        photoTakenIn: "Tämä kuva otettiin paikassa",
+        unknownLocationShort: "Tuntematon sijainti",
+        photoTakenIn: "Tämä kuva otettiin paikassa {place}",
         methodGPS: "Sijainti tunnistettiin kuvan metatiedoissa olevien GPS-koordinaattien avulla.",
+        moreInformation: "Lisätietoja",
     },
 
     fr: {
@@ -216,8 +240,10 @@ var TRANSLATIONS = {
         dark: "Sombre",
         light: "Clair",
         unknownLocation: "Le lieu de cette photo n'a pas pu être identifié",
-        photoTakenIn: "Cette photo a été prise à",
+        unknownLocationShort: "Lieu inconnu",
+        photoTakenIn: "Cette photo a été prise à {place}",
         methodGPS: "Lieu identifié à partir des coordonnées GPS des métadonnées de la photo.",
+        moreInformation: "En savoir plus",
     },
 
     he: {
@@ -233,8 +259,10 @@ var TRANSLATIONS = {
         dark: "כהה",
         light: "בהיר",
         unknownLocation: "לא ניתן היה לזהות את מיקום התמונה",
-        photoTakenIn: "התמונה הזו צולמה ב",
+        unknownLocationShort: "מיקום לא ידוע",
+        photoTakenIn: "התמונה הזו צולמה ב{place}",
         methodGPS: "המיקום זוהה באמצעות קואורדינטות GPS ממטא־הנתונים של התמונה.",
+        moreInformation: "למידע נוסף",
     },
 
     hi: {
@@ -250,8 +278,10 @@ var TRANSLATIONS = {
         dark: "डार्क",
         light: "लाइट",
         unknownLocation: "इस फोटो का स्थान पहचाना नहीं जा सका",
-        photoTakenIn: "यह फोटो यहाँ ली गई थी",
+        unknownLocationShort: "अज्ञात स्थान",
+        photoTakenIn: "यह फोटो {place} में ली गई थी",
         methodGPS: "फोटो के मेटाडेटा में मौजूद GPS निर्देशांकों का उपयोग करके स्थान पहचाना गया।",
+        moreInformation: "और जानें",
     },
 
     hr: {
@@ -267,8 +297,10 @@ var TRANSLATIONS = {
         dark: "Tamna",
         light: "Svijetla",
         unknownLocation: "Lokacija ove fotografije nije mogla biti identificirana",
-        photoTakenIn: "Ova fotografija je snimljena u",
+        unknownLocationShort: "Nepoznata lokacija",
+        photoTakenIn: "Ova fotografija je snimljena u {place}",
         methodGPS: "Lokacija je identificirana pomoću GPS koordinata iz metapodataka fotografije.",
+        moreInformation: "Saznaj više",
     },
 
     hu: {
@@ -284,8 +316,10 @@ var TRANSLATIONS = {
         dark: "Sötét",
         light: "Világos",
         unknownLocation: "A fénykép helyét nem sikerült azonosítani",
-        photoTakenIn: "Ez a fénykép itt készült",
+        unknownLocationShort: "Ismeretlen hely",
+        photoTakenIn: "Ez a fénykép itt készült: {place}",
         methodGPS: "A helyet a fénykép metaadataiban található GPS-koordináták alapján azonosítottuk.",
+        moreInformation: "További információ",
     },
 
     id: {
@@ -301,8 +335,10 @@ var TRANSLATIONS = {
         dark: "Gelap",
         light: "Terang",
         unknownLocation: "Lokasi foto ini tidak dapat diidentifikasi",
-        photoTakenIn: "Foto ini diambil di",
+        unknownLocationShort: "Lokasi tidak diketahui",
+        photoTakenIn: "Foto ini diambil di {place}",
         methodGPS: "Lokasi diidentifikasi menggunakan koordinat GPS dari metadata foto.",
+        moreInformation: "Pelajari lebih lanjut",
     },
 
     is: {
@@ -318,8 +354,10 @@ var TRANSLATIONS = {
         dark: "Dökkt",
         light: "Ljóst",
         unknownLocation: "Ekki tókst að staðsetja þessa mynd",
-        photoTakenIn: "Þessi mynd var tekin í",
+        unknownLocationShort: "Óþekkt staðsetning",
+        photoTakenIn: "Þessi mynd var tekin í {place}",
         methodGPS: "Staðsetning var fundin með GPS-hnitum úr lýsigögnum myndarinnar.",
+        moreInformation: "Frekari upplýsingar",
     },
 
     it: {
@@ -335,8 +373,10 @@ var TRANSLATIONS = {
         dark: "Scuro",
         light: "Chiaro",
         unknownLocation: "Non è stato possibile identificare la posizione di questa foto",
-        photoTakenIn: "Questa foto è stata scattata a",
+        unknownLocationShort: "Posizione sconosciuta",
+        photoTakenIn: "Questa foto è stata scattata a {place}",
         methodGPS: "Posizione identificata utilizzando le coordinate GPS dei metadati della foto.",
+        moreInformation: "Scopri di più",
     },
 
     ja: {
@@ -352,8 +392,10 @@ var TRANSLATIONS = {
         dark: "ダーク",
         light: "ライト",
         unknownLocation: "この写真の場所を特定できませんでした",
-        photoTakenIn: "この写真は次の場所で撮影されました",
+        unknownLocationShort: "不明な場所",
+        photoTakenIn: "この写真は{place}で撮影されました",
         methodGPS: "写真のメタデータ内のGPS座標を使用して場所を特定しました。",
+        moreInformation: "もっと知る",
     },
 
     ko: {
@@ -369,8 +411,10 @@ var TRANSLATIONS = {
         dark: "다크",
         light: "라이트",
         unknownLocation: "이 사진의 위치를 확인할 수 없습니다",
-        photoTakenIn: "이 사진은 다음 위치에서 촬영되었습니다",
+        unknownLocationShort: "알 수 없는 위치",
+        photoTakenIn: "이 사진은 {place}에서 촬영되었습니다",
         methodGPS: "사진 메타데이터의 GPS 좌표를 사용하여 위치를 확인했습니다.",
+        moreInformation: "자세히 보기",
     },
 
     lt: {
@@ -386,8 +430,10 @@ var TRANSLATIONS = {
         dark: "Tamsi",
         light: "Šviesi",
         unknownLocation: "Nepavyko nustatyti šios nuotraukos vietos",
-        photoTakenIn: "Ši nuotrauka buvo padaryta",
+        unknownLocationShort: "Nežinoma vieta",
+        photoTakenIn: "Ši nuotrauka buvo padaryta {place}",
         methodGPS: "Vieta nustatyta naudojant GPS koordinates iš nuotraukos metaduomenų.",
+        moreInformation: "Sužinoti daugiau",
     },
 
     lv: {
@@ -403,12 +449,14 @@ var TRANSLATIONS = {
         dark: "Tumšs",
         light: "Gaišs",
         unknownLocation: "Šī fotoattēla atrašanās vietu neizdevās noteikt",
-        photoTakenIn: "Šis fotoattēls tika uzņemts",
+        unknownLocationShort: "Nezināma atrašanās vieta",
+        photoTakenIn: "Šis fotoattēls tika uzņemts {place}",
         methodGPS: "Atrašanās vieta tika noteikta, izmantojot GPS koordinātas no fotoattēla metadatiem.",
+        moreInformation: "Uzzināt vairāk",
     },
 
     nl: {
-        title: "Foto geolocator",
+        title: "Foto-locatiezoeker",
         welcome: "Welkom! Upload een foto om te bepalen waar deze is genomen.",
         upload: "Foto uploaden",
         searching: "Locatie identificeren...",
@@ -420,12 +468,14 @@ var TRANSLATIONS = {
         dark: "Donker",
         light: "Licht",
         unknownLocation: "De locatie van deze foto kon niet worden geïdentificeerd",
-        photoTakenIn: "Deze foto is genomen in",
+        unknownLocationShort: "Onbekende locatie",
+        photoTakenIn: "Deze foto is genomen in {place}",
         methodGPS: "Locatie geïdentificeerd met behulp van GPS-coördinaten uit de metadata van de foto.",
+        moreInformation: "Meer informatie",
     },
 
     no: {
-        title: "Foto-geolokalisator",
+        title: "Foto-geolokator",
         welcome: "Velkommen! Last opp et bilde for å identifisere hvor det ble tatt.",
         upload: "Last opp bilde",
         searching: "Identifiserer sted...",
@@ -437,8 +487,10 @@ var TRANSLATIONS = {
         dark: "Mørk",
         light: "Lys",
         unknownLocation: "Plasseringen til dette bildet kunne ikke identifiseres",
-        photoTakenIn: "Dette bildet ble tatt i",
+        unknownLocationShort: "Ukjent sted",
+        photoTakenIn: "Dette bildet ble tatt i {place}",
         methodGPS: "Plasseringen ble identifisert ved hjelp av GPS-koordinater fra bildets metadata.",
+        moreInformation: "Les mer",
     },
 
     pl: {
@@ -454,8 +506,10 @@ var TRANSLATIONS = {
         dark: "Ciemny",
         light: "Jasny",
         unknownLocation: "Nie udało się zidentyfikować lokalizacji tego zdjęcia",
-        photoTakenIn: "To zdjęcie zostało wykonane w",
+        unknownLocationShort: "Nieznana lokalizacja",
+        photoTakenIn: "To zdjęcie zostało wykonane w {place}",
         methodGPS: "Lokalizacja została określona przy użyciu współrzędnych GPS z metadanych zdjęcia.",
+        moreInformation: "Dowiedz się więcej",
     },
 
     pt: {
@@ -471,8 +525,10 @@ var TRANSLATIONS = {
         dark: "Escuro",
         light: "Claro",
         unknownLocation: "Não foi possível identificar a localização desta foto",
-        photoTakenIn: "Esta foto foi tirada em",
+        unknownLocationShort: "Local desconhecido",
+        photoTakenIn: "Esta foto foi tirada em {place}",
         methodGPS: "Local identificado usando as coordenadas GPS dos metadados da foto.",
+        moreInformation: "Saiba mais",
     },
 
     ro: {
@@ -480,7 +536,7 @@ var TRANSLATIONS = {
         welcome: "Bun venit! Încarcă o fotografie pentru a identifica unde a fost făcută.",
         upload: "Încarcă fotografie",
         searching: "Se identifică locația...",
-        view: "Vizualizare",
+        view: "Vedere",
         theme: "Temă",
         language: "Limbă",
         satellite: "Satelit",
@@ -488,8 +544,10 @@ var TRANSLATIONS = {
         dark: "Întunecat",
         light: "Deschis",
         unknownLocation: "Locația acestei fotografii nu a putut fi identificată",
-        photoTakenIn: "Această fotografie a fost făcută în",
+        unknownLocationShort: "Locație necunoscută",
+        photoTakenIn: "Această fotografie a fost făcută în {place}",
         methodGPS: "Locația a fost identificată folosind coordonatele GPS din metadatele fotografiei.",
+        moreInformation: "Aflați mai multe",
     },
 
     ru: {
@@ -505,8 +563,10 @@ var TRANSLATIONS = {
         dark: "Тёмная",
         light: "Светлая",
         unknownLocation: "Не удалось определить местоположение этой фотографии",
-        photoTakenIn: "Эта фотография была сделана в",
+        unknownLocationShort: "Неизвестное место",
+        photoTakenIn: "Эта фотография была сделана в {place}",
         methodGPS: "Местоположение определено с помощью GPS-координат из метаданных фотографии.",
+        moreInformation: "Подробнее",
     },
 
     sk: {
@@ -522,8 +582,10 @@ var TRANSLATIONS = {
         dark: "Tmavý",
         light: "Svetlý",
         unknownLocation: "Polohu tejto fotografie sa nepodarilo identifikovať",
-        photoTakenIn: "Táto fotografia bola vytvorená v",
+        unknownLocationShort: "Neznáme miesto",
+        photoTakenIn: "Táto fotografia bola vytvorená v {place}",
         methodGPS: "Poloha bola identifikovaná pomocou GPS súradníc z metadát fotografie.",
+        moreInformation: "Zistiť viac",
     },
 
     sl: {
@@ -539,8 +601,10 @@ var TRANSLATIONS = {
         dark: "Temna",
         light: "Svetla",
         unknownLocation: "Lokacije te fotografije ni bilo mogoče določiti",
-        photoTakenIn: "Ta fotografija je bila posneta v",
+        unknownLocationShort: "Neznana lokacija",
+        photoTakenIn: "Ta fotografija je bila posneta v {place}",
         methodGPS: "Lokacija je bila določena z uporabo GPS-koordinat iz metapodatkov fotografije.",
+        moreInformation: "Več informacij",
     },
 
     sr: {
@@ -556,12 +620,14 @@ var TRANSLATIONS = {
         dark: "Тамна",
         light: "Светла",
         unknownLocation: "Локација ове фотографије није могла бити идентификована",
-        photoTakenIn: "Ова фотографија је снимљена у",
+        unknownLocationShort: "Непозната локација",
+        photoTakenIn: "Ова фотографија је снимљена у {place}",
         methodGPS: "Локација је идентификована помоћу GPS координата из метаподатака фотографије.",
+        moreInformation: "Сазнај више",
     },
 
     sv: {
-        title: "Foto-geolokalisering",
+        title: "Foto-geolokator",
         welcome: "Välkommen! Ladda upp ett foto för att identifiera var det togs.",
         upload: "Ladda upp foto",
         searching: "Identifierar plats...",
@@ -573,8 +639,10 @@ var TRANSLATIONS = {
         dark: "Mörk",
         light: "Ljus",
         unknownLocation: "Platsen för detta foto kunde inte identifieras",
-        photoTakenIn: "Detta foto togs i",
+        unknownLocationShort: "Okänd plats",
+        photoTakenIn: "Detta foto togs i {place}",
         methodGPS: "Platsen identifierades med hjälp av GPS-koordinater från fotots metadata.",
+        moreInformation: "Läs mer",
     },
 
     ta: {
@@ -590,8 +658,10 @@ var TRANSLATIONS = {
         dark: "இருண்ட",
         light: "ஒளிரும்",
         unknownLocation: "இந்த புகைப்படத்தின் இருப்பிடத்தை கண்டறிய முடியவில்லை",
-        photoTakenIn: "இந்த புகைப்படம் எடுக்கப்பட்டது",
+        unknownLocationShort: "தெரியாத இடம்",
+        photoTakenIn: "இந்த புகைப்படம் {place} இல் எடுக்கப்பட்டது",
         methodGPS: "புகைப்படத்தின் மெட்டாடேட்டாவில் உள்ள GPS இணைக்கோட்டுகளை பயன்படுத்தி இருப்பிடம் கண்டறியப்பட்டது.",
+        moreInformation: "மேலும் தகவல்",
     },
 
     th: {
@@ -607,8 +677,10 @@ var TRANSLATIONS = {
         dark: "มืด",
         light: "สว่าง",
         unknownLocation: "ไม่สามารถระบุตำแหน่งของรูปภาพนี้ได้",
-        photoTakenIn: "รูปภาพนี้ถ่ายที่",
+        unknownLocationShort: "ไม่ทราบตำแหน่ง",
+        photoTakenIn: "รูปภาพนี้ถ่ายที่ {place}",
         methodGPS: "ระบุตำแหน่งโดยใช้พิกัด GPS จากข้อมูลเมตาของรูปภาพ",
+        moreInformation: "ดูข้อมูลเพิ่มเติม",
     },
 
     tr: {
@@ -624,8 +696,10 @@ var TRANSLATIONS = {
         dark: "Koyu",
         light: "Açık",
         unknownLocation: "Bu fotoğrafın konumu belirlenemedi",
-        photoTakenIn: "Bu fotoğraf şu konumda çekildi",
+        unknownLocationShort: "Bilinmeyen konum",
+        photoTakenIn: "Bu fotoğraf {place} konumunda çekildi",
         methodGPS: "Konum, fotoğraf meta verilerindeki GPS koordinatları kullanılarak belirlendi.",
+        moreInformation: "Daha fazla bilgi",
     },
 
     uk: {
@@ -641,8 +715,10 @@ var TRANSLATIONS = {
         dark: "Темна",
         light: "Світла",
         unknownLocation: "Не вдалося визначити місцезнаходження цієї фотографії",
-        photoTakenIn: "Цю фотографію було зроблено в",
+        unknownLocationShort: "Невідоме місце",
+        photoTakenIn: "Цю фотографію було зроблено в {place}",
         methodGPS: "Місцезнаходження визначено за допомогою GPS-координат із метаданих фотографії.",
+        moreInformation: "Дізнатися більше",
     },
 
     ur: {
@@ -658,8 +734,10 @@ var TRANSLATIONS = {
         dark: "گہرا",
         light: "ہلکا",
         unknownLocation: "اس تصویر کا مقام معلوم نہیں ہو سکا",
-        photoTakenIn: "یہ تصویر یہاں لی گئی تھی",
+        unknownLocationShort: "نامعلوم مقام",
+        photoTakenIn: "یہ تصویر {place} میں لی گئی تھی",
         methodGPS: "تصویر کے میٹا ڈیٹا میں موجود GPS نقاط استعمال کرکے مقام کی شناخت کی گئی۔",
+        moreInformation: "مزید معلومات",
     },
 
     vi: {
@@ -675,8 +753,10 @@ var TRANSLATIONS = {
         dark: "Tối",
         light: "Sáng",
         unknownLocation: "Không thể xác định vị trí của bức ảnh này",
-        photoTakenIn: "Bức ảnh này được chụp tại",
+        unknownLocationShort: "Vị trí không xác định",
+        photoTakenIn: "Bức ảnh này được chụp tại {place}",
         methodGPS: "Vị trí được xác định bằng tọa độ GPS từ siêu dữ liệu của ảnh.",
+        moreInformation: "Tìm hiểu thêm",
     },
 
     zh: {
@@ -692,9 +772,11 @@ var TRANSLATIONS = {
         dark: "深色",
         light: "浅色",
         unknownLocation: "无法识别这张照片的位置",
-        photoTakenIn: "这张照片拍摄于",
+        unknownLocationShort: "未知位置",
+        photoTakenIn: "这张照片拍摄于{place}",
         methodGPS: "使用照片元数据中的 GPS 坐标识别了位置。",
-    },
+        moreInformation: "了解更多",
+    }
 };
 
 var languageInstructions = {
