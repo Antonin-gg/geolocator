@@ -174,12 +174,6 @@ body {
     display: none;
 }
 
-#panelSearching {
-    display: none;
-    text-align: center;
-    font-family: 'DM Sans', sans-serif;
-}
-
 #resultStrip {
     position: fixed;
     top: 50%;
