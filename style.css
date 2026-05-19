@@ -244,6 +244,30 @@ body {
     flex-wrap: wrap;
 }
 
+#panelPlaceName.loading {
+    background: linear-gradient(90deg,
+            currentColor 0%,
+            currentColor 40%,
+            rgba(128, 128, 128, 0.4) 50%,
+            currentColor 60%,
+            currentColor 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
 .leaflet-popup-content {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.95rem;
@@ -430,7 +454,17 @@ body.dark #toggleTheme:hover {
 }
 
 .searching-active {
-    animation: pulse 1.5s ease-in-out infinite;
+    background: linear-gradient(90deg,
+            currentColor 0%,
+            currentColor 40%,
+            rgba(128, 128, 128, 0.4) 50%,
+            currentColor 60%,
+            currentColor 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
 }
 
 @keyframes spin {
@@ -442,19 +476,6 @@ body.dark #toggleTheme:hover {
         transform: rotate(360deg);
     }
 }
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
-}
-
 
 @media (max-width: 768px) and (orientation: portrait) {
 
