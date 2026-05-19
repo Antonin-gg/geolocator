@@ -1002,11 +1002,15 @@ async function locateImage(input) {
 
 if (isDark) {
     toDarkTheme();
+    document.getElementById("toggleTheme").textContent = translate("light");
+    if (!isSatellite) {
+        map.removeLayer(streetLayerLight);
+        streetLayerDark.addTo(map);
+    }
 }
 
 if (isSatellite) {
-    if (isDark) map.removeLayer(streetLayerDark);
-    else map.removeLayer(streetLayerLight);
+    map.removeLayer(streetLayerLight);
     satelliteLayer.addTo(map);
     document.getElementById("toggleView").textContent = translate("street");
 }
