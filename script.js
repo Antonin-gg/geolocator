@@ -18,6 +18,7 @@ var currentShortName = null;
 var currentIsAI = false;
 var locationPolygon = null;
 var currentLang = "en";
+var isSearching = false;
 
 
 
@@ -361,7 +362,7 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
         var panelOpen = document.getElementById("resultPanel").classList.contains("open");
         var stripOpen = document.getElementById("resultStrip").style.display === "flex";
-        
+
         if ((panelOpen || stripOpen) && currentImageFile) {
             rerunSearch();
         }
@@ -397,6 +398,7 @@ map.on("click", function () {
 // ── UI HELPERS ─────────────────────────────────────────────────────
 // showSearching, hideSearching, showError, onCloseClick
 function showSearching() {
+    isSearching = true;
 
     if (window.innerWidth <= 768 &&
         document.getElementById("resultPanel").classList.contains("open")) {
@@ -405,7 +407,7 @@ function showSearching() {
 
         document.getElementById("panelSearching").style.display = "block";
 
-        document.getElementById("panelSearching")
+        document.getElementById("panelSearchingText")
             .classList.add("searching-active");
 
         document.getElementById("panelSearchingGlobe")
@@ -417,7 +419,7 @@ function showSearching() {
 
         document.getElementById("searching").style.display = "block";
 
-        document.getElementById("searching")
+        document.getElementById("searchingText")
             .classList.add("searching-active");
 
         document.getElementById("searchingGlobe")
@@ -426,15 +428,19 @@ function showSearching() {
 }
 
 function hideSearching() {
+    isSearching = false;
 
     document.getElementById("searching").style.display = "none";
-    document.getElementById("searching")
+    document.getElementById("searchingText")
         .classList.remove("searching-active");
 
     document.getElementById("searchingGlobe")
         .classList.remove("globe-active");
 
     document.getElementById("panelSearching").style.display = "none";
+
+    document.getElementById("panelSearchingText")
+        .classList.remove("searching-active");
 
     document.getElementById("panelSearchingGlobe")
         .classList.remove("globe-active");
@@ -525,12 +531,17 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
         var sentence = translate("photoTakenIn").replace("{place}", placeName.replace(shortName, "<strong>" + shortName + "</strong>"));
         document.getElementById("panelPlaceName").innerHTML = sentence;
     } else {
-        document.getElementById("panelPlaceName").innerHTML = currentSentence;
-
-        document.getElementById("panelPlaceName").innerHTML = currentSentence.replace(
-            location.shortName,
-            "<strong>" + location.shortName + "</strong>"
+        var sentence = currentSentence;
+        var boldedSentence = sentence.replace(
+            shortName,
+            "<strong>" + shortName + "</strong>"
         );
+
+        if (boldedSentence === sentence) {
+            document.getElementById("panelPlaceName").innerHTML = "<strong>" + sentence + "</strong>";
+        } else {
+            document.getElementById("panelPlaceName").innerHTML = boldedSentence;
+        }
     }
     document.getElementById("panelMethod").textContent = method;
     document.getElementById("resultPanel").classList.add('open');
@@ -593,7 +604,13 @@ function minimizePanel() {
     document.getElementById("wrapper").classList.remove('panel-open');
 
     document.getElementById("resultStrip").style.display = "flex";
-    document.getElementById("stripPlaceName").textContent = currentShortName;
+
+    if (isSearching) {
+        document.getElementById("stripPlaceName").textContent = translate("searching");
+    } else {
+        document.getElementById("stripPlaceName").textContent = currentShortName;
+    }
+
     setTimeout(function () {
         map.invalidateSize();
         if (photoMarker) {
@@ -735,6 +752,8 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
+
+    document.getElementById("panelPlaceName").classList.remove("loading");
 
     openPanel(placeName, photoHtml, translate("methodGPS"), shortName, false);
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
@@ -916,6 +935,8 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         hideSearching();
 
+        document.getElementById("panelPlaceName").classList.remove("loading");
+
         if (photoMarker) {
             map.removeLayer(photoMarker);
             photoMarker = null;
@@ -945,6 +966,8 @@ async function placeMarkerFromAI(image, photoHtml) {
         var location = await getLocationData(queryLocation, aiResult.confidence);
 
         hideSearching();
+
+        document.getElementById("panelPlaceName").classList.remove("loading");
 
         if (photoMarker) {
             map.removeLayer(photoMarker);
@@ -981,16 +1004,54 @@ async function placeMarkerFromAI(image, photoHtml) {
     }
 }
 
+function showPanelLoading(photoHtml) {
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
+
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
+    }
+
+    document.getElementById("panelPhoto").innerHTML = photoHtml;
+    document.getElementById("panelPlaceName").innerHTML = "<strong>" + translate("searching") + "</strong>";
+    document.getElementById("panelPlaceName").classList.add("loading");
+    document.getElementById("panelMethod").textContent = "";
+
+    var strip = document.getElementById("resultStrip");
+    if (strip.style.display === "flex") {
+        strip.style.display = "none";
+        document.getElementById("resultPanel").classList.add('open');
+        document.getElementById("map").classList.add('panel-open');
+        document.getElementById("wrapper").classList.add('panel-open');
+    }
+
+    document.getElementById("welcome").style.display = "none";
+
+    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+
+        document.getElementById("imageInputLabel").style.display = "none";
+        document.getElementById("imageInputLabelPanel").style.display = "flex";
+
+    } else {
+
+        document.getElementById("imageInputLabel").style.display = "flex";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+
+    }
+
+    setTimeout(function () { map.invalidateSize(); }, 300);
+}
+
 async function rerunSearch() {
     if (!currentImageFile) return;
-    
-    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
-    if (stripOpen) {
-        openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
-    }
-    
+
+    showPanelLoading(currentPhotoHtml);
+
     var photoLatLng = await exifr.gps(currentImageFile);
-    
+
     if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
         placeMarkerFromEXIF(photoLatLng, currentPhotoHtml);
     } else {
@@ -1011,6 +1072,13 @@ async function locateImage(input) {
 
     var photoImgSrc = URL.createObjectURL(image);
     var photoImgHtml = '<img src="' + photoImgSrc + '" style="width:100%;border-radius:4px;margin-top:6px;">';
+    currentPhotoHtml = photoImgHtml;
+
+    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    if (panelOpen || stripOpen) {
+        showPanelLoading(photoImgHtml);
+    }
 
     var photoLatLng = await exifr.gps(image);
 
