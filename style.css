@@ -240,6 +240,8 @@ body {
     align-items: center;
     width: 100%;
     justify-content: center;
+    text-align: center;
+    flex-wrap: wrap;
 }
 
 .leaflet-popup-content {
