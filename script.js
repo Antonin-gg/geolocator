@@ -10,9 +10,11 @@ var isSatellite = false;
 var isDark = false;
 var photoMarker;
 var currentPlaceName = null;
+var currentSentence = null;
 var currentPhotoHtml = null;
 var currentMethod = null;
 var currentShortName = null;
+var currentIsAI = false;
 var locationPolygon = null;
 var currentLang = "en";
 
@@ -31,6 +33,20 @@ if (TRANSLATIONS[browserLang]) {
     currentLang = browserLang;
     changeLanguage();
 }
+
+var savedDark = localStorage.getItem("isDark");
+if (savedDark !== null) isDark = savedDark === "true";
+
+var savedSatellite = localStorage.getItem("isSatellite");
+if (savedSatellite !== null) isSatellite = savedSatellite === "true";
+
+var savedLang = localStorage.getItem("currentLang");
+if (savedLang !== null && TRANSLATIONS[savedLang]) {
+    currentLang = savedLang;
+    changeLanguage();
+}
+
+document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
 
 var map = L.map('map').setView([0, 0], 2);
 
@@ -232,6 +248,8 @@ document.getElementById("toggleTheme").addEventListener("click", function () {
     this.classList.toggle("hidden-theme");
     setToggleArrow(document.getElementById("showToggleTheme"), false);
     document.getElementById("showToggleTheme").classList.remove("dropdown-open");
+
+    localStorage.setItem("isDark", isDark);
 });
 
 document.getElementById("showToggleView").addEventListener("click", function () {
@@ -291,6 +309,8 @@ document.getElementById("toggleView").addEventListener("click", function () {
     this.classList.toggle("hidden-view");
     setToggleArrow(document.getElementById("showToggleView"), false);
     document.getElementById("showToggleView").classList.remove("dropdown-open");
+
+    localStorage.setItem("isSatellite", isSatellite);
 });
 
 document.getElementById("showToggleLanguage").addEventListener("click", function () {
@@ -324,6 +344,8 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
             setToggleArrow(document.getElementById("showToggleLanguage"), false);
         }
 
+        document.querySelector('[data-lang="' + currentLang + '"]').classList.remove("active-lang");
+
         currentLang = this.getAttribute("data-lang");
 
         changeLanguage();
@@ -331,6 +353,10 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
         document.getElementById("languageOptions").classList.add("hidden-language");
         setToggleArrow(document.getElementById("showToggleLanguage"), false);
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+
+        document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
+
+        localStorage.setItem("currentLang", currentLang);
     });
 
 });
@@ -439,7 +465,7 @@ window.addEventListener("resize", function () {
 
         if (document.getElementById("resultPanel").classList.contains("open")) {
 
-            openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName);
+            openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
             if (
                 document.getElementById("searching").classList.contains("searching-active") ||
                 document.getElementById("panelSearching").classList.contains("searching-active")
@@ -476,17 +502,27 @@ window.addEventListener("resize", function () {
 
 
 // ── PANEL CONTROLS ─────────────────────────────────────────────────
-function openPanel(placeName, photoHtml, method, shortName) {
+function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     currentPlaceName = placeName;
     currentPhotoHtml = photoHtml;
     currentMethod = method;
     currentShortName = shortName;
+    currentIsAI = isAI;
 
     if (photoMarker) photoMarker.closePopup();
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
-    document.getElementById("panelPlaceName").innerHTML = translate("photoTakenIn") + " " + placeName.replace(shortName, "<strong>" + shortName + "</strong>");
+    if (!isAI) {
+        document.getElementById("panelPlaceName").innerHTML = translate("photoTakenIn") + " " + placeName.replace(shortName, "<strong>" + shortName + "</strong>");
+    } else {
+        document.getElementById("panelPlaceName").innerHTML = currentSentence;
+
+        document.getElementById("panelPlaceName").innerHTML = currentSentence.replace(
+            location.shortName,
+            "<strong>" + location.shortName + "</strong>"
+        );
+    }
     document.getElementById("panelMethod").textContent = method;
     document.getElementById("resultPanel").classList.add('open');
     document.getElementById("map").classList.add('panel-open');
@@ -585,7 +621,7 @@ document.getElementById("panelClose").addEventListener("click", closePanel);
 document.getElementById("stripClose").addEventListener("click", closeStrip);
 document.getElementById("panelToggle").addEventListener("click", minimizePanel);
 document.getElementById("stripToggle").addEventListener("click", function () {
-    openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName);
+    openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
 });
 
 
@@ -691,7 +727,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         locationPolygon = null;
     }
 
-    openPanel(placeName, photoHtml, translate("methodGPS"), shortName);
+    openPanel(placeName, photoHtml, translate("methodGPS"), shortName, false);
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
     map.flyTo([photoCoordinates.latitude, photoCoordinates.longitude], 13);
@@ -881,14 +917,16 @@ async function placeMarkerFromAI(image, photoHtml) {
             locationPolygon = null;
         }
 
+        currentSentence = "<strong>" + translate("unknownLocation") + "</strong>";
+
         openPanel(
             "Unknown location",
             photoHtml,
             aiResult.method,
-            "Unknown location"
+            "Unknown location",
+            true
         );
 
-        document.getElementById("panelPlaceName").innerHTML = "<strong>" + translate("unknownLocation") + "</strong>";
     }
 
     else {
@@ -921,14 +959,9 @@ async function placeMarkerFromAI(image, photoHtml) {
             }).addTo(map);
         }
 
-        openPanel(location.shortName, photoHtml, aiResult.method, location.shortName);
+        currentSentence = aiResult.displaySentence;
 
-        document.getElementById("panelPlaceName").innerHTML = aiResult.displaySentence;
-
-        document.getElementById("panelPlaceName").innerHTML = aiResult.displaySentence.replace(
-            location.shortName,
-            "<strong>" + location.shortName + "</strong>"
-        );
+        openPanel(location.shortName, photoHtml, aiResult.method, location.shortName, true);
 
         photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
@@ -964,6 +997,17 @@ async function locateImage(input) {
         placeMarkerFromAI(image, photoImgHtml);
 
     }
+}
+
+if (isDark) {
+    toDarkTheme();
+}
+
+if (isSatellite) {
+    if (isDark) map.removeLayer(streetLayerDark);
+    else map.removeLayer(streetLayerLight);
+    satelliteLayer.addTo(map);
+    document.getElementById("toggleView").textContent = translate("street");
 }
 
 
