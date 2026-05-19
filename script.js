@@ -685,7 +685,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     var url = "https://nominatim.openstreetmap.org/reverse?lat=" +
         photoCoordinates.latitude + "&lon=" + photoCoordinates.longitude +
-        "&format=json&zoom=14&addressdetails=1&accept-language=" + currentLang;
+        "&format=json&zoom=18&addressdetails=1&accept-language=" + currentLang;
 
     var result = await fetch(url, {
         headers: { "User-Agent": "PhotoGeolocator/1.0" }
