@@ -300,6 +300,11 @@ body {
     cursor: pointer;
 }
 
+.active-lang {
+    font-weight: bold;
+    pointer-events: none;
+}
+
 body.dark .lang-option:hover,
 body.dark #toggleView:hover,
 body.dark #toggleTheme:hover {
