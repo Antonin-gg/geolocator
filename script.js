@@ -514,7 +514,8 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
     if (!isAI) {
-        document.getElementById("panelPlaceName").innerHTML = translate("photoTakenIn") + " " + placeName.replace(shortName, "<strong>" + shortName + "</strong>");
+        var sentence = translate("photoTakenIn").replace("{place}", placeName.replace(shortName, "<strong>" + shortName + "</strong>"));
+        document.getElementById("panelPlaceName").innerHTML = sentence;
     } else {
         document.getElementById("panelPlaceName").innerHTML = currentSentence;
 
@@ -920,10 +921,10 @@ async function placeMarkerFromAI(image, photoHtml) {
         currentSentence = "<strong>" + translate("unknownLocation") + "</strong>";
 
         openPanel(
-            "Unknown location",
+            translate("unknownLocationShort"),
             photoHtml,
             aiResult.method,
-            "Unknown location",
+            translate("unknownLocationShort"),
             true
         );
 
