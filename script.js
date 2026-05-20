@@ -23,12 +23,6 @@ var isSearching = false;
 
 
 
-// ── PLATFORM DETECTION ─────────────────────────────────────────────
-var isAndroid = /Android/i.test(navigator.userAgent);
-var isFirefox = /Firefox/i.test(navigator.userAgent);
-
-
-
 // ── MAP & INITIAL SETUP ────────────────────────────────────────────
 // L.map, tile layers, icons, attribution
 var browserLang = navigator.language.split("-")[0];
@@ -72,13 +66,8 @@ streetLayerLight.addTo(map);
 
 map.attributionControl.setPrefix('<a href="https://github.com/antonin-gg" target="_blank">© A.G.</a>');
 
-if (/SamsungBrowser/.test(navigator.userAgent)) {
-    document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ Please open this page in Chrome for full functionality.";
-} else if (isAndroid && isFirefox) {
-    document.getElementById("welcome").textContent = "Welcome! Upload a photo to identify where it was taken. ⚠️ Firefox on Android doesn't support location data. Try Chrome or desktop for best results.";
-} else {
-    document.getElementById("welcome").textContent = translate("welcome");
-}
+document.getElementById("welcome").textContent = translate("welcome");
+
 var fileInput = document.getElementById('imageInput');
 if (/Android/i.test(navigator.userAgent)) {
     fileInput.accept = 'image/*,model/gltf+json';
@@ -1195,8 +1184,6 @@ function getPreferredTypes(confidence) {
 
 async function placeMarkerFromAI(image, photoHtml) {
 
-    showSearching();
-
     document.getElementById("welcome").style.display = "none";
 
     var aiResult = await aiLocator(image);
@@ -1358,7 +1345,7 @@ async function locateImage(input) {
     var stripOpen = document.getElementById("resultStrip").style.display === "flex";
     if (panelOpen || stripOpen) {
         showPanelLoading(photoImgHtml);
-    }
+    } else showSearching();
 
     var photoLatLng = await exifr.gps(image);
 
@@ -1372,10 +1359,6 @@ async function locateImage(input) {
 
         await placeMarkerFromAI(image, photoImgHtml);
 
-    }
-
-    if (panelOpen || stripOpen) {
-        hideSearching();
     }
 }
 
