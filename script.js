@@ -749,190 +749,245 @@ async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
 
     var queries = generateFallbackQueries(aiPlace);
 
-    // Strict Nomminatim pass with type filter
+    // Strict pass with type filter
     for (var i = 0; i < queries.length; i++) {
-        var url = "https://nominatim.openstreetmap.org/search?q=" +
-            encodeURIComponent(queries[i]) +
-            "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+        var nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
+        if (nominatimResult === "error") return null;
+        if (nominatimResult) return nominatimResult;
 
-        if (aiCountryCode) {
-            url += "&countrycodes=" + aiCountryCode.toLowerCase();
-        }
-
-        var response = await fetch(url, {
-            headers: { "User-Agent": "PhotoGeolocator/1.0" }
-        });
-
-        if (!response.ok) {
-            showError("Network error. Please try again.");
-            return null;
-        }
-
-        var results = await response.json();
-
-        if (results.length > 0) {
-            var result = pickBestNominatimResult(results, queries[i], aiConfidence);
-
-            if (result) {
-                return {
-                    lat: parseFloat(result.lat),
-                    lng: parseFloat(result.lon),
-                    bounds: result.boundingbox,
-                    polygon: result.geojson,
-                    displayName: queries[i],
-                    shortName: buildShortName(result),
-                    showPolygon: showPolygon(aiConfidence, result.geojson)
-                };
-            }
-        }
+        var openCageResult = await tryOpenCage(queries[i], aiConfidence, aiCountryCode);
+        if (openCageResult === "error") return null;
+        if (openCageResult) return openCageResult;
     }
 
-    // Loose Nomminatim pass without type filter
+    // Loose pass without type filter
     for (var i = 0; i < queries.length; i++) {
-        var url = "https://nominatim.openstreetmap.org/search?q=" +
-            encodeURIComponent(queries[i]) +
-            "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+        var nominatimResult = await tryNominatim(queries[i], null, aiCountryCode);
+        if (nominatimResult === "error") return null;
+        if (nominatimResult) return nominatimResult;
 
-        if (aiCountryCode) {
-            url += "&countrycodes=" + aiCountryCode.toLowerCase();
-        }
-
-        var response = await fetch(url, {
-            headers: { "User-Agent": "PhotoGeolocator/1.0" }
-        });
-
-        if (!response.ok) {
-            showError("Network error. Please try again.");
-            return null;
-        }
-
-        var results = await response.json();
-
-        if (results.length > 0) {
-            var result = pickBestNominatimResult(results, queries[i], null);
-
-            if (result) {
-                return {
-                    lat: parseFloat(result.lat),
-                    lng: parseFloat(result.lon),
-                    bounds: result.boundingbox,
-                    polygon: result.geojson,
-                    displayName: queries[i],
-                    shortName: buildShortName(result),
-                    showPolygon: showPolygon(aiConfidence, result.geojson)
-                };
-            }
-        }
+        var openCageResult = await tryOpenCage(queries[i], null, aiCountryCode);
+        if (openCageResult === "error") return null;
+        if (openCageResult) return openCageResult;
     }
 
-    // Strict OpenCage pass with type filter
-    for (var i = 0; i < queries.length; i++) {
-        var url = "https://api.opencagedata.com/geocode/v1/json?q=" +
-            encodeURIComponent(queries[i]) +
-            "&key=" + OPENCAGE_API_KEY +
-            "&limit=5" +
-            "&no_annotations=1" +
-            "&language=en";
+    return null;
+}
 
-        if (aiCountryCode) {
-            url += "&countrycode=" + aiCountryCode.toLowerCase();
-        }
-        var response = await fetch(url);
+async function tryNominatim(query, aiConfidence, aiCountryCode) {
 
-        if (!response.ok) {
-            showError("Network error. Please try again.");
-            return null;
-        }
+    var url = "https://nominatim.openstreetmap.org/search?q=" +
+        encodeURIComponent(query) +
+        "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
 
-        var data = await response.json();
-
-        if (data.status && data.status.code !== 200) {
-            showError("Geocoding error. Please try again.");
-            return null;
-        }
-
-        var results = data.results || [];
-
-        if (results.length > 0) {
-            var result = pickBestOpenCageResult(results, queries[i], aiConfidence);
-
-            if (result) {
-                return {
-                    lat: result.geometry.lat,
-                    lng: result.geometry.lng,
-                    bounds: result.bounds
-                        ? [
-                            result.bounds.southwest.lat,
-                            result.bounds.northeast.lat,
-                            result.bounds.southwest.lng,
-                            result.bounds.northeast.lng
-                        ]
-                        : null,
-                    polygon: null,
-                    displayName: result.formatted || "",
-                    shortName: buildShortNameFromOpenCage(result),
-                    showPolygon: false
-                };
-
-            }
-        }
+    if (aiCountryCode) {
+        url += "&countrycodes=" + aiCountryCode.toLowerCase();
     }
 
-    // Loose OpenCage pass without type filter
-    for (var i = 0; i < queries.length; i++) {
-        var url = "https://api.opencagedata.com/geocode/v1/json?q=" +
-            encodeURIComponent(queries[i]) +
-            "&key=" + OPENCAGE_API_KEY +
-            "&limit=5" +
-            "&no_annotations=1" +
-            "&language=en";
+    var response = await fetch(url, {
+        headers: { "User-Agent": "PhotoGeolocator/1.0" }
+    });
 
-        if (aiCountryCode) {
-            url += "&countrycode=" + aiCountryCode.toLowerCase();
-        }
+    if (!response.ok) {
+        showError("Network error. Please try again.");
+        return "error";
+    }
 
-        var response = await fetch(url);
+    var results = await response.json();
 
-        if (!response.ok) {
-            showError("Network error. Please try again.");
-            return null;
-        }
+    if (results.length > 0) {
+        var result = pickBestNominatimResult(results, query, aiConfidence);
 
-        var data = await response.json();
-
-        if (data.status && data.status.code !== 200) {
-            showError("Geocoding error. Please try again.");
-            return null;
-        }
-
-        var results = data.results || [];
-
-        if (results.length > 0) {
-            var result = pickBestOpenCageResult(results, queries[i], null);
-
-            if (result) {
-                return {
-                    lat: result.geometry.lat,
-                    lng: result.geometry.lng,
-                    bounds: result.bounds
-                        ? [
-                            result.bounds.southwest.lat,
-                            result.bounds.northeast.lat,
-                            result.bounds.southwest.lng,
-                            result.bounds.northeast.lng
-                        ]
-                        : null,
-                    polygon: null,
-                    displayName: result.formatted || "",
-                    shortName: buildShortNameFromOpenCage(result),
-                    showPolygon: false
-                };
-
-            }
+        if (result) {
+            return {
+                lat: parseFloat(result.lat),
+                lng: parseFloat(result.lon),
+                bounds: result.boundingbox,
+                polygon: result.geojson,
+                displayName: query,
+                shortName: buildShortName(result),
+                showPolygon: showPolygon(aiConfidence, result.geojson)
+            };
         }
     }
 
     return null;
+}
+
+async function tryOpenCage(query, aiConfidence, aiCountryCode) {
+
+    var url = "https://api.opencagedata.com/geocode/v1/json?q=" +
+        encodeURIComponent(query) +
+        "&key=" + OPENCAGE_API_KEY +
+        "&limit=5" +
+        "&no_annotations=1" +
+        "&language=en";
+
+    if (aiCountryCode) {
+        url += "&countrycode=" + aiCountryCode.toLowerCase();
+    }
+    var response = await fetch(url);
+
+    if (!response.ok) {
+        showError("Network error. Please try again.");
+        return "error";
+    }
+
+    var data = await response.json();
+
+    if (data.status && data.status.code !== 200) {
+        showError("Geocoding error. Please try again.");
+        return "error";
+    }
+
+    var results = data.results || [];
+
+    if (results.length > 0) {
+        var result = pickBestOpenCageResult(results, query, aiConfidence);
+
+        if (result) {
+            var extraDataFromNominatim = (await getExtraDataFromNominatim(result, aiConfidence, aiCountryCode)) || {};
+            return {
+                lat: extraDataFromNominatim.lat || result.geometry.lat,
+                lng: extraDataFromNominatim.lng || result.geometry.lng,
+                bounds: extraDataFromNominatim.bounds || (result.bounds ?
+                    [
+                        result.bounds.southwest.lat,
+                        result.bounds.northeast.lat,
+                        result.bounds.southwest.lng,
+                        result.bounds.northeast.lng
+                    ]
+                    : null),
+                polygon: extraDataFromNominatim.polygon,
+                displayName: result.formatted || "",
+                shortName: extraDataFromNominatim.shortName || buildShortNameFromOpenCage(result),
+                showPolygon: extraDataFromNominatim.polygon ? showPolygon(aiConfidence, extraDataFromNominatim.polygon) : false
+            };
+
+        }
+    }
+
+    return null;
+}
+
+async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountryCode) {
+    var query = openCageResult.formatted;
+    if (!query) return null;
+
+    query = query
+        .replace(/\b\d{4,6}(-\d{3,4})?\b/g, '')
+        .replace(/,\s*,/g, ',')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    for (var i = 0; i < 2; i++) {
+        if (i === 1) {
+            var reduced = query.split(",")[0].trim();
+            if (reduced === query) break;
+            query = reduced;
+        }
+        var url = "https://nominatim.openstreetmap.org/search?q=" +
+            encodeURIComponent(query) +
+            "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+
+        if (aiCountryCode) {
+            url += "&countrycodes=" + aiCountryCode.toLowerCase();
+        }
+
+        var response = await fetch(url, {
+            headers: { "User-Agent": "PhotoGeolocator/1.0" }
+        });
+        if (!response.ok) continue;
+
+        var results = await response.json();
+
+        var matching = findClosestExtraResult(results, openCageResult, aiConfidence);
+
+        if (matching) {
+            return {
+                lat: matching.lat,
+                lng: matching.lng,
+                polygon: matching.geojson,
+                bounds: matching.boundingbox,
+                shortName: buildShortName(matching)
+            };
+        }
+    }
+
+    var zoom = getZoomLevel(aiConfidence);
+    var reverseUrl = "https://nominatim.openstreetmap.org/reverse?lat=" + openCageResult.geometry.lat +
+        "&lon=" + openCageResult.geometry.lng + "&format=json&zoom=" + zoom +
+        "&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+
+    var reverseResponse = await fetch(reverseUrl, {
+        headers: { "User-Agent": "PhotoGeolocator/1.0" }
+    });
+    if (!reverseResponse.ok) return null;
+    var reverseResult = await reverseResponse.json();
+    if (reverseResult) {
+        return {
+            lat: reverseResult.lat,
+            lng: reverseResult.lng,
+            polygon: reverseResult.geojson || null,
+            bounds: reverseResult.boundingbox || null,
+            shortName: buildShortName(reverseResult)
+        };
+    }
+    return null;
+}
+
+function findClosestExtraResult(results, openCageResult, aiConfidence) {
+    if (!results || results.length === 0) return null;
+
+    var typeFilteredResults = results;
+    var preferredTypes = getPreferredTypes(aiConfidence);
+
+    if (aiConfidence && aiConfidence !== "landmark") {
+        typeFilteredResults = results.filter(function (r) {
+            return preferredTypes.includes(r.type) ||
+                preferredTypes.includes(r.addresstype);
+        });
+    } else if (aiConfidence === "landmark") {
+        typeFilteredResults = results.filter(function (r) {
+            return !preferredTypes.includes(r.type) &&
+                !preferredTypes.includes(r.addresstype);
+        });
+    }
+
+    if (typeFilteredResults.length === 0) {
+        typeFilteredResults = results;
+    }
+
+    var maxDist = (aiConfidence === "country") ? 100 : (aiConfidence === "region") ? 4 : (aiConfidence === "city") ? 0.2 : (aiConfidence === "landmark") ? 0.05 : null;
+
+    var sorted = typeFilteredResults
+        .filter(function (r) {
+            if (!r.geojson || r.geojson.type === "Point") return false;
+
+            var distR = squaredDistance(parseFloat(r.lat), parseFloat(r.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            return distR < maxDist;
+        })
+        .sort(function (a, b) {
+            var distA = squaredDistance(parseFloat(a.lat), parseFloat(a.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            var distB = squaredDistance(parseFloat(b.lat), parseFloat(b.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            return distA - distB;
+        });
+
+    return sorted[0] || null;
+}
+
+function squaredDistance(lat1, lng1, lat2, lng2) {
+    var dLat = lat2 - lat1;
+    var dLng = lng2 - lng1;
+    return dLat * dLat + dLng * dLng;
+}
+
+function getZoomLevel(aiConfidence) {
+    if (aiConfidence === "landmark") return 14;
+    if (aiConfidence === "city") return 12;
+    if (aiConfidence === "region") return 8;
+    if (aiConfidence === "country") return 3;
+    return 10;
 }
 
 function generateFallbackQueries(aiPlace) {
@@ -1242,7 +1297,25 @@ function getPreferredTypes(confidence) {
         "parking",
 
         "address",
-        "yes"
+        "yes",
+        "apartment",
+        "restaurant", "cafe", "bar", "pub", "fast_food",
+        "shop", "supermarket", "convenience",
+
+        "region",
+        "state",
+        "province",
+        "county",
+        "state_district",
+        "archipelago",
+
+        "national_park",
+        "protected_area",
+        "nature_reserve",
+        "mountain_range",
+        "peninsula",
+        "cape",
+        "bay"
     ];
     return [];
 }
@@ -1330,7 +1403,7 @@ async function placeMarkerFromAI(image, photoHtml) {
         if (location.bounds) {
             map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]]);
         } else {
-            map.flyTo([location.lat, location.lng], 10);
+            map.flyTo([location.lat, location.lng], getZoomLevel(aiResult.confidence));
         }
 
         document.getElementById("welcome").style.display = "none";
