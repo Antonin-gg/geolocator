@@ -419,6 +419,7 @@ function showError(message) {
             document.getElementById("panelPlaceName").classList.remove("loading");
             document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
             document.getElementById("panelSearchingGlobe").style.display = "none";
+            isSearching = false;
         }
     } else if (isSearching) hideSearching();
     if (panelOpen) closePanel();
@@ -1124,7 +1125,7 @@ function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
     });
 
     if (fullFormattedMatches.length > 0) {
-        return sortByConfidence(fullFormattedMatches)[0];
+        return sortByImportance(fullFormattedMatches)[0];
     }
 
     var primaryPartMatches = typeFilteredResults.filter(function (r) {
@@ -1133,7 +1134,7 @@ function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
     });
 
     if (primaryPartMatches.length > 0) {
-        return sortByConfidence(primaryPartMatches)[0];
+        return sortByImportance(primaryPartMatches)[0];
     }
 
     var componentNameMatches = typeFilteredResults.filter(function (r) {
@@ -1160,7 +1161,7 @@ function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
     });
 
     if (componentNameMatches.length > 0) {
-        return sortByConfidence(componentNameMatches)[0];
+        return sortByImportance(componentNameMatches)[0];
     }
 
     return null;
@@ -1309,7 +1310,7 @@ async function placeMarkerFromAI(image, photoHtml) {
         }
 
         if (!location) {
-            openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location");
+            openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location", true);
             document.getElementById("panelPlaceName").innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
             return;
         }
@@ -1384,6 +1385,7 @@ async function rerunSearch() {
     if (!currentImageFile) return;
 
     showPanelLoading(currentPhotoHtml);
+    isSearching = true;
 
     var photoLatLng = await exifr.gps(currentImageFile);
 
@@ -1414,6 +1416,7 @@ async function locateImage(input) {
     var panelOpen = document.getElementById("resultPanel").classList.contains("open");
     var stripOpen = document.getElementById("resultStrip").style.display === "flex";
     if (panelOpen || stripOpen) {
+        isSearching = true;
         showPanelLoading(photoImgHtml);
     } else showSearching();
 
