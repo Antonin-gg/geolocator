@@ -848,8 +848,8 @@ async function tryOpenCage(query, aiConfidence, aiCountryCode) {
         if (result) {
             var extraDataFromNominatim = (await getExtraDataFromNominatim(result, aiConfidence, aiCountryCode)) || {};
             return {
-                lat: extraDataFromNominatim.lat || result.geometry.lat,
-                lng: extraDataFromNominatim.lng || result.geometry.lng,
+                lat: extraDataFromNominatim.lat ? parseFloat(extraDataFromNominatim.lat) : result.geometry.lat,
+                lng: extraDataFromNominatim.lng ? parseFloat(extraDataFromNominatim.lng) : result.geometry.lng,
                 bounds: extraDataFromNominatim.bounds || (result.bounds ?
                     [
                         result.bounds.southwest.lat,
@@ -1180,7 +1180,7 @@ function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
     });
 
     if (fullFormattedMatches.length > 0) {
-        return sortByImportance(fullFormattedMatches)[0];
+        return sortByConfidence(fullFormattedMatches)[0];
     }
 
     var primaryPartMatches = typeFilteredResults.filter(function (r) {
@@ -1189,7 +1189,7 @@ function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
     });
 
     if (primaryPartMatches.length > 0) {
-        return sortByImportance(primaryPartMatches)[0];
+        return sortByConfidence(primaryPartMatches)[0];
     }
 
     var componentNameMatches = typeFilteredResults.filter(function (r) {
@@ -1229,6 +1229,12 @@ function usefulName(name) {
 function sortByImportance(results) {
     return results.sort(function (a, b) {
         return (b.importance || 0) - (a.importance || 0);
+    });
+}
+
+function sortByConfidence(results) {
+    return results.sort(function (a, b) {
+        return (b.confidence || 0) - (a.confidence || 0);
     });
 }
 
