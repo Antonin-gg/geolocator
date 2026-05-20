@@ -412,6 +412,18 @@ function hideSearching() {
 }
 
 function showError(message) {
+    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    if (panelOpen || stripOpen) {
+        if (isSearching) {
+            document.getElementById("panelPlaceName").classList.remove("loading");
+            document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+            document.getElementById("panelSearchingGlobe").style.display = "none";
+        }
+    } else if (isSearching) hideSearching();
+    if (panelOpen) closePanel();
+    else if (stripOpen) closeStrip();
+
     document.getElementById("noData").style.display = "block";
     document.getElementById("noData").textContent = message;
     setTimeout(() => {
@@ -643,6 +655,11 @@ async function aiLocator(image) {
         })
     });
 
+    if (!aiResponse.ok) {
+        showError("Network error. Please try again.");
+        return null;
+    }
+
     var data = await aiResponse.json();
     var raw = data.choices[0].message.content;
     var clean = raw.replace(/```json|```/g, "").trim();
@@ -665,9 +682,16 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         photoCoordinates.latitude + "&lon=" + photoCoordinates.longitude +
         "&format=json&zoom=18&addressdetails=1&accept-language=" + currentLang;
 
-    var result = await fetch(url, {
+    var response = await fetch(url, {
         headers: { "User-Agent": "PhotoGeolocator/1.0" }
-    }).then(r => r.json());
+    });
+
+    if (!response.ok) {
+        showError("Network error. Please try again.");
+        return null;
+    }
+
+    var result = await response.json();
 
     var placeName = "Unknown location";
     var shortName = "Unknown location";
@@ -706,6 +730,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         locationPolygon = null;
     }
 
+    hideSearching();
     document.getElementById("panelPlaceName").classList.remove("loading");
     document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
     document.getElementById("panelSearchingGlobe").style.display = "none";
@@ -733,9 +758,16 @@ async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
             url += "&countrycodes=" + aiCountryCode.toLowerCase();
         }
 
-        var results = await fetch(url, {
+        var response = await fetch(url, {
             headers: { "User-Agent": "PhotoGeolocator/1.0" }
-        }).then(r => r.json());
+        });
+
+        if (!response.ok) {
+            showError("Network error. Please try again.");
+            return null;
+        }
+
+        var results = await response.json();
 
         if (results.length > 0) {
             var result = pickBestNominatimResult(results, queries[i], aiConfidence);
@@ -764,9 +796,16 @@ async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
             url += "&countrycodes=" + aiCountryCode.toLowerCase();
         }
 
-        var results = await fetch(url, {
+        var response = await fetch(url, {
             headers: { "User-Agent": "PhotoGeolocator/1.0" }
-        }).then(r => r.json());
+        });
+
+        if (!response.ok) {
+            showError("Network error. Please try again.");
+            return null;
+        }
+
+        var results = await response.json();
 
         if (results.length > 0) {
             var result = pickBestNominatimResult(results, queries[i], null);
@@ -797,8 +836,20 @@ async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
         if (aiCountryCode) {
             url += "&countrycode=" + aiCountryCode.toLowerCase();
         }
+        var response = await fetch(url);
 
-        var data = await fetch(url).then(r => r.json());
+        if (!response.ok) {
+            showError("Network error. Please try again.");
+            return null;
+        }
+
+        var data = await response.json();
+
+        if (data.status && data.status.code !== 200) {
+            showError("Geocoding error. Please try again.");
+            return null;
+        }
+
         var results = data.results || [];
 
         if (results.length > 0) {
@@ -839,7 +890,20 @@ async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
             url += "&countrycode=" + aiCountryCode.toLowerCase();
         }
 
-        var data = await fetch(url).then(r => r.json());
+        var response = await fetch(url);
+
+        if (!response.ok) {
+            showError("Network error. Please try again.");
+            return null;
+        }
+
+        var data = await response.json();
+
+        if (data.status && data.status.code !== 200) {
+            showError("Geocoding error. Please try again.");
+            return null;
+        }
+
         var results = data.results || [];
 
         if (results.length > 0) {
@@ -1188,6 +1252,8 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     var aiResult = await aiLocator(image);
 
+    if (!aiResult) return;
+
     var aiLocation = aiResult.place;
 
     if (aiLocation == "unknown") {
@@ -1260,7 +1326,11 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
-        map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]]);
+        if (location.bounds) {
+            map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]]);
+        } else {
+            map.flyTo([location.lat, location.lng], 10);
+        }
 
         document.getElementById("welcome").style.display = "none";
 
