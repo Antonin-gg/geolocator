@@ -749,24 +749,71 @@ async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
 
     var queries = generateFallbackQueries(aiPlace);
 
+    if (aiConfidence === "landmark") {
+        return await getLocationDataLandmark(queries, aiCountryCode);
+    }
+
+    return await getLocationDataAreas(queries, aiConfidence, aiCountryCode);
+}
+
+async function getLocationDataLandmark(queries, aiCountryCode) {
+
     // Strict pass with type filter
     for (var i = 0; i < queries.length; i++) {
-        var nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
+        // Try Nominatim
+        var nominatimResult = await tryNominatim(queries[i], "landmark", aiCountryCode);
         if (nominatimResult === "error") return null;
         if (nominatimResult) return nominatimResult;
 
-        var openCageResult = await tryOpenCage(queries[i], aiConfidence, aiCountryCode);
+        // Try OpenCage
+        var openCageResult = await tryOpenCage(queries[i], "landmark", aiCountryCode);
         if (openCageResult === "error") return null;
         if (openCageResult) return openCageResult;
     }
 
     // Loose pass without type filter
     for (var i = 0; i < queries.length; i++) {
+        // Try Nominatim
         var nominatimResult = await tryNominatim(queries[i], null, aiCountryCode);
         if (nominatimResult === "error") return null;
         if (nominatimResult) return nominatimResult;
 
+        // Try OpenCage
         var openCageResult = await tryOpenCage(queries[i], null, aiCountryCode);
+        if (openCageResult === "error") return null;
+        if (openCageResult) return openCageResult;
+    }
+
+    return null;
+
+}
+
+async function getLocationDataAreas(queries, aiConfidence, aiCountryCode) {
+
+    // Strict Nominatim pass with type filter
+    for (var i = 0; i < queries.length; i++) {
+        var nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
+        if (nominatimResult === "error") return null;
+        if (nominatimResult) return nominatimResult;
+    }
+
+    // Strict OpenCage pass with type filter
+    for (var j = 0; j < queries.length; j++) {
+        var openCageResult = await tryOpenCage(queries[j], aiConfidence, aiCountryCode);
+        if (openCageResult === "error") return null;
+        if (openCageResult) return openCageResult;
+    }
+
+    // Loose Nominatim pass without type filter
+    for (var k = 0; k < queries.length; k++) {
+        var nominatimResult = await tryNominatim(queries[k], null, aiCountryCode);
+        if (nominatimResult === "error") return null;
+        if (nominatimResult) return nominatimResult;
+    }
+
+    // Loose OpenCage pass without type filter
+    for (var l = 0; l < queries.length; l++) {
+        var openCageResult = await tryOpenCage(queries[l], null, aiCountryCode);
         if (openCageResult === "error") return null;
         if (openCageResult) return openCageResult;
     }
@@ -1006,6 +1053,9 @@ function generateFallbackQueries(aiPlace) {
         }
     }
 
+    if (parts.length > 1) {
+        queries.push(parts[0]);
+    }
 
     for (var i = 1; i < parts.length; i++) {
         queries.push(parts.slice(i).join(", "));
@@ -1092,8 +1142,7 @@ function buildShortNameFromOpenCage(result) {
 }
 
 function pickBestNominatimResult(results, aiPlace, aiConfidence) {
-    var aiPlaceLower = aiPlace.toLowerCase();
-    var primaryPart = aiPlace.split(",")[0].trim().toLowerCase();
+
     var preferredTypes = getPreferredTypes(aiConfidence);
 
     var typeFilteredResults = results;
@@ -1112,50 +1161,28 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
 
     if (typeFilteredResults.length === 0) return null;
 
-    var nameEnMatches = typeFilteredResults.filter(function (r) {
+    var tokenMatches = typeFilteredResults.filter(function (r) {
         var nameEn = r.namedetails && r.namedetails["name:en"];
-        return usefulName(nameEn) &&
-            aiPlaceLower.includes(nameEn.toLowerCase());
-    });
-
-    if (nameEnMatches.length > 0) {
-        return sortByImportance(nameEnMatches)[0];
-    }
-
-    var localNameMatches = typeFilteredResults.filter(function (r) {
         var localName = r.namedetails && r.namedetails.name;
-        return usefulName(localName) &&
-            aiPlaceLower.includes(localName.toLowerCase());
+        var display = r.display_name || "";
+        var primaryPart = aiPlace.split(",")[0].trim();
+
+
+        return (usefulName(nameEn) && bidirectionalTokenMatch(aiPlace, nameEn)) ||
+            (usefulName(localName) && bidirectionalTokenMatch(aiPlace, localName)) ||
+            bidirectionalTokenMatch(aiPlace, display) ||
+            (usefulName(nameEn) && primaryPart.length > 2 && bidirectionalTokenMatch(primaryPart, nameEn)) ||
+            (primaryPart.length > 2 && bidirectionalTokenMatch(primaryPart, display));
     });
 
-    if (localNameMatches.length > 0) {
-        return sortByImportance(localNameMatches)[0];
-    }
-
-    var fullDisplayMatches = typeFilteredResults.filter(function (r) {
-        return r.display_name &&
-            r.display_name.toLowerCase().includes(aiPlaceLower);
-    });
-
-    if (fullDisplayMatches.length > 0) {
-        return sortByImportance(fullDisplayMatches)[0];
-    }
-
-    var primaryPartMatches = typeFilteredResults.filter(function (r) {
-        return r.display_name &&
-            r.display_name.toLowerCase().includes(primaryPart);
-    });
-
-    if (primaryPartMatches.length > 0) {
-        return sortByImportance(primaryPartMatches)[0];
+    if (tokenMatches.length > 0) {
+        return sortByImportance(tokenMatches)[0];
     }
 
     return null;
 }
 
 function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
-    var aiPlaceLower = aiPlace.toLowerCase();
-    var primaryPart = aiPlace.split(",")[0].trim().toLowerCase();
     var preferredTypes = getPreferredTypes(aiConfidence);
 
     var typeFilteredResults = results;
@@ -1174,25 +1201,8 @@ function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
 
     if (typeFilteredResults.length === 0) return null;
 
-    var fullFormattedMatches = typeFilteredResults.filter(function (r) {
-        return r.formatted &&
-            r.formatted.toLowerCase().includes(aiPlaceLower);
-    });
-
-    if (fullFormattedMatches.length > 0) {
-        return sortByConfidence(fullFormattedMatches)[0];
-    }
-
-    var primaryPartMatches = typeFilteredResults.filter(function (r) {
-        return r.formatted &&
-            r.formatted.toLowerCase().includes(primaryPart);
-    });
-
-    if (primaryPartMatches.length > 0) {
-        return sortByConfidence(primaryPartMatches)[0];
-    }
-
-    var componentNameMatches = typeFilteredResults.filter(function (r) {
+    var tokenMatches = typeFilteredResults.filter(function (r) {
+        var primaryPart = aiPlace.split(",")[0].trim();
         var a = r.components || {};
         var names = [
             a._normalized_city,
@@ -1209,14 +1219,15 @@ function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
             a.attraction
         ];
 
-        return names.some(function (name) {
-            return usefulName(name) &&
-                aiPlaceLower.includes(name.toLowerCase());
-        });
+        return bidirectionalTokenMatch(aiPlace, r.formatted) ||
+            names.some(function (name) {
+                return usefulName(name) &&
+                    (bidirectionalTokenMatch(primaryPart, name) || (usefulName(primaryPart) && bidirectionalTokenMatch(primaryPart, name)));
+            });
     });
 
-    if (componentNameMatches.length > 0) {
-        return sortByImportance(componentNameMatches)[0];
+    if (tokenMatches.length > 0) {
+        return sortByConfidence(tokenMatches)[0];
     }
 
     return null;
@@ -1236,6 +1247,32 @@ function sortByConfidence(results) {
     return results.sort(function (a, b) {
         return (b.confidence || 0) - (a.confidence || 0);
     });
+}
+
+function tokenizePlaceName(value) {
+    return (value || "")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .split(/\s+/)
+        .filter(function (word) {
+            return word.length >= 3 &&
+                !["the", "and", "of", "de"].includes(word);
+        });
+}
+
+function containsTokens(source, target) {
+    var sourceTokens = tokenizePlaceName(source);
+    var targetLower = (target || "").toLowerCase();
+
+    if (sourceTokens.length === 0 || !targetLower) return false;
+
+    return sourceTokens.every(function (token) {
+        return targetLower.includes(token);
+    });
+}
+
+function bidirectionalTokenMatch(a, b) {
+    return containsTokens(a, b) || containsTokens(b, a);
 }
 
 function getPreferredTypes(confidence) {
@@ -1308,20 +1345,13 @@ function getPreferredTypes(confidence) {
         "restaurant", "cafe", "bar", "pub", "fast_food",
         "shop", "supermarket", "convenience",
 
+        "country",
         "region",
         "state",
         "province",
         "county",
         "state_district",
-        "archipelago",
-
-        "national_park",
-        "protected_area",
-        "nature_reserve",
-        "mountain_range",
-        "peninsula",
-        "cape",
-        "bay"
+        "archipelago"
     ];
     return [];
 }
