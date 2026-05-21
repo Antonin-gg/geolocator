@@ -215,6 +215,7 @@ body {
     transform: rotate(180deg);
     text-overflow: ellipsis;
     overflow: hidden;
+    text-align: center;
     min-width: 0;
 }
 
