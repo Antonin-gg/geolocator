@@ -1252,6 +1252,9 @@ function sortByConfidence(results) {
 function tokenizePlaceName(value) {
     return (value || "")
         .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // removes accents
+        .replace(/['’ʻ`´]/g, "")         // removes apostrophes
         .replace(/[^\p{L}\p{N}]+/gu, " ")
         .split(/\s+/)
         .filter(function (word) {
@@ -1262,7 +1265,13 @@ function tokenizePlaceName(value) {
 
 function containsTokens(source, target) {
     var sourceTokens = tokenizePlaceName(source);
-    var targetLower = (target || "").toLowerCase();
+    var targetLower = (target || "").toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/['’ʻ`´]/g, "")
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 
     if (sourceTokens.length === 0 || !targetLower) return false;
 
