@@ -673,18 +673,22 @@ body.dark #toggleTheme:hover {
     }
 
     #learnMore {
-        background: none;
-        border: none;
-        text-decoration: underline;
-        padding: 4px 0;
-        width: fit-content;
-        font-weight: bold;
-        font-size: 0.85rem;
-        color: inherit;
-        cursor: pointer;
-        display: block;
-        margin: 0 auto;
-    }
+    background: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 4px 0;
+    width: fit-content;
+    text-decoration: underline;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: inherit;
+    cursor: pointer;
+    display: block;
+    margin: 0 auto;
+}
 
 }
 
