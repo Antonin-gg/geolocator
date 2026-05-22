@@ -236,6 +236,8 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     display: none;
     font-weight: 800;
     text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
     font-size: 1.15rem;
     transition: left 0.3s ease, top 0.3s ease, transform 0.3s ease;
 }
@@ -702,6 +704,7 @@ body.dark #toggleTheme:hover {
         justify-content: center;
         z-index: 1002;
         font-size: 1rem;
+        text-underline-offset: 4px;
         cursor: pointer;
     }
 
