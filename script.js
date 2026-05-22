@@ -9,7 +9,7 @@ var STOPWORDS = ["the", "and", "of", "de", "mount", "mountain", "volcano", "isla
 
 // ── STATE ──────────────────────────────────────────────────────────
 var isSatellite = false;
-var isDark = false;
+var isDark = true;
 var photoMarker;
 var currentPlaceName = null;
 var currentSentence = null;
