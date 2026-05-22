@@ -54,8 +54,8 @@ body {
     width: 100%;
     max-width: 100%;
     overflow-y: hidden;
-    overflow-x: auto;  /* prevent horizontal scrollbar showing up */
-    -webkit-overflow-scrolling: touch;  /* smooth scrolling on iOS */
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 #panelContent.scrollable {
@@ -73,6 +73,10 @@ body {
 #panelContent::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
+}
+
+#panelPhoto.locked {
+    flex: 0 0 auto;
 }
 
 body.dark #panelContent::-webkit-scrollbar-thumb {
@@ -179,8 +183,8 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 }
 
 #panelPhoto img {
-    width: 100%;
-    height: auto;
+    max-height: var(--panel-photo-max-height, none);
+    object-fit: contain;
     border-radius: 8px;
     display: block;
 }
@@ -251,13 +255,21 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 
 #learnMore {
     display: none;
-    margin-top: 8px;
-    cursor: pointer;
-    font-size: 0.85rem;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 4px 0;
+    width: fit-content;
+    text-decoration: underline;
     font-weight: bold;
+    font-size: 0.85rem;
     color: inherit;
-    width: 200px;
+    cursor: pointer;
     margin: 0 auto;
+    font-family: 'DM Sans', sans-serif;
 }
 
 #panelWiki {
@@ -604,18 +616,6 @@ body.dark #toggleTheme:hover {
         display: block;
     }
 
-    #imageInputLabelPanel {
-        position: absolute;
-        bottom: 14px;
-        left: 50%;
-        width: 250px;
-        margin-left: -125px;
-
-        text-align: center;
-        justify-content: center;
-        font-weight: bold;
-    }
-
     #resultStrip {
         top: auto;
         bottom: 0;
@@ -650,7 +650,8 @@ body.dark #toggleTheme:hover {
 
 }
 
-@media (max-width: 768px), (max-height: 500px) {
+@media (max-width: 768px),
+(max-height: 500px) {
 
     #panelPhoto {
         display: flex;
@@ -668,26 +669,20 @@ body.dark #toggleTheme:hover {
         display: block;
     }
 
-    #panelContent {
-        overflow-y: auto;
+    #imageInputLabelPanel {
+        position: fixed;
+        top: 88px;
+        left: 14px;
+        width: 34px;
+        height: 36px;
+        padding: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1002;
+        font-size: 1rem;
+        cursor: pointer;
     }
-
-    #learnMore {
-    background: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 4px 0;
-    width: fit-content;
-    text-decoration: underline;
-    font-weight: bold;
-    font-size: 0.85rem;
-    color: inherit;
-    cursor: pointer;
-    margin: 0 auto;
-}
 
 }
 
