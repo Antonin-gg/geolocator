@@ -130,8 +130,6 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 #panelToggle,
 #stripClose,
 #stripToggle {
-    width: 36px;
-    height: 36px;
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.08);
     border: none;
@@ -141,14 +139,19 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     justify-content: center;
 }
 
+#pannelClose,
+#pannelToggle {
+    width: 36px;
+    height: 36px;
+}
+
 #stripClose,
 #stripToggle {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32x;
     min-width: 32px;
     min-height: 32px;
-    flex: 0 0 32px;
-    border-radius: 50%;
+    flex: 0 32px;
 }
 
 #stripClose {
@@ -188,6 +191,7 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 
 #panelPhoto img {
     max-height: var(--panel-photo-max-height, none);
+    max-width: 100%;
     object-fit: contain;
     border-radius: 8px;
     display: block;
@@ -260,7 +264,6 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     text-align: center;
     min-width: 0;
     flex: 1 1 auto;
-    overflow: hidden;
     white-space: nowrap;
 }
 
@@ -292,6 +295,10 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     border-left: 3px solid rgba(0, 0, 0, 0.2);
     padding-left: 12px;
     margin-top: 8px;
+    overflow: hidden;
+    max-height: 600px;
+    opacity: 1;
+    transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
 }
 
 #panelWiki a {
@@ -495,7 +502,10 @@ body.dark #toggleTheme:hover {
 }
 
 #panelWiki.hidden-wiki {
-    display: none;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
 }
 
 .leaflet-control-zoom a {
@@ -606,10 +616,6 @@ body.dark #toggleTheme:hover {
 
     #resultPanel.open {
         transform: translateY(0);
-    }
-
-    #panelPhoto img {
-        max-height: 25dvh;
     }
 
     #panelToggle {
