@@ -2010,7 +2010,7 @@ async function locateImage(input) {
     currentImageFile = image;
 
     var photoImgSrc = URL.createObjectURL(image);
-    var photoImgHtml = '<img src="' + photoImgSrc + '" style="width:100%;border-radius:4px;margin-top:6px;">';
+    var photoImgHtml = '<img src="' + photoImgSrc + '" style="border-radius:4px;margin-top:6px;">';
     currentPhotoHtml = photoImgHtml;
 
     var panelOpen = document.getElementById("resultPanel").classList.contains("open");
