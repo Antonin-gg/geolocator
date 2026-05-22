@@ -139,8 +139,8 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     justify-content: center;
 }
 
-#pannelClose,
-#pannelToggle {
+#panelClose,
+#panelToggle {
     width: 36px;
     height: 36px;
 }
@@ -148,10 +148,10 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 #stripClose,
 #stripToggle {
     width: 32px;
-    height: 32x;
+    height: 32px;
     min-width: 32px;
     min-height: 32px;
-    flex: 0 32px;
+    flex: 0 0 32px;
 }
 
 #stripClose {
