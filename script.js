@@ -3,6 +3,7 @@ var OPENCAGE_API_KEY = "49b47c25108242779832267ff8062473";
 var WORKER_URL = "https://geolocator-ai.a-gg.workers.dev";
 var AI_MODEL = "gpt-4o";
 var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nLANGUAGE — CRITICAL: All user-facing text fields (method, displaySentence) MUST be written in the language specified in the system instructions appended to this prompt. Only the \"place\" field stays in English (it is used for geocoding lookups, not displayed to the user). If you are uncertain which language to use, default to English. Never mix languages within a single response.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify, ALWAYS in English for geocoding\",\n  \"countryCode\": \"ISO 3166-1 alpha-2 country code for the identified location, uppercase, or empty string if unknown\",\n  \"confidence\": \"landmark\" | \"city\" | \"region\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location, written in the user's language\",\n  \"displaySentence\": \"a complete, grammatically natural sentence in the user's language announcing where the photo was taken, with the place name written naturally in that language and woven into the sentence. Empty string if confidence is unknown.\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is clearly not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots of apps or websites, social media posts, food delivery or e-commerce interfaces, video game captures, memes, or any digital interface with visible UI elements — you MUST set confidence to \"unknown\", place to \"unknown\", countryCode to an empty string, method to \"This image is not a real photograph.\" (translated to the user's language), and displaySentence to an empty string. This rule applies ONLY when the image is clearly not a real-world camera photo. ATTENTION : If the image appears to be a real photo but the location cannot be identified, DO NOT SAY it is not a real photograph; instead return \"unknown\" because the location is not identifiable.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, road markings, architecture, culturally specific objects.\n- License plates indicate where a vehicle is registered, not necessarily where the photo was taken. Treat license plates as supporting evidence only when they agree with other independent visible context, such as readable local signage, flags, road markings, architecture, landscape, or country-specific street details. A license plate alone IS NOT ENOUGH to identify a country, city, region, or landmark. If the only meaningful clue is a license plate, return \"unknown\".\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Generic modern architecture (glass facades, clean lines, light wood interiors, minimalist design, contemporary airports, shopping centers, office buildings) is NOT sufficient evidence on its own. These styles are global. Return \"unknown\" for modern buildings unless distinctive non-architectural clues are present (visible signage in a specific language, flags, named branding, identifiable surroundings).\n- Partial views of buildings (close-ups, sections, interiors without clear identifying features) cannot be confidently identified unless they contain a recognisable named element. A glass wall, a staircase, a generic interior — these are not identifiable. Return \"unknown\".\n- Landmark replicas, themed architecture, decorative monuments, mall displays, amusement-park structures, and imitation landmarks are NOT sufficient evidence for the original landmark or any specific city. If a famous-looking structure appears to be a replica or decorative version, return \"unknown\" unless there is independent location evidence such as readable local signage, flags, or uniquely identifiable surrounding features.\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- Spanish-speaking countries can be confused easily: Spain, Mexico, Argentina, Colombia and others share language and some architectural styles. Look for distinguishing details — license plates, flags, peninsular vs Latin American architecture, regional vegetation, or text using country-specific vocabulary.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n- If the image suggests a possible location but the same evidence could reasonably fit another place, return \"unknown\". Only return a location when the visible evidence uniquely supports it or when the combination of clues makes alternatives unlikely.\n\nFormatting rules (for the English \"place\" field):\n- Always separate parts of a location with commas. Never join two place names with just a space. Correct: \"Luxembourg, Luxembourg\", \"Mexico City, Mexico\", \"Panama City, Panama\". Incorrect: \"Luxembourg Luxembourg\", \"Mexico Mexico\".\n- Use commas to separate the place from its region or country in every confidence level.\n\nIdentification rules (for the English \"place\" field):\n- Confidence is fundamentally about how the place appears on a map. A landmark is a pinpoint — something you would mark with a single pin. A city/neighborhood/district is an urban area. A region is an outlined large area — something you would draw as a polygon. Use this mental test whenever you are uncertain.\n- Use \"landmark\" ONLY for a specific, individually named physical object or site with a small footprint on a map: a single building, monument, tower, bridge, statue, station, temple, church, museum, stadium, waterfall, cliff viewpoint, or named attraction. Include city/region and country (e.g. \"Eiffel Tower, Paris, France\", \"Berliner Dom, Berlin, Germany\", \"Cliffs of Moher, County Clare, Ireland\").\n- Do NOT use \"landmark\" for named urban areas. Named districts, business districts, financial districts, neighborhoods, suburbs, quarters, boroughs, city zones, plazas used as districts, and urban redevelopment areas are \"city\", not \"landmark\". Examples: \"La Défense, Île-de-France, France\" is \"city\"; \"Manhattan, New York, USA\" is \"city\"; \"Shibuya, Tokyo, Japan\" is \"city\"; \"Canary Wharf, London, United Kingdom\" is \"city\". Only use \"landmark\" if the image clearly identifies one specific building, monument, station, bridge, tower, statue, or attraction inside that area.\n- If the place name can refer both to an area and to a specific object, choose \"city\" unless the specific object is visually identifiable. For example, \"La Défense\" alone is a district, not a landmark; \"Grande Arche de la Défense, Puteaux, France\" is a landmark.\n- Use \"city\" for any urban area with high certainty: village, town, suburb, neighborhood, district, business district, financial district, quarter, borough, city zone, or city. Include region/state if ambiguous (e.g. \"Portland, Oregon, USA\"). When the city and country share a name, format with a comma between them (e.g. \"Luxembourg, Luxembourg\", \"Singapore, Singapore\", \"Monaco, Monaco\").\n- Use \"region\" for any large named area that covers significant geographic extent rather than a single point: states, provinces, country subdivisions, recognised natural regions (Patagonia, Tuscany, Bavaria, Provence, Cornwall, Sahara), national parks and protected areas (Yellowstone, Serengeti), archipelagos and major islands (Lofoten, Galápagos, Easter Island), mountain ranges, peninsulas, and similar large features. Use this whenever the place is something you would draw on a map as an outlined area rather than a pin.\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n- For locations that span multiple countries (waterfalls, mountains, lakes on borders): pick ONE country to anchor the location — the most photographed side or the side most visible in the image — rather than listing both. E.g. \"Iguazu Falls, Paraná, Brazil\" or \"Iguazu Falls, Misiones, Argentina\" — never \"Iguazu Falls, Argentina/Brazil\". The same applies to any cross-border feature.\n\nGeocodability rules — the \"place\" field will be sent to Nominatim and OpenCage for lookup. Optimize for these geocoders:\n- Use the most common and shortest official name. Not \"The Republic of South Africa\" but \"South Africa\".\n- Preserve official accents and diacritics in Latin-script place names when they are normally used, especially for cities, regions, and countries: \"Liège, Belgium\", not \"Liege, Belgium\"; \"São Luís, Maranhão, Brazil\", not \"Sao Luis, Maranhao, Brazil\"; \"Bogotá\", not \"Bogota\"; \"Málaga\", not \"Malaga\".\n- Drop English-attached descriptors that aren't part of the canonical name: \"Lofoten\" not \"Lofoten Islands\", \"Atacama\" not \"Atacama Desert\", \"Galápagos\" not \"Galápagos Islands\". Use descriptors ONLY when they're part of the official name (e.g., \"Great Barrier Reef\", \"Easter Island\").\n- ALWAYS include the administrative parent (region/state/province) between a natural feature and the country (e.g., \"Lofoten, Nordland, Norway\", not \"Lofoten, Norway\").\n- Never use slashes or \"or\": \"Iguazu Falls, Misiones, Argentina\" not \"Iguazu Falls, Argentina/Brazil\".\n- Use English exonyms only when the English name is genuinely different from the local name, not merely a diacritic-free spelling. Preserve official diacritics in Latin-script names: \"Liège, Belgium\", not \"Liege, Belgium\"; \"São Luís, Maranhão, Brazil\", not \"Sao Luis, Maranhao, Brazil\"; \"Bogotá\", not \"Bogota\"; \"Málaga\", not \"Malaga\". Still use true English exonyms where standard: \"Munich\" not \"München\", \"Florence\" not \"Firenze\", \"Moscow\" not \"Москва\".\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location, in the user's language.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples (shown in English but should be written in the user's language):\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"Road signage in Portuguese combined with the tropical urban landscape points to Brazil.\"\n- If confidence is \"unknown\" and the image appears to be a real photo, set method to a single sentence in the user's language explaining that the location could not be determined from the visible evidence. Do not say the image is not a real photograph unless it clearly is not one.\n\ndisplaySentence rules:\n- The displaySentence must be a complete, grammatically natural sentence in the user's language announcing where the photo was taken. It is shown directly to the user.\n- Write the place name naturally in the user's language inside the sentence: translate country names, region names, and well-known city names; keep proper nouns (specific landmark names, small place names) in their original form when no translation exists.\n- Weave the place name into the sentence according to the grammar of the user's language. Different languages place prepositions, particles, and word order differently — write whatever sounds natural.\n- Examples for the location \"Berliner Dom, Berlin, Germany\":\n  - English: \"This photo was taken at Berliner Dom in Berlin, Germany.\"\n  - French: \"Cette photo a été prise à la Cathédrale de Berlin, à Berlin, en Allemagne.\"\n  - Spanish: \"Esta foto fue tomada en la Catedral de Berlín, en Berlín, Alemania.\"\n  - German: \"Dieses Foto wurde am Berliner Dom in Berlin, Deutschland aufgenommen.\"\n  - Japanese: \"この写真はドイツのベルリンにあるベルリン大聖堂で撮影されました。\"\n  - Arabic: \"تم التقاط هذه الصورة عند كاتدرائية برلين في برلين، ألمانيا.\"\n  - Chinese: \"这张照片拍摄于德国柏林的柏林大教堂。\"\n- If confidence is \"unknown\", set displaySentence to an empty string \"\".\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: is this unmistakably a non-photo image or digital interface? If yes, return \"unknown\", countryCode to an empty string, method to \"This image is not a real photograph.\" translated to the user's language, and displaySentence to \"\".\n- If the image appears to be a camera photo of a real-world scene but the location is not identifiable, return \"unknown\" because the visible evidence is insufficient. Never describe a real-world camera photo as not a real photograph merely because the location cannot be identified.\n- Ask: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the strongest clue is a license plate, return \"unknown\" unless there is other independent visible evidence that supports the same location.\n- If the strongest clue is a famous-looking object that could be a replica, themed decoration, or imitation, do not infer a location from it. Return \"unknown\" unless another independent clue identifies the place.\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n- Verify that method and displaySentence are in the user's specified language. Do not mix languages.\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
+var STOPWORDS = ["the", "and", "of", "de", "mount", "mountain", "volcano", "island", "islands"];
 
 
 
@@ -21,6 +22,8 @@ var locationPolygon = null;
 var currentLang = "en";
 var isSearching = false;
 var scrollHintShown = false;
+var geocodingFellback = false;
+var wikiBlacklisted = 0;
 
 
 
@@ -636,10 +639,38 @@ function closeWikiExcerpt() {
 
 async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
 
+    wikiBlacklisted = 0;
+
     var queries = buildWikiFallbackQueries(aiPlace);
 
     var result = null;
 
+    /*
+    Wikipedia fallback logic:
+
+    If `queries` is null, this is an EXIF-based result, so there is no AI place-name
+    query chain to try. In that case, search Wikipedia directly using the geocoded
+    shortName, then fall back to a coordinate-based Wikipedia geosearch.
+
+    Otherwise, loop through the generated Wikipedia queries:
+    1. Search English Wikipedia with the current query.
+    2. If the query builder added a blacklisted/simplified query, it is handled as
+       part of this same loop. `wikiBlacklisted` marks the index where local/geosearch
+       fallbacks are allowed.
+    3. If an English result is found and the UI language is not English:
+       a. Try to find the translated article title in the current UI language.
+       b. On the first query or the blacklisted/simplified query, also try searching
+          the local-language Wikipedia using the geocoded shortName.
+       c. If that fails, try local-language coordinate geosearch.
+       d. If those local fallbacks fail, keep the original English result.
+    4. If no English result is found:
+       a. Only on the first query or the blacklisted/simplified query, try searching
+          the local-language Wikipedia using the geocoded shortName.
+       b. Then try local-language coordinate geosearch.
+       c. If the UI language is not English, also try English coordinate geosearch,
+          then translate that result if possible.
+    5. If nothing works, continue to the next generated query.
+    */
     if (!queries) {
         result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
         if (!result) result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
@@ -647,7 +678,7 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
         for (var i = 0; i < queries.length; i++) {
             result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
 
-            if (result) {
+            if (result && currentLang != "en") {
                 var translatedTitle = getWikiTitleTranslation(result);
                 if (translatedTitle) {
 
@@ -658,7 +689,8 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
                     }
                 }
 
-                if (i === 0) {
+                if (i === wikiBlacklisted) {
+                    var enResult = result;
 
                     result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
                     if (result) break;
@@ -666,13 +698,14 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
                     result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
                     if (result) break;
 
+                    result = enResult;
                 }
-
-                break;
 
             }
 
-            if (i === 0) {
+            if (result) break;
+
+            if (i === wikiBlacklisted) {
                 result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
                 if (result) break;
 
@@ -699,9 +732,6 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
     if (!result) return;
 
     var text = result.extract;
-    /*if (text.length > 350) {
-        text = text.slice(0, 350).trim() + "...";
-    }*/
 
     document.getElementById("panelWiki").innerHTML =
         "<strong>" + result.title + "</strong><br>" +
@@ -745,7 +775,7 @@ async function getWikiData(query, language, lat, lng, aiConfidence) {
         "https://" + language + ".wikipedia.org/w/api.php?action=query" +
         "&generator=search" +
         "&gsrsearch=" + encodeURIComponent(query) +
-        "&gsrlimit=10" +
+        "&gsrlimit=20" +
         "&prop=extracts|coordinates|info|langlinks" +
         "&exintro=1" +
         "&explaintext=1" +
@@ -780,7 +810,7 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
         if (tokenMatches.length === 0) {
             var firstToken = tokenizePlaceName(query)[0];
             tokenMatches = results.filter(function (r) {
-                return r.title.includes(firstToken) && r.coordinates && r.coordinates[0];
+                return containsTokens(firstToken, r.title) && r.coordinates && r.coordinates[0];
             });
             if (tokenMatches.length > 0) aiConfidence = "landmark"; //looser title match so stricter geographical match
         }
@@ -788,7 +818,7 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
     } else {
         tokenMatches = results.filter(function (r) {
 
-            return containsTokens(query, r.title);
+            return containsTokens(r.title, query);
         });
     }
 
@@ -796,7 +826,11 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
 
     if (lat && lng) {
 
-        var maxDist = (aiConfidence === "country") ? 100 : (aiConfidence === "region") ? 4 : (aiConfidence === "city") ? 0.2 : (aiConfidence === "landmark") ? 0.05 : 0.02;
+        var maxDist = (aiConfidence === "country") ? 100 : (aiConfidence === "region") ? 4 : (aiConfidence === "city") ? 0.4 : (aiConfidence === "landmark") ? 0.1 : 0.02;
+
+        if (geocodingFellback && aiConfidence === "landmark") {
+            maxDist = 5;
+        }
 
         tokenMatches = tokenMatches.filter(function (r) {
             if (!r.coordinates || !r.coordinates[0]) return true;
@@ -829,6 +863,20 @@ function buildWikiFallbackQueries(query) {
 
     queries.push(primary);
 
+    var blacklistedPrimary = tokenizePlaceName(primary)
+        .filter(function (token) {
+            return !STOPWORDS.includes(token);
+        })
+        .join(" ");
+
+    if (
+        blacklistedPrimary &&
+        blacklistedPrimary.toLowerCase() !== primary.toLowerCase()
+    ) {
+        queries.push(blacklistedPrimary);
+        wikiBlacklisted++;
+    }
+
     if (country) {
         queries.push(primary + " " + country);
     }
@@ -854,17 +902,17 @@ function getWikiTitleTranslation(page) {
 
 function showScrollHint() {
     if (window.innerWidth > 768 && window.innerHeight > 500) return;
-    
+
     var panelContent = document.getElementById("panelContent");
     if (panelContent.scrollHeight <= panelContent.clientHeight) return;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    
-    setTimeout(function() {
+
+    setTimeout(function () {
         panelContent.scrollTo({ top: 40, behavior: "smooth" });
     }, 400);
-    
-    setTimeout(function() {
+
+    setTimeout(function () {
         panelContent.scrollTo({ top: 0, behavior: "smooth" });
     }, 1000);
 
@@ -886,7 +934,7 @@ document.getElementById("learnMore").addEventListener("click", function () {
     document.getElementById("panelContent").classList.toggle("scrollable", wikiVisible);
 
     if (wikiVisible) {
-        setTimeout(function() {
+        setTimeout(function () {
             document.getElementById("panelWiki").scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 50);
     }
@@ -1039,6 +1087,9 @@ async function getLocationDataLandmark(queries, aiCountryCode) {
 
     // Strict pass with type filter
     for (var i = 0; i < queries.length; i++) {
+
+        if (i === 2) geocodingFellback = true;
+
         // Try Nominatim
         var nominatimResult = await tryNominatim(queries[i], "landmark", aiCountryCode);
         if (nominatimResult === "error") return null;
@@ -1049,9 +1100,13 @@ async function getLocationDataLandmark(queries, aiCountryCode) {
         if (openCageResult === "error") return null;
         if (openCageResult) return openCageResult;
     }
+    geocodingFellback = false;
 
     // Loose pass without type filter
     for (var i = 0; i < queries.length; i++) {
+
+        if (i === 2) geocodingFellback = true;
+
         // Try Nominatim
         var nominatimResult = await tryNominatim(queries[i], null, aiCountryCode);
         if (nominatimResult === "error") return null;
@@ -1063,6 +1118,8 @@ async function getLocationDataLandmark(queries, aiCountryCode) {
         if (openCageResult) return openCageResult;
     }
 
+    geocodingFellback = false;
+
     return null;
 
 }
@@ -1071,31 +1128,47 @@ async function getLocationDataAreas(queries, aiConfidence, aiCountryCode) {
 
     // Strict Nominatim pass with type filter
     for (var i = 0; i < queries.length; i++) {
+
+        if (i === 2) geocodingFellback = true;
+
         var nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
         if (nominatimResult === "error") return null;
         if (nominatimResult) return nominatimResult;
     }
+    geocodingFellback = false;
 
     // Strict OpenCage pass with type filter
     for (var j = 0; j < queries.length; j++) {
+
+        if (i === 2) geocodingFellback = true;
+
         var openCageResult = await tryOpenCage(queries[j], aiConfidence, aiCountryCode);
         if (openCageResult === "error") return null;
         if (openCageResult) return openCageResult;
     }
+    geocodingFellback = false;
 
     // Loose Nominatim pass without type filter
     for (var k = 0; k < queries.length; k++) {
+
+        if (i === 2) geocodingFellback = true;
+
         var nominatimResult = await tryNominatim(queries[k], null, aiCountryCode);
         if (nominatimResult === "error") return null;
         if (nominatimResult) return nominatimResult;
     }
+    geocodingFellback = false;
 
     // Loose OpenCage pass without type filter
     for (var l = 0; l < queries.length; l++) {
+
+        if (i === 2) geocodingFellback = true;
+
         var openCageResult = await tryOpenCage(queries[l], null, aiCountryCode);
         if (openCageResult === "error") return null;
         if (openCageResult) return openCageResult;
     }
+    geocodingFellback = false;
 
     return null;
 }
@@ -1324,6 +1397,20 @@ function generateFallbackQueries(aiPlace) {
 
     var parts = cleaned.split(",").map(p => p.trim());
     var queries = [cleaned];
+
+    var blacklisted = cleaned.toLowerCase();
+    STOPWORDS.forEach(function (word) {
+        var regex = new RegExp("\\b" + word + "\\b", "gi");
+        blacklisted = blacklisted.replace(regex, " ");
+    });
+    blacklisted = blacklisted.replace(/\s+/g, " ").trim();
+
+    if (
+        blacklisted &&
+        blacklisted.toLowerCase() !== cleaned.toLowerCase()
+    ) {
+        queries.push(blacklisted);
+    }
 
     for (var skip = 1; skip < parts.length - 1; skip++) {
         var trimmed = [parts[0]].concat(parts.slice(skip + 1));
@@ -1646,6 +1733,8 @@ function getPreferredTypes(confidence) {
 }
 
 async function placeMarkerFromAI(image, photoHtml) {
+
+    geocodingFellback = false;
 
     document.getElementById("welcome").style.display = "none";
 
