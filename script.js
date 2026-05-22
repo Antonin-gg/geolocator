@@ -486,6 +486,8 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     currentShortName = shortName;
     currentIsAI = isAI;
 
+    document.getElementById("panelContent").scrollTop = 0;  // ← add this
+
     if (photoMarker) photoMarker.closePopup();
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
@@ -560,6 +562,8 @@ function closePanel() {
         map.invalidateSize();
         document.getElementById("welcome").style.display = "block";
     }, 300);
+
+    closeWikiExcerpt();
 }
 
 function minimizePanel() {
@@ -587,6 +591,7 @@ function minimizePanel() {
 }
 
 function closeStrip() {
+
     map.stop();
 
     document.getElementById("resultStrip").style.display = "none";
@@ -607,6 +612,240 @@ function closeStrip() {
     }
 
     document.getElementById("welcome").style.display = "block";
+
+    closeWikiExcerpt();
+}
+
+function closeWikiExcerpt() {
+
+    if (document.getElementById("learnMore").style.display === "inline-block" ||
+        document.getElementById("learnMore").style.display === "block") {
+        if (!document.getElementById("panelWiki").classList.contains("hidden-wiki")) {
+            document.getElementById("panelWiki").classList.add("hidden-wiki");
+            setToggleArrow(document.getElementById("learnMore"), false);
+        }
+        document.getElementById("panelWiki").innerHTML = "";
+        document.getElementById("learnMore").style.display = "none"
+    }
+
+}
+
+async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
+
+    var queries = buildWikiFallbackQueries(aiPlace);
+
+    var result = null;
+
+    if (!queries) {
+        result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
+        if (!result) result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
+    } else {
+        for (var i = 0; i < queries.length; i++) {
+            result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
+
+            if (result) {
+                var translatedTitle = getWikiTitleTranslation(result);
+                if (translatedTitle) {
+
+                    var translatedResult = await getWikiData(translatedTitle, currentLang, lat, lng, aiConfidence) || result;
+                    if (translatedResult != result) {
+                        result = translatedResult;
+                        break;
+                    }
+                }
+
+                if (i === 0) {
+
+                    result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
+                    if (result) break;
+
+                    result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
+                    if (result) break;
+
+                }
+
+                break;
+
+            }
+
+            if (i === 0) {
+                result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
+                if (result) break;
+
+                result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
+                if (result) break;
+
+                if (currentLang != "en") {
+                    result = await wikiGeoSearch(geocodedPlace, "en", lat, lng, aiConfidence);
+                    if (result) {
+                        var geoTranslatedTitle = getWikiTitleTranslation(result);
+                        if (geoTranslatedTitle) {
+
+                            result = await getWikiData(geoTranslatedTitle, currentLang, lat, lng, aiConfidence) || result;
+
+                        }
+                    }
+                    if (result) break;
+                }
+            }
+
+        }
+    }
+
+    if (!result) return;
+
+    var text = result.extract;
+    /*if (text.length > 350) {
+        text = text.slice(0, 350).trim() + "...";
+    }*/
+
+    document.getElementById("panelWiki").innerHTML =
+        "<strong>" + result.title + "</strong><br>" +
+        text + " " +
+        (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + translate("moreInformation") + '</a>' : "");
+
+    document.getElementById("learnMore").style.display = "block";
+
+}
+
+async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
+    var url =
+        "https://" + language + ".wikipedia.org/w/api.php?action=query" +
+        "&generator=geosearch" +
+        "&ggscoord=" + encodeURIComponent(lat + "|" + lng) +
+        "&ggsradius=10000" +
+        "&ggslimit=20" +
+        "&prop=extracts|coordinates|info|langlinks" +
+        "&exintro=1" +
+        "&explaintext=1" +
+        "&inprop=url" +
+        "&lllimit=500" +
+        "&format=json" +
+        "&origin=*";
+
+    var response = await fetch(url);
+
+    if (!response.ok) return null;
+
+    var data = await response.json();
+
+    var pages = Object.values((data.query && data.query.pages) || {});
+    if (pages.length === 0) return null;
+
+    return pickBestWikiResult(pages, query, lat, lng, aiConfidence);
+}
+
+async function getWikiData(query, language, lat, lng, aiConfidence) {
+
+    var url =
+        "https://" + language + ".wikipedia.org/w/api.php?action=query" +
+        "&generator=search" +
+        "&gsrsearch=" + encodeURIComponent(query) +
+        "&gsrlimit=10" +
+        "&prop=extracts|coordinates|info|langlinks" +
+        "&exintro=1" +
+        "&explaintext=1" +
+        "&inprop=url" +
+        "&lllimit=500" +
+        "&format=json" +
+        "&origin=*";
+
+    var response = await fetch(url);
+
+    if (!response.ok) return null;
+
+    var data = await response.json();
+
+    var pages = Object.values((data.query && data.query.pages) || {});
+    if (pages.length === 0) return null;
+
+    return pickBestWikiResult(pages, query, lat, lng, aiConfidence);
+}
+
+function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
+
+    var tokenMatches = {};
+
+    if (aiConfidence != "country") {
+
+        tokenMatches = results.filter(function (r) {
+
+            return containsTokens(query, r.title) && r.coordinates && r.coordinates[0];
+        });
+
+        if (tokenMatches.length === 0) {
+            var firstToken = tokenizePlaceName(query)[0];
+            tokenMatches = results.filter(function (r) {
+                return r.title.includes(firstToken) && r.coordinates && r.coordinates[0];
+            });
+            if (tokenMatches.length > 0) aiConfidence = "landmark"; //looser title match so stricter geographical match
+        }
+
+    } else {
+        tokenMatches = results.filter(function (r) {
+
+            return containsTokens(query, r.title);
+        });
+    }
+
+    if (tokenMatches.length === 0) return null;
+
+    if (lat && lng) {
+
+        var maxDist = (aiConfidence === "country") ? 100 : (aiConfidence === "region") ? 4 : (aiConfidence === "city") ? 0.2 : (aiConfidence === "landmark") ? 0.05 : 0.02;
+
+        tokenMatches = tokenMatches.filter(function (r) {
+            if (!r.coordinates || !r.coordinates[0]) return true;
+            var wikiLat = r.coordinates[0].lat;
+            var wikiLng = r.coordinates[0].lon;
+
+            if (!wikiLat || !wikiLng) return true;
+
+            var distWiki = squaredDistance(lat, lng, wikiLat, wikiLng);
+            return distWiki < maxDist;
+        });
+
+    }
+
+    return tokenMatches[0] || null;
+}
+
+function buildWikiFallbackQueries(query) {
+
+    if (!query) return null;
+
+    var cleaned = query.replace(/(\w+)\/(\w+)/g, "$1");
+    var parts = cleaned.split(",").map(p => p.trim()).filter(Boolean);
+
+    var primary = parts[0] || cleaned;
+    var country = parts.length > 1 ? parts[parts.length - 1] : null;
+    var admin = parts.length > 2 ? parts[1] : null;
+
+    var queries = [];
+
+    queries.push(primary);
+
+    if (country) {
+        queries.push(primary + " " + country);
+    }
+
+    if (admin) {
+        queries.push(primary + " " + admin);
+    }
+
+    queries.push(cleaned);
+
+    return queries;
+}
+
+function getWikiTitleTranslation(page) {
+    if (!page || !page.langlinks) return null;
+
+    var match = page.langlinks.find(function (link) {
+        return link.lang === currentLang;
+    });
+
+    return match ? match["*"] : null;
 }
 
 document.getElementById("panelClose").addEventListener("click", closePanel);
@@ -614,6 +853,11 @@ document.getElementById("stripClose").addEventListener("click", closeStrip);
 document.getElementById("panelToggle").addEventListener("click", minimizePanel);
 document.getElementById("stripToggle").addEventListener("click", function () {
     openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
+});
+document.getElementById("learnMore").addEventListener("click", function () {
+    document.getElementById("panelWiki").classList.toggle("hidden-wiki");
+    var expanded = this.textContent.trim().endsWith("▼");
+    setToggleArrow(this, expanded);
 });
 
 
@@ -731,12 +975,15 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         locationPolygon = null;
     }
 
+    await buildWikiExcerpt(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city");
+
     hideSearching();
     document.getElementById("panelPlaceName").classList.remove("loading");
     document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
     document.getElementById("panelSearchingGlobe").style.display = "none";
 
     openPanel(placeName, photoHtml, translate("methodGPS"), shortName, false);
+
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
     map.flyTo([photoCoordinates.latitude, photoCoordinates.longitude], 13);
@@ -1254,6 +1501,7 @@ function tokenizePlaceName(value) {
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "") // removes accents
+        .replace(/[()]/g, " ")           // removes only parentheses
         .replace(/['’ʻ`´]/g, "")         // removes apostrophes
         .replace(/[^\p{L}\p{N}]+/gu, " ")
         .split(/\s+/)
@@ -1411,6 +1659,8 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         var location = await getLocationData(queryLocation, aiResult.confidence, aiResult.countryCode);
 
+        await buildWikiExcerpt(aiResult.place, location.shortName, location.lat, location.lng, aiResult.confidence);
+
         hideSearching();
 
         document.getElementById("panelPlaceName").classList.remove("loading");
@@ -1466,6 +1716,8 @@ function showPanelLoading(photoHtml) {
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
+
+    closeWikiExcerpt();
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
     document.getElementById("panelPlaceName").innerHTML = "<strong> " + translate("searching") + "</strong>";
