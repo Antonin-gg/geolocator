@@ -495,7 +495,7 @@ function lockPanelPhotoSize() {
             if ((window.innerWidth <= 768 && window.innerHeight > window.innerWidth) ||
                 (window.innerHeight <= 500 && window.innerWidth > window.innerHeight)) {
 
-                reservedResultHeight += 80; //panelMethod likely at least one more line on mobile
+                reservedResultHeight += 140; //panelMethod likely at least one more line on mobile
             }
         }
 
