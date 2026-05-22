@@ -16,6 +16,7 @@ var TRANSLATIONS = {
         photoTakenIn: "This photo was taken in {place}",
         methodGPS: "Location identified using GPS coordinates from photo metadata.",
         moreInformation: "Learn more",
+        readMore: "Read more",
     },
 
     ar: {
@@ -777,6 +778,50 @@ var TRANSLATIONS = {
         methodGPS: "使用照片元数据中的 GPS 坐标识别了位置。",
         moreInformation: "了解更多",
     }
+};
+
+var READ_MORE_TRANSLATIONS = {
+    en: "Read more",
+    ar: "اقرأ المزيد",
+    bg: "Прочетете още",
+    bn: "আরও পড়ুন",
+    cs: "Číst dál",
+    da: "Læs mere",
+    de: "Mehr lesen",
+    el: "Διαβάστε περισσότερα",
+    es: "Leer más",
+    et: "Loe edasi",
+    fa: "بیشتر بخوانید",
+    fi: "Lue lisää",
+    fr: "Lire la suite",
+    he: "קרא עוד",
+    hi: "और पढ़ें",
+    hr: "Pročitajte više",
+    hu: "Tovább olvasom",
+    id: "Baca selengkapnya",
+    is: "Lesa meira",
+    it: "Leggi di più",
+    ja: "続きを読む",
+    ko: "더 읽기",
+    lt: "Skaityti daugiau",
+    lv: "Lasīt vairāk",
+    nl: "Meer lezen",
+    no: "Les mer",
+    pl: "Czytaj więcej",
+    pt: "Ler mais",
+    ro: "Citește mai mult",
+    ru: "Читать далее",
+    sk: "Čítať ďalej",
+    sl: "Preberi več",
+    sr: "Прочитај више",
+    sv: "Läs mer",
+    ta: "மேலும் படிக்க",
+    th: "อ่านเพิ่มเติม",
+    tr: "Devamını oku",
+    uk: "Читати далі",
+    ur: "مزید پڑھیں",
+    vi: "Đọc thêm",
+    zh: "继续阅读"
 };
 
 var languageInstructions = {
