@@ -22,8 +22,10 @@ var locationPolygon = null;
 var currentLang = "en";
 var isSearching = false;
 var scrollHintShown = false;
+var wikiIsOpen = false;
 var geocodingFellback = false;
 var wikiBlacklisted = 0;
+var lockedPhotoHeight = null;
 
 
 
@@ -444,6 +446,58 @@ function getPolygonColor() {
     return "#4a90d9";
 }
 
+function lockPanelPhotoSize() {
+    if (wikiIsOpen) return;
+
+    var panelContent = document.getElementById("panelContent");
+    var panelPhoto = document.getElementById("panelPhoto");
+    var img = panelPhoto.querySelector("img");
+
+    if (!img) return;
+
+    panelContent.classList.remove("scrollable");
+    panelPhoto.classList.remove("locked");
+    img.style.removeProperty("max-height");
+
+    requestAnimationFrame(function () {
+        var minPhotoHeight = 160;
+
+        var contentHeight = panelContent.clientHeight;
+        var usedHeight = 0;
+
+        Array.from(panelContent.children).forEach(function (child) {
+            if (child !== panelPhoto && child.id !== "panelWiki") {
+                usedHeight += child.offsetHeight;
+            }
+        });
+
+        var gap = 14;
+        var visibleChildren = Array.from(panelContent.children).filter(function (child) {
+            return child !== panelPhoto &&
+                child.id !== "panelWiki" &&
+                getComputedStyle(child).display !== "none";
+        });
+
+        visibleChildren.forEach(function (child) {
+            usedHeight += child.offsetHeight;
+        });
+
+        usedHeight += Math.max(0, visibleChildren.length) * gap;
+
+        var availablePhotoHeight = contentHeight - usedHeight;
+
+        if (availablePhotoHeight < minPhotoHeight) {
+            availablePhotoHeight = minPhotoHeight;
+            panelContent.classList.add("scrollable");
+        }
+
+        lockedPhotoHeight = availablePhotoHeight;
+        img.style.maxHeight = lockedPhotoHeight + "px";
+
+        panelPhoto.classList.add("locked");
+    });
+}
+
 var resizeTimeout;
 
 window.addEventListener("resize", function () {
@@ -490,11 +544,17 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     currentShortName = shortName;
     currentIsAI = isAI;
 
-    document.getElementById("panelContent").scrollTop = 0;  // ← add this
+    document.getElementById("panelContent").scrollTop = 0;
 
     if (photoMarker) photoMarker.closePopup();
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
+
+    if (wikiIsOpen && lockedPhotoHeight) {
+        var img = document.querySelector("#panelPhoto img");
+        if (img) img.style.maxHeight = lockedPhotoHeight + "px";
+    }
+
     if (!isAI) {
         var sentence = translate("photoTakenIn").replace("{place}", placeName.replace(shortName, "<strong>" + shortName + "</strong>"));
         document.getElementById("panelPlaceName").innerHTML = sentence;
@@ -512,6 +572,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
         }
     }
     document.getElementById("panelMethod").textContent = method;
+
     document.getElementById("resultPanel").classList.add('open');
     document.getElementById("map").classList.add('panel-open');
     document.getElementById("wrapper").classList.add('panel-open');
@@ -523,7 +584,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     document.getElementById("welcome").style.display = "none";
 
-    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+    if (window.innerWidth <= 768 || window.innerHeight <= 500) {
 
         document.getElementById("imageInputLabel").style.display = "none";
         document.getElementById("imageInputLabelPanel").style.display = "flex";
@@ -533,6 +594,17 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
         document.getElementById("imageInputLabel").style.display = "flex";
         document.getElementById("imageInputLabelPanel").style.display = "none";
 
+    }
+
+    if (wikiIsOpen) {
+        document.getElementById("panelWiki").classList.remove("hidden-wiki");
+        document.getElementById("panelContent").classList.add("scrollable");
+        setToggleArrow(document.getElementById("learnMore"), true);
+    } else {
+        document.getElementById("panelWiki").classList.add("hidden-wiki");
+        document.getElementById("panelContent").classList.remove("scrollable");
+        setToggleArrow(document.getElementById("learnMore"), false);
+        setTimeout(lockPanelPhotoSize, 50);
     }
 
     setTimeout(function () {
@@ -559,10 +631,8 @@ function closePanel() {
         locationPolygon = null;
     }
 
-    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
-        document.getElementById("imageInputLabel").style.display = "flex";
-        document.getElementById("imageInputLabelPanel").style.display = "none";
-    }
+    document.getElementById("imageInputLabel").style.display = "flex";
+    document.getElementById("imageInputLabelPanel").style.display = "none";
 
     setTimeout(function () {
         map.invalidateSize();
@@ -612,10 +682,8 @@ function closeStrip() {
         locationPolygon = null;
     }
 
-    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
-        document.getElementById("imageInputLabel").style.display = "flex";
-        document.getElementById("imageInputLabelPanel").style.display = "none";
-    }
+    document.getElementById("imageInputLabel").style.display = "flex";
+    document.getElementById("imageInputLabelPanel").style.display = "none";
 
     document.getElementById("welcome").style.display = "block";
 
@@ -797,55 +865,65 @@ async function getWikiData(query, language, lat, lng, aiConfidence) {
 }
 
 function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
+    var scored = results.map(function (r, index) {
+        var score = wikiTitleScore(r.title || "", query);
 
-    var tokenMatches = {};
+        if (lat && lng && r.coordinates && r.coordinates[0]) {
+            var dist = squaredDistance(lat, lng, r.coordinates[0].lat, r.coordinates[0].lon);
 
-    if (aiConfidence != "country") {
+            var maxDist =
+                aiConfidence === "country" ? 100 :
+                    aiConfidence === "region" ? 4 :
+                        aiConfidence === "city" ? 1 :
+                            aiConfidence === "landmark" ? 0.1 :
+                                0.02;
 
-        tokenMatches = results.filter(function (r) {
-
-            return containsTokens(query, r.title) && r.coordinates && r.coordinates[0];
-        });
-
-        if (tokenMatches.length === 0) {
-            var firstToken = tokenizePlaceName(query)[0];
-            tokenMatches = results.filter(function (r) {
-                return containsTokens(firstToken, r.title) && r.coordinates && r.coordinates[0];
-            });
-            if (tokenMatches.length > 0) aiConfidence = "landmark"; //looser title match so stricter geographical match
+            if (dist < maxDist) score += 20;
+            else score -= 60;
         }
 
-    } else {
-        tokenMatches = results.filter(function (r) {
+        score -= index * 2;
 
-            return containsTokens(r.title, query);
-        });
+        return {
+            page: r,
+            score: score,
+            index: index
+        };
+    }).filter(function (item) {
+        return item.score >= 50;
+    });
+
+    scored.sort(function (a, b) {
+        return b.score - a.score || a.index - b.index;
+    });
+
+    return scored[0] ? scored[0].page : null;
+}
+
+function wikiTitleScore(title, query) {
+    var primaryQuery = query.split(",")[0].trim();
+    var primaryTokens = tokenizePlaceName(primaryQuery);
+    var titleTokens = tokenizePlaceName(title);
+
+    if (primaryTokens.length === 0 || titleTokens.length === 0) return -100;
+
+    if (containsTokens(primaryQuery, title) && containsTokens(title, primaryQuery)) {
+        return 100;
     }
 
-    if (tokenMatches.length === 0) return null;
+    var containsPrimaryTokens = primaryTokens.every(function (token) {
+        return titleTokens.includes(token);
+    });
 
-    if (lat && lng) {
-
-        var maxDist = (aiConfidence === "country") ? 100 : (aiConfidence === "region") ? 4 : (aiConfidence === "city") ? 0.4 : (aiConfidence === "landmark") ? 0.1 : 0.02;
-
-        if (geocodingFellback && aiConfidence === "landmark") {
-            maxDist = 5;
-        }
-
-        tokenMatches = tokenMatches.filter(function (r) {
-            if (!r.coordinates || !r.coordinates[0]) return true;
-            var wikiLat = r.coordinates[0].lat;
-            var wikiLng = r.coordinates[0].lon;
-
-            if (!wikiLat || !wikiLng) return true;
-
-            var distWiki = squaredDistance(lat, lng, wikiLat, wikiLng);
-            return distWiki < maxDist;
+    if (containsPrimaryTokens) {
+        var extraTitleTokens = titleTokens.filter(function (token) {
+            return !primaryTokens.includes(token);
         });
 
+        return 80 - extraTitleTokens.length * 15;
     }
 
-    return tokenMatches[0] || null;
+    return -100;
 }
 
 function buildWikiFallbackQueries(query) {
@@ -930,10 +1008,10 @@ document.getElementById("learnMore").addEventListener("click", function () {
     var expanded = this.textContent.trim().endsWith("▼");
     setToggleArrow(this, expanded);
 
-    var wikiVisible = !document.getElementById("panelWiki").classList.contains("hidden-wiki");
-    document.getElementById("panelContent").classList.toggle("scrollable", wikiVisible);
+    wikiIsOpen = !document.getElementById("panelWiki").classList.contains("hidden-wiki");
+    document.getElementById("panelContent").classList.toggle("scrollable", wikiIsOpen);
 
-    if (wikiVisible) {
+    if (wikiIsOpen) {
         setTimeout(function () {
             document.getElementById("panelWiki").scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 50);
