@@ -536,7 +536,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
         map.invalidateSize();
     }, 300);
 
-    hintScrollable();
+    showScrollHint();
 }
 
 function closePanel() {
