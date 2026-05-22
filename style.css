@@ -29,7 +29,7 @@ body {
     z-index: 1001;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(248, 247, 244, 0.96);
     font-family: 'DM Sans', sans-serif;
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
     border-radius: 0;
@@ -145,6 +145,10 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 #stripToggle {
     width: 28px;
     height: 28px;
+    min-width: 32px;
+    min-height: 32px;
+    flex: 0 0 32px;
+    border-radius: 50%;
 }
 
 #stripClose {
@@ -226,6 +230,10 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 
 #imageInputLabelPanel {
     display: none;
+    font-weight: 800;
+    text-decoration: underline;
+    font-size: 1.15rem;
+    transition: left 0.3s ease, top 0.3s ease, transform 0.3s ease;
 }
 
 #resultStrip {
@@ -251,6 +259,9 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     overflow: hidden;
     text-align: center;
     min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 #learnMore {
@@ -433,6 +444,7 @@ body.dark #toggleTheme:hover {
 #languageOptions {
     max-height: 175px;
     overflow-y: auto;
+    overflow-x: hidden;
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -589,6 +601,7 @@ body.dark #toggleTheme:hover {
         height: 50dvh;
         transform: translateY(100%);
         border-radius: 0;
+        padding: 60px 16px max(5px, env(safe-area-inset-bottom)) 16px;
     }
 
     #resultPanel.open {
@@ -648,6 +661,10 @@ body.dark #toggleTheme:hover {
         width: 100%;
     }
 
+    #imageInputLabelPanel {
+        top: 76px;
+        left: 9.5px;
+    }
 }
 
 @media (max-width: 768px),
@@ -671,10 +688,8 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         position: fixed;
-        top: 88px;
-        left: 14px;
-        width: 34px;
-        height: 36px;
+        width: 30px;
+        height: 32px;
         padding: 0;
         display: none;
         align-items: center;
@@ -706,5 +721,14 @@ body.dark #toggleTheme:hover {
 
     #stripPlaceName {
         display: none;
+    }
+
+    #imageInputLabelPanel {
+        top: 76px;
+        left: calc(30vw + 9.5px);
+    }
+
+    body.strip-open #imageInputLabelPanel {
+        left: 9.5px;
     }
 }
