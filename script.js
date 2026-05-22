@@ -625,7 +625,8 @@ function closeWikiExcerpt() {
             setToggleArrow(document.getElementById("learnMore"), false);
         }
         document.getElementById("panelWiki").innerHTML = "";
-        document.getElementById("learnMore").style.display = "none"
+        document.getElementById("learnMore").style.display = "none";
+        document.getElementById("panelContent").classList.remove("scrollable");
     }
 
 }
@@ -858,6 +859,15 @@ document.getElementById("learnMore").addEventListener("click", function () {
     document.getElementById("panelWiki").classList.toggle("hidden-wiki");
     var expanded = this.textContent.trim().endsWith("▼");
     setToggleArrow(this, expanded);
+
+    var wikiVisible = !document.getElementById("panelWiki").classList.contains("hidden-wiki");
+    document.getElementById("panelContent").classList.toggle("scrollable", wikiVisible);
+
+    if (wikiVisible) {
+        setTimeout(function() {
+            document.getElementById("panelWiki").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 50);
+    }
 });
 
 
