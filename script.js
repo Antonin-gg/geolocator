@@ -1999,6 +1999,7 @@ async function locateImage(input) {
 
     var image = input.files[0];
 
+    if (!file) return;
     if (!image || !image.type.startsWith('image/')) {
         showError("Please upload an image file.");
         return;
