@@ -824,7 +824,7 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
     document.getElementById("panelWiki").innerHTML =
         "<strong>" + result.title + "</strong><br>" +
         text + " " +
-        (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + translate("moreInformation") + '</a>' : "");
+        (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + READ_MORE_TRANSLATIONS[currentLang] + '</a>' : "");
 
     document.getElementById("learnMore").style.display = "block";
 
