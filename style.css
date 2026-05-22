@@ -37,7 +37,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 #resultPanel.open {
@@ -50,10 +50,29 @@ body {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     gap: 14px;
     width: 100%;
     max-width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;  /* prevent horizontal scrollbar showing up */
+    -webkit-overflow-scrolling: touch;  /* smooth scrolling on iOS */
+}
+
+#panelContent::-webkit-scrollbar {
+    width: 8px;
+}
+
+#panelContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#panelContent::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+body.dark #panelContent::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 #panelClose {
@@ -148,6 +167,13 @@ body {
     overflow: hidden;
 }
 
+#panelPhoto,
+#panelMethod,
+#panelWiki {
+    flex-shrink: 0;
+    width: 100%;
+}
+
 #panelPhoto img {
     width: 100%;
     height: auto;
@@ -217,6 +243,42 @@ body {
     overflow: hidden;
     text-align: center;
     min-width: 0;
+}
+
+#learnMore {
+    display: none;
+    margin-top: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: inherit;
+    width: 200px;
+    margin: 0 auto;
+}
+
+#panelWiki {
+    display: block;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    line-height: 1.5;
+    border-left: 3px solid rgba(0, 0, 0, 0.2);
+    padding-left: 12px;
+    margin-top: 8px;
+}
+
+#panelWiki a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+#panelWiki a:hover {
+    opacity: 0.7;
+}
+
+body.dark #panelWiki {
+    color: #f0f0f0;
+    border-left-color: rgba(255, 255, 255, 0.25);
 }
 
 #imageInput {
@@ -401,6 +463,10 @@ body.dark #toggleTheme:hover {
 }
 
 .hidden-language {
+    display: none;
+}
+
+#panelWiki.hidden-wiki {
     display: none;
 }
 
