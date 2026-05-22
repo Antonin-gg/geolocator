@@ -891,4 +891,6 @@ function changeLanguage() {
 
     document.getElementById("showToggleLanguage").innerHTML = translate("language") + " ▼";
 
+    document.getElementById("learnMore").innerHTML = translate("moreInformation") + " ▼";
+
 }
