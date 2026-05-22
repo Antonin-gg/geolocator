@@ -877,8 +877,6 @@ function changeLanguage() {
 
     document.getElementById("imageInputLabel").textContent = translate("upload");
 
-    document.getElementById("imageInputLabelPanel").textContent = translate("upload");
-
     document.getElementById("showToggleView").innerHTML = translate("view") + " ▼";
 
     if (!isSatellite) document.getElementById("toggleView").textContent = translate("satellite");
