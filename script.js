@@ -20,6 +20,7 @@ var currentIsAI = false;
 var locationPolygon = null;
 var currentLang = "en";
 var isSearching = false;
+var scrollHintShown = false;
 
 
 
@@ -534,6 +535,8 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     setTimeout(function () {
         map.invalidateSize();
     }, 300);
+
+    hintScrollable();
 }
 
 function closePanel() {
@@ -847,6 +850,25 @@ function getWikiTitleTranslation(page) {
     });
 
     return match ? match["*"] : null;
+}
+
+function showScrollHint() {
+    if (window.innerWidth > 768 && window.innerHeight > 500) return;
+    
+    var panelContent = document.getElementById("panelContent");
+    if (panelContent.scrollHeight <= panelContent.clientHeight) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    
+    setTimeout(function() {
+        panelContent.scrollTo({ top: 40, behavior: "smooth" });
+    }, 400);
+    
+    setTimeout(function() {
+        panelContent.scrollTo({ top: 0, behavior: "smooth" });
+    }, 1000);
+
+    scrollHintShown = true;
 }
 
 document.getElementById("panelClose").addEventListener("click", closePanel);
@@ -1766,6 +1788,7 @@ async function rerunSearch() {
 
     showPanelLoading(currentPhotoHtml);
     isSearching = true;
+    scrollHintShown = false;
 
     var photoLatLng = await exifr.gps(currentImageFile);
 
@@ -1786,6 +1809,8 @@ async function locateImage(input) {
         showError("Please upload an image file.");
         return;
     }
+
+    scrollHintShown = false;
 
     currentImageFile = image;
 
