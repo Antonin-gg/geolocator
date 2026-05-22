@@ -371,22 +371,30 @@ function setToggleArrow(element, expanded) {
     element.textContent = text + (expanded ? " ▲" : " ▼");
 }
 
-map.on("click", function () {
-    if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
-        document.getElementById("toggleView").classList.add("hidden-view");
-        setToggleArrow(document.getElementById("showToggleView"), false);
-        document.getElementById("showToggleView").classList.remove("dropdown-open");
+document.addEventListener("click", function (e) {
+    var clickedInsideToggles = e.target.closest("#wrapperToggles");
+
+    if (!clickedInsideToggles) {
+        if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
+            document.getElementById("toggleView").classList.add("hidden-view");
+            setToggleArrow(document.getElementById("showToggleView"), false);
+            document.getElementById("showToggleView").classList.remove("dropdown-open");
+        }
+        if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
+            document.getElementById("toggleTheme").classList.add("hidden-theme");
+            setToggleArrow(document.getElementById("showToggleTheme"), false);
+            document.getElementById("showToggleTheme").classList.remove("dropdown-open");
+        }
+        if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
+            document.getElementById("languageOptions").classList.add("hidden-language");
+            setToggleArrow(document.getElementById("showToggleLanguage"), false);
+            document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+        }
     }
-    if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
-        document.getElementById("toggleTheme").classList.add("hidden-theme");
-        setToggleArrow(document.getElementById("showToggleTheme"), false);
-        document.getElementById("showToggleTheme").classList.remove("dropdown-open");
-    }
-    if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
-        document.getElementById("languageOptions").classList.add("hidden-language");
-        setToggleArrow(document.getElementById("showToggleLanguage"), false);
-        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
-    }
+});
+
+document.getElementById("wrapperToggles").addEventListener("click", function (e) {
+    e.stopPropagation();
 });
 
 
