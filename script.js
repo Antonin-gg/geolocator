@@ -454,8 +454,8 @@ function getPolygonColor() {
     return "#4a90d9";
 }
 
-function lockPanelPhotoSize() {
-    if (wikiIsOpen) return;
+function lockPanelPhotoSize(force) {
+    if (wikiIsOpen && !force) return;
 
     var panelContent = document.getElementById("panelContent");
     var panelPhoto = document.getElementById("panelPhoto");
@@ -525,6 +525,14 @@ window.addEventListener("resize", function () {
 
             openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
 
+            setTimeout(function () {
+                lockPanelPhotoSize(true);
+
+                if (wikiIsOpen) {
+                    document.getElementById("panelContent").classList.add("scrollable");
+                }
+            }, 80);
+
         }
 
         else if (document.getElementById("resultStrip").style.display === "flex") {
@@ -567,7 +575,14 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     if (wikiIsOpen && lockedPhotoHeight) {
         var img = document.querySelector("#panelPhoto img");
-        if (img) img.style.maxHeight = lockedPhotoHeight + "px";
+        if (img) {
+            img.style.maxHeight = lockedPhotoHeight + "px";
+            img.style.width = "100%";
+            img.style.height = "auto";
+            img.style.maxWidth = "100%";
+            img.style.objectFit = "contain";
+            img.style.display = "block";
+        }
     }
 
     if (!isAI) {
