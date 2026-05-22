@@ -121,7 +121,7 @@ function toLightTheme() {
     document.querySelector(".leaflet-control-attribution").style.background = "rgba(255,255,255,0.4)";
     document.querySelector(".leaflet-control-attribution").style.color = "#000";
 
-    document.getElementById("resultPanel").style.background = "rgba(255, 255, 255, 0.95)";
+    document.getElementById("resultPanel").style.background = "rgba(248, 247, 244, 0.96)";
     document.getElementById("resultPanel").style.color = "#000000";
     document.getElementById("panelMethod").style.color = "#666666";
     document.getElementById("panelClose").style.background = "rgba(0,0,0,0.08)";
@@ -484,7 +484,20 @@ function lockPanelPhotoSize() {
 
         usedHeight += Math.max(0, visibleChildren.length) * gap;
 
-        var availablePhotoHeight = contentHeight - usedHeight;
+        var reservedResultHeight = 0;
+
+        if (isSearching) {
+            reservedResultHeight += 24; // panelMethod likely one line
+            reservedResultHeight += 24; // learnMore button
+            reservedResultHeight += 28; // two gaps, roughly 14px each
+            if ((window.innerWidth <= 768 && window.innerHeight > window.innerWidth) ||
+                (window.innerHeight <= 500 && window.innerWidth > window.innerHeight)) {
+
+                reservedResultHeight += 36; //panelMethod likely at least one more line on mobile
+            }
+        }
+
+        var availablePhotoHeight = contentHeight - usedHeight - reservedResultHeight;
 
         if (availablePhotoHeight < minPhotoHeight) {
             availablePhotoHeight = minPhotoHeight;
@@ -514,8 +527,8 @@ window.addEventListener("resize", function () {
 
         else if (document.getElementById("resultStrip").style.display === "flex") {
 
-            if (window.innerWidth <= 768 &&
-                window.innerHeight > window.innerWidth) {
+            if ((window.innerWidth <= 768 && window.innerHeight > window.innerWidth) ||
+                (window.innerHeight <= 500 && window.innerWidth > window.innerHeight)) {
 
                 document.getElementById("imageInputLabel").style.display = "none";
 
@@ -577,6 +590,8 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     document.getElementById("map").classList.add('panel-open');
     document.getElementById("wrapper").classList.add('panel-open');
 
+    document.body.classList.remove("strip-open");
+
     var strip = document.getElementById("resultStrip");
     if (strip.style.display === "flex") {
         strip.style.display = "none";
@@ -584,7 +599,8 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     document.getElementById("welcome").style.display = "none";
 
-    if (window.innerWidth <= 768 || window.innerHeight <= 500) {
+    if ((window.innerWidth <= 768 && window.innerHeight > window.innerWidth) ||
+        (window.innerHeight <= 500 && window.innerWidth > window.innerHeight)) {
 
         document.getElementById("imageInputLabel").style.display = "none";
         document.getElementById("imageInputLabelPanel").style.display = "flex";
@@ -649,6 +665,8 @@ function minimizePanel() {
 
     document.getElementById("resultStrip").style.display = "flex";
 
+    document.body.classList.add("strip-open");
+
     if (isSearching) {
         document.getElementById("stripPlaceName").textContent = translate("searching");
     } else {
@@ -684,6 +702,8 @@ function closeStrip() {
 
     document.getElementById("imageInputLabel").style.display = "flex";
     document.getElementById("imageInputLabelPanel").style.display = "none";
+
+    document.body.classList.remove("strip-open");
 
     document.getElementById("welcome").style.display = "block";
 
