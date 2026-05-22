@@ -54,7 +54,7 @@ body {
     width: 100%;
     max-width: 100%;
     overflow-y: hidden;
-    overflow-x: hidden;  /* prevent horizontal scrollbar showing up */
+    overflow-x: auto;  /* prevent horizontal scrollbar showing up */
     -webkit-overflow-scrolling: touch;  /* smooth scrolling on iOS */
 }
 
