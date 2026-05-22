@@ -473,12 +473,6 @@ function lockPanelPhotoSize() {
         var contentHeight = panelContent.clientHeight;
         var usedHeight = 0;
 
-        Array.from(panelContent.children).forEach(function (child) {
-            if (child !== panelPhoto && child.id !== "panelWiki") {
-                usedHeight += child.offsetHeight;
-            }
-        });
-
         var gap = 14;
         var visibleChildren = Array.from(panelContent.children).filter(function (child) {
             return child !== panelPhoto &&
@@ -495,13 +489,13 @@ function lockPanelPhotoSize() {
         var reservedResultHeight = 0;
 
         if (isSearching) {
-            reservedResultHeight += 24; // panelMethod likely one line
-            reservedResultHeight += 24; // learnMore button
+            reservedResultHeight += 30; // panelMethod likely one line
+            reservedResultHeight += 30; // learnMore button
             reservedResultHeight += 28; // two gaps, roughly 14px each
             if ((window.innerWidth <= 768 && window.innerHeight > window.innerWidth) ||
                 (window.innerHeight <= 500 && window.innerWidth > window.innerHeight)) {
 
-                reservedResultHeight += 36; //panelMethod likely at least one more line on mobile
+                reservedResultHeight += 80; //panelMethod likely at least one more line on mobile
             }
         }
 
@@ -719,6 +713,7 @@ function closeStrip() {
 }
 
 function closeWikiExcerpt() {
+    wikiIsOpen = false;
 
     if (document.getElementById("learnMore").style.display === "inline-block" ||
         document.getElementById("learnMore").style.display === "block") {
@@ -1123,6 +1118,8 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     }
 
     var result = await response.json();
+
+    wikiIsOpen = false;
 
     var placeName = "Unknown location";
     var shortName = "Unknown location";
@@ -1841,6 +1838,8 @@ function getPreferredTypes(confidence) {
 async function placeMarkerFromAI(image, photoHtml) {
 
     geocodingFellback = false;
+
+    wikiIsOpen = false;
 
     document.getElementById("welcome").style.display = "none";
 
