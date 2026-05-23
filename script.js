@@ -1140,7 +1140,10 @@ document.getElementById("learnMore").addEventListener("click", function () {
         if (wikiIsOpen || panelContent.scrollHeight > panelContent.clientHeight) {
             panelContent.classList.add("scrollable");
         } else {
-            panelContent.classList.remove("scrollable");
+            panelContent.scrollTo({ top: 0, behavior: "smooth" });
+            setTimeout(function () {
+                panelContent.classList.remove("scrollable");
+            }, 300);
         }
     }, 250);
 
