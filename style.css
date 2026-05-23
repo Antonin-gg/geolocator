@@ -60,6 +60,8 @@ body {
 
 #panelContent.scrollable {
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
 }
 
 #panelContent::-webkit-scrollbar {
