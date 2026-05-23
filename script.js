@@ -404,6 +404,8 @@ document.getElementById("wrapperToggles").addEventListener("click", function (e)
 function showSearching() {
     isSearching = true;
 
+    document.getElementById("welcome").style.display = "none";
+
     document.getElementById("searching").style.display = "block";
 
     document.getElementById("searchingText")
@@ -510,6 +512,10 @@ function lockPanelPhotoSize(force) {
         img.style.maxHeight = lockedPhotoHeight + "px";
 
         panelPhoto.classList.add("locked");
+
+        if (panelContent.scrollHeight > panelContent.clientHeight) {
+            panelContent.classList.add("scrollable");
+        }
     });
 }
 
@@ -675,6 +681,13 @@ function closePanel() {
     closeWikiExcerpt();
 }
 
+function getPopupPhotoHtml() {
+    return currentPhotoHtml.replace(
+        "<img ",
+        '<img style="max-width:100%;height:auto;border-radius:4px;" '
+    );
+}
+
 function minimizePanel() {
     document.getElementById("resultPanel").classList.remove('open');
     document.getElementById("map").classList.remove('panel-open');
@@ -695,7 +708,7 @@ function minimizePanel() {
         if (photoMarker) {
             var popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
             var miniPopup = L.popup({ closeButton: false, maxWidth: popupWidth })
-                .setContent(currentPhotoHtml);
+                .setContent(getPopupPhotoHtml());
             photoMarker.bindPopup(miniPopup).openPopup();
         }
     }, 300);
@@ -1017,6 +1030,7 @@ function getWikiTitleTranslation(page) {
 }
 
 function showScrollHint() {
+    if (scrollHintShown) return;
     if (window.innerWidth > 768 && window.innerHeight > 500) return;
 
     var panelContent = document.getElementById("panelContent");
@@ -1966,6 +1980,10 @@ function showPanelLoading(photoHtml) {
     document.getElementById("panelSearchingGlobe").style.display = "block";
     document.getElementById("panelSearchingGlobe").classList.add("globe-active");
     document.getElementById("panelMethod").textContent = "";
+
+    setTimeout(function () {
+        lockPanelPhotoSize(true);
+    }, 50);
 
     var strip = document.getElementById("resultStrip");
     if (strip.style.display === "flex") {
