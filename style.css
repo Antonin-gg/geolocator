@@ -182,6 +182,8 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 #panelPhoto {
     min-height: 0;
     overflow: hidden;
+    justify-content: center;
+    align-items: center;
 }
 
 #panelPhoto,
@@ -194,9 +196,16 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 #panelPhoto img {
     max-height: var(--panel-photo-max-height, none);
     max-width: 100%;
+    height:auto;
     object-fit: contain;
     border-radius: 8px;
     display: block;
+}
+
+#panelPhoto.locked img {
+    width: auto !important;
+    max-width: 100%;
+    max-height: var(--locked-photo-height);
 }
 
 #placeNameWithGlobe {
