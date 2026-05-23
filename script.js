@@ -1134,7 +1134,7 @@ document.getElementById("learnMore").addEventListener("click", function () {
     setToggleArrow(this, expanded);
 
     wikiIsOpen = !document.getElementById("panelWiki").classList.contains("hidden-wiki");
-    panelContent = document.getElementById("panelContent");
+    var panelContent = document.getElementById("panelContent");
 
     setTimeout(function () {
         if (wikiIsOpen || panelContent.scrollHeight > panelContent.clientHeight) {
@@ -1353,7 +1353,7 @@ async function getLocationDataAreas(queries, aiConfidence, aiCountryCode) {
     // Strict OpenCage pass with type filter
     for (var j = 0; j < queries.length; j++) {
 
-        if (i === 2) geocodingFellback = true;
+        if (j === 2) geocodingFellback = true;
 
         var openCageResult = await tryOpenCage(queries[j], aiConfidence, aiCountryCode);
         if (openCageResult === "error") return null;
@@ -1364,7 +1364,7 @@ async function getLocationDataAreas(queries, aiConfidence, aiCountryCode) {
     // Loose Nominatim pass without type filter
     for (var k = 0; k < queries.length; k++) {
 
-        if (i === 2) geocodingFellback = true;
+        if (k === 2) geocodingFellback = true;
 
         var nominatimResult = await tryNominatim(queries[k], null, aiCountryCode);
         if (nominatimResult === "error") return null;
@@ -1375,7 +1375,7 @@ async function getLocationDataAreas(queries, aiConfidence, aiCountryCode) {
     // Loose OpenCage pass without type filter
     for (var l = 0; l < queries.length; l++) {
 
-        if (i === 2) geocodingFellback = true;
+        if (l === 2) geocodingFellback = true;
 
         var openCageResult = await tryOpenCage(queries[l], null, aiCountryCode);
         if (openCageResult === "error") return null;
