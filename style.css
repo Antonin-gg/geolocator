@@ -673,7 +673,7 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         top: 76px;
-        left: 9.5px;
+        left: 10spx;
     }
 }
 
@@ -736,10 +736,10 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         top: 76px;
-        left: calc(30vw + 9.5px);
+        left: calc(30vw + 10px);
     }
 
     body.strip-open #imageInputLabelPanel {
-        left: 9.5px;
+        left: 10px;
     }
 }
