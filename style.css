@@ -55,7 +55,6 @@ body {
     max-width: 100%;
     overflow-y: hidden;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
 }
 
 #panelContent.scrollable {
@@ -149,11 +148,8 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 
 #stripClose,
 #stripToggle {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
     flex: 0 0 32px;
+    height: 32px;
 }
 
 #stripClose {
@@ -195,9 +191,9 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 }
 
 #panelPhoto img {
-    max-height: var(--panel-photo-max-height, none);
+    max-height: none;
     max-width: 100%;
-    height:auto;
+    height: auto;
     object-fit: contain;
     border-radius: 8px;
     display: block;
@@ -237,10 +233,6 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     font-size: 0.85rem;
     color: #666;
     text-align: center;
-    flex-shrink: 0;
-}
-
-#panelMethod {
     flex-shrink: 0;
 }
 
@@ -389,7 +381,8 @@ body.dark #panelWiki {
     justify-content: center;
     text-align: center;
     flex-wrap: wrap;
-    overflow: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 #panelPlaceName.loading {
