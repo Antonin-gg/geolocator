@@ -772,8 +772,21 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
     Wikipedia fallback logic:
 
     If `queries` is null, this is an EXIF-based result, so there is no AI place-name
-    query chain to try. In that case, search Wikipedia directly using the geocoded
-    shortName, then fall back to a coordinate-based Wikipedia geosearch.
+    query chain to try. In that case:
+    1. Search the current UI-language Wikipedia using the full geocoded shortName.
+    2. If that fails, try current UI-language coordinate geosearch.
+    3. If that still fails, try English Wikipedia using only the primary place name
+       before the first comma.
+    4. If an English result is found and the UI language is not English:
+       a. Try to find the translated article title in the current UI language.
+       b. If that translated article exists, use it.
+       c. Otherwise, keep the English result.
+    5. If primary-name English search fails, try English coordinate geosearch.
+    6. If English geosearch finds a result and the UI language is not English:
+       a. Try to find the translated article title in the current UI language.
+       b. If that translated article exists, use it.
+       c. Otherwise, keep the English geosearch result.
+    7. If nothing works, no Wikipedia result is shown.
 
     Otherwise, loop through the generated Wikipedia queries:
     1. Search English Wikipedia with the current query.
@@ -797,6 +810,37 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
     if (!queries) {
         result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
         if (!result) result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
+
+        if (!result && currentLang !== "en") {
+            var primaryExifPlace = geocodedPlace.split(",")[0].trim();
+
+            result = await getWikiData(primaryExifPlace, "en", lat, lng, aiConfidence);
+
+            if (result) {
+                var translatedExifTitle = getWikiTitleTranslation(result);
+
+                if (translatedExifTitle) {
+                    result =
+                        await getWikiData(translatedExifTitle, currentLang, lat, lng, aiConfidence) ||
+                        result;
+                }
+            }
+
+            if (!result) {
+                result = await wikiGeoSearch(primaryExifPlace, "en", lat, lng, aiConfidence);
+
+                if (result) {
+                    var geoTranslatedExifTitle = getWikiTitleTranslation(result);
+
+                    if (geoTranslatedExifTitle) {
+                        result =
+                            await getWikiData(geoTranslatedExifTitle, currentLang, lat, lng, aiConfidence) ||
+                            result;
+                    }
+                }
+            }
+        }
+
     } else {
         for (var i = 0; i < queries.length; i++) {
             result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
@@ -872,8 +916,8 @@ async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
         "&ggscoord=" + encodeURIComponent(lat + "|" + lng) +
         "&ggsradius=10000" +
         "&ggslimit=20" +
-        "&prop=extracts|coordinates|info|langlinks" +
-        "&ppprop=disambiguation" +
+        "&redirects=1" +
+        "&prop=extracts|coordinates|info|langlinks|pageprops" +
         "&exintro=1" +
         "&explaintext=1" +
         "&inprop=url" +
@@ -900,6 +944,7 @@ async function getWikiData(query, language, lat, lng, aiConfidence) {
         "&generator=search" +
         "&gsrsearch=" + encodeURIComponent(query) +
         "&gsrlimit=20" +
+        "&redirects=1" +
         "&prop=extracts|coordinates|info|langlinks|pageprops" +
         "&exintro=1" +
         "&explaintext=1" +
@@ -924,6 +969,11 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
     results = results.filter(function (r) {
         return !(r.pageprops && Object.prototype.hasOwnProperty.call(r.pageprops, "disambiguation"));
     });
+
+    results = results.filter(function (r) {
+        return !isListPage(r);
+    });
+
     var scored = results.map(function (r, index) {
         var score = wikiTitleScore(r.title || "", query);
 
@@ -991,6 +1041,13 @@ function wikiTitleScore(title, query) {
     }
 
     return -100;
+}
+
+function isListPage(page) {
+    var title = (page.title || "").toLowerCase().trim();
+
+    return title.startsWith("list of ") ||
+        title.startsWith("lists of ");
 }
 
 function buildWikiFallbackQueries(query) {
