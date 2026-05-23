@@ -904,21 +904,6 @@ body.dark #toggleTheme:hover {
         z-index: 1002;
         cursor: pointer;
     }
-
-    #panelGeoInfo > div {
-        flex: 0 1 calc(50% - 4px);
-    }
-
-    #panelGeoInfo > div.wide {
-        flex: 0 1 100%;
-        aspect-ratio: auto;
-        max-width: none;
-    }
-
-    #panelGeoInfo > div.wide .value {
-        white-space: normal;  /* allow wrap on small screens */
-    }
-
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
