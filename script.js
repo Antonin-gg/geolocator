@@ -873,6 +873,7 @@ async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
         "&ggsradius=10000" +
         "&ggslimit=20" +
         "&prop=extracts|coordinates|info|langlinks" +
+        "&ppprop=disambiguation" +
         "&exintro=1" +
         "&explaintext=1" +
         "&inprop=url" +
@@ -899,7 +900,7 @@ async function getWikiData(query, language, lat, lng, aiConfidence) {
         "&generator=search" +
         "&gsrsearch=" + encodeURIComponent(query) +
         "&gsrlimit=20" +
-        "&prop=extracts|coordinates|info|langlinks" +
+        "&prop=extracts|coordinates|info|langlinks|pageprops" +
         "&exintro=1" +
         "&explaintext=1" +
         "&inprop=url" +
@@ -920,6 +921,9 @@ async function getWikiData(query, language, lat, lng, aiConfidence) {
 }
 
 function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
+    results = results.filter(function (r) {
+        return !(r.pageprops && Object.prototype.hasOwnProperty.call(r.pageprops, "disambiguation"));
+    });
     var scored = results.map(function (r, index) {
         var score = wikiTitleScore(r.title || "", query);
 
@@ -975,7 +979,15 @@ function wikiTitleScore(title, query) {
             return !primaryTokens.includes(token);
         });
 
-        return 80 - extraTitleTokens.length * 15;
+        var startsWithTokens = primaryTokens.every(function (token, i) {
+            return titleTokens[i] === token;
+        });
+
+        var score = 80 - extraTitleTokens.length * 15;
+
+        if (!startsWithTokens) score -= 35;
+
+        return score;
     }
 
     return -100;
