@@ -247,20 +247,20 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     align-items: center;
     justify-content: center;
 
-    width: 22px;
+    width: 26px;
     height: 24px;
 
     font-size: 22px;
     font-weight: 900;
     line-height: 1;
-    transform: scaleX(1.25) translateY(-1px);
+    transform: scaleX(1.5) translateY(-3px);
 }
 
 .uploadArrow::after {
     content: "";
     position: absolute;
     left: 50%;
-    bottom: 1px;
+    bottom: 2px;
     width: 12px;
     height: 2px;
     background: currentColor;
