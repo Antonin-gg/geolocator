@@ -501,7 +501,7 @@ function lockPanelPhotoSize(force) {
             }
         }
 
-        var availablePhotoHeight = contentHeight - usedHeight - reservedResultHeight;
+        var availablePhotoHeight = contentHeight - usedHeight - reservedResultHeight - 20;
 
         var hitMinPhotoHeight = false;
 
@@ -511,7 +511,7 @@ function lockPanelPhotoSize(force) {
         }
 
         lockedPhotoHeight = availablePhotoHeight;
-        img.style.maxHeight = lockedPhotoHeight + "px";
+        panelPhoto.style.setProperty("--locked-photo-height", lockedPhotoHeight + "px");
 
         panelPhoto.classList.add("locked");
 
