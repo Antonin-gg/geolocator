@@ -182,6 +182,7 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 #panelPhoto {
     min-height: 0;
     overflow: hidden;
+    display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -682,7 +683,7 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         top: 76px;
-        left: 10spx;
+        left: 10px;
     }
 }
 
