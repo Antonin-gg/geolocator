@@ -1061,7 +1061,15 @@ document.getElementById("learnMore").addEventListener("click", function () {
     setToggleArrow(this, expanded);
 
     wikiIsOpen = !document.getElementById("panelWiki").classList.contains("hidden-wiki");
-    document.getElementById("panelContent").classList.toggle("scrollable", wikiIsOpen);
+    panelContent = document.getElementById("panelContent");
+
+    setTimeout(function () {
+        if (wikiIsOpen || panelContent.scrollHeight > panelContent.clientHeight) {
+            panelContent.classList.add("scrollable");
+        } else {
+            panelContent.classList.remove("scrollable");
+        }
+    }, 250);
 
     if (wikiIsOpen) {
         setTimeout(function () {
