@@ -22,10 +22,12 @@ var locationPolygon = null;
 var currentLang = "en";
 var isSearching = false;
 var scrollHintShown = false;
-var wikiIsOpen = false;
+var moreContentIsOpen = false;
 var geocodingFellback = false;
 var wikiBlacklisted = 0;
 var lockedPhotoHeight = null;
+var isImperial = false;
+var userCoordinates = null;
 
 
 
@@ -48,6 +50,13 @@ if (savedLang !== null && TRANSLATIONS[savedLang]) {
     currentLang = savedLang;
     changeLanguage();
 }
+
+setTimeout(alignToggleChevrons, 50);
+
+if (currentLang === "en" && navigator.language === "en-US") isImperial = true;
+
+var savedImperial = localStorage.getItem("isImperial");
+if (savedImperial !== null) isImperial = savedImperial === "true";
 
 document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
 
@@ -204,20 +213,16 @@ var cameraIconDark = new L.Icon({
 document.getElementById("showToggleTheme").addEventListener("click", function () {
     if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
         document.getElementById("toggleView").classList.add("hidden-view");
-        setToggleArrow(document.getElementById("showToggleView"), false);
         document.getElementById("showToggleView").classList.remove("dropdown-open");
     }
     if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
         document.getElementById("languageOptions").classList.add("hidden-language");
-        setToggleArrow(document.getElementById("showToggleLanguage"), false);
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
     }
 
     document.getElementById("toggleTheme").classList.toggle("hidden-theme");
     var isOpen = !document.getElementById("toggleTheme").classList.contains("hidden-theme");
     this.classList.toggle("dropdown-open", isOpen);
-    var expanded = this.textContent.trim().endsWith("▼");
-    setToggleArrow(this, expanded);
 });
 
 document.getElementById("toggleTheme").addEventListener("click", function () {
@@ -244,7 +249,6 @@ document.getElementById("toggleTheme").addEventListener("click", function () {
     }
 
     this.classList.toggle("hidden-theme");
-    setToggleArrow(document.getElementById("showToggleTheme"), false);
     document.getElementById("showToggleTheme").classList.remove("dropdown-open");
 
     localStorage.setItem("isDark", isDark);
@@ -253,27 +257,22 @@ document.getElementById("toggleTheme").addEventListener("click", function () {
 document.getElementById("showToggleView").addEventListener("click", function () {
     if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
         document.getElementById("toggleTheme").classList.add("hidden-theme");
-        setToggleArrow(document.getElementById("showToggleTheme"), false);
         document.getElementById("showToggleTheme").classList.remove("dropdown-open");
     }
     if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
         document.getElementById("languageOptions").classList.add("hidden-language");
-        setToggleArrow(document.getElementById("showToggleLanguage"), false);
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
     }
 
     document.getElementById("toggleView").classList.toggle("hidden-view");
     var isOpen = !document.getElementById("toggleView").classList.contains("hidden-view");
     this.classList.toggle("dropdown-open", isOpen);
-    var expanded = this.textContent.trim().endsWith("▼");
-    setToggleArrow(this, expanded);
 });
 
 document.getElementById("toggleView").addEventListener("click", function () {
 
     if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
         document.getElementById("toggleTheme").classList.add("hidden-theme");
-        setToggleArrow(document.getElementById("showToggleTheme"), false);
     }
 
     if (isSatellite) {
@@ -305,7 +304,6 @@ document.getElementById("toggleView").addEventListener("click", function () {
     }
 
     this.classList.toggle("hidden-view");
-    setToggleArrow(document.getElementById("showToggleView"), false);
     document.getElementById("showToggleView").classList.remove("dropdown-open");
 
     localStorage.setItem("isSatellite", isSatellite);
@@ -314,12 +312,10 @@ document.getElementById("toggleView").addEventListener("click", function () {
 document.getElementById("showToggleLanguage").addEventListener("click", function () {
     if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
         document.getElementById("toggleTheme").classList.add("hidden-theme");
-        setToggleArrow(document.getElementById("showToggleTheme"), false);
         document.getElementById("showToggleTheme").classList.remove("dropdown-open");
     }
     if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
         document.getElementById("toggleView").classList.add("hidden-view");
-        setToggleArrow(document.getElementById("showToggleView"), false);
         document.getElementById("showToggleView").classList.remove("dropdown-open");
     }
 
@@ -329,8 +325,6 @@ document.getElementById("showToggleLanguage").addEventListener("click", function
         document.getElementById("languageOptions").scrollTop = 0;
     }
     this.classList.toggle("dropdown-open", isOpen);
-    var expanded = this.textContent.trim().endsWith("▼");
-    setToggleArrow(this, expanded);
 });
 
 document.querySelectorAll(".lang-option").forEach(function (button) {
@@ -339,7 +333,6 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
         if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
             document.getElementById("languageOptions").classList.add("hidden-language");
-            setToggleArrow(document.getElementById("showToggleLanguage"), false);
         }
 
         document.querySelector('[data-lang="' + currentLang + '"]').classList.remove("active-lang");
@@ -349,7 +342,6 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
         changeLanguage();
 
         document.getElementById("languageOptions").classList.add("hidden-language");
-        setToggleArrow(document.getElementById("showToggleLanguage"), false);
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
 
         document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
@@ -366,28 +358,20 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
 });
 
-function setToggleArrow(element, expanded) {
-    var text = element.textContent.slice(0, -1).trim();
-    element.textContent = text + (expanded ? " ▲" : " ▼");
-}
-
 document.addEventListener("click", function (e) {
     var clickedInsideToggles = e.target.closest("#wrapperToggles");
 
     if (!clickedInsideToggles) {
         if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
             document.getElementById("toggleView").classList.add("hidden-view");
-            setToggleArrow(document.getElementById("showToggleView"), false);
             document.getElementById("showToggleView").classList.remove("dropdown-open");
         }
         if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
             document.getElementById("toggleTheme").classList.add("hidden-theme");
-            setToggleArrow(document.getElementById("showToggleTheme"), false);
             document.getElementById("showToggleTheme").classList.remove("dropdown-open");
         }
         if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
             document.getElementById("languageOptions").classList.add("hidden-language");
-            setToggleArrow(document.getElementById("showToggleLanguage"), false);
             document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
         }
     }
@@ -457,7 +441,7 @@ function getPolygonColor() {
 }
 
 function lockPanelPhotoSize(force) {
-    if (wikiIsOpen && !force) return;
+    if (moreContentIsOpen && !force) return;
 
     var panelContent = document.getElementById("panelContent");
     var panelPhoto = document.getElementById("panelPhoto");
@@ -478,7 +462,7 @@ function lockPanelPhotoSize(force) {
         var gap = 14;
         var visibleChildren = Array.from(panelContent.children).filter(function (child) {
             return child !== panelPhoto &&
-                child.id !== "panelWiki" &&
+                child.id !== "moreContent" &&
                 getComputedStyle(child).display !== "none";
         });
 
@@ -515,11 +499,30 @@ function lockPanelPhotoSize(force) {
 
         panelPhoto.classList.add("locked");
 
-        if (wikiIsOpen || hitMinPhotoHeight) {
+        if (moreContentIsOpen || hitMinPhotoHeight) {
             panelContent.classList.add("scrollable");
         } else {
             panelContent.classList.remove("scrollable");
         }
+    });
+}
+
+function alignToggleChevrons() {
+    var toggles = [
+        document.querySelector("#showToggleView .toggle-text"),
+        document.querySelector("#showToggleTheme .toggle-text"),
+        document.querySelector("#showToggleLanguage .toggle-text")
+    ];
+    
+    toggles.forEach(function(t) { t.style.minWidth = ""; });
+    
+    var maxWidth = 0;
+    toggles.forEach(function(t) {
+        if (t.offsetWidth > maxWidth) maxWidth = t.offsetWidth;
+    });
+    
+    toggles.forEach(function(t) {
+        t.style.minWidth = maxWidth + "px";
     });
 }
 
@@ -537,8 +540,9 @@ window.addEventListener("resize", function () {
 
             setTimeout(function () {
                 lockPanelPhotoSize(true);
+                balanceGeoInfoLayout();
 
-                if (wikiIsOpen) {
+                if (moreContentIsOpen) {
                     document.getElementById("panelContent").classList.add("scrollable");
                 }
             }, 80);
@@ -583,7 +587,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
 
-    if (wikiIsOpen && lockedPhotoHeight) {
+    if (moreContentIsOpen && lockedPhotoHeight) {
         var img = document.querySelector("#panelPhoto img");
         if (img) {
             img.style.maxHeight = lockedPhotoHeight + "px";
@@ -639,14 +643,14 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     }
 
-    if (wikiIsOpen) {
-        document.getElementById("panelWiki").classList.remove("hidden-wiki");
+    if (moreContentIsOpen) {
+        document.getElementById("moreContent").classList.remove("collapsed");
         document.getElementById("panelContent").classList.add("scrollable");
-        setToggleArrow(document.getElementById("learnMore"), true);
+        document.getElementById("learnMore").classList.add("expanded");
     } else {
-        document.getElementById("panelWiki").classList.add("hidden-wiki");
+        document.getElementById("moreContent").classList.add("collapsed");
         document.getElementById("panelContent").classList.remove("scrollable");
-        setToggleArrow(document.getElementById("learnMore"), false);
+        document.getElementById("learnMore").classList.remove("expanded");
         setTimeout(lockPanelPhotoSize, 50);
     }
 
@@ -682,7 +686,7 @@ function closePanel() {
         document.getElementById("welcome").style.display = "block";
     }, 300);
 
-    closeWikiExcerpt();
+    closeMoreContent();
 }
 
 function getPopupPhotoHtml() {
@@ -741,23 +745,43 @@ function closeStrip() {
 
     document.getElementById("welcome").style.display = "block";
 
-    closeWikiExcerpt();
+    closeMoreContent();
 }
 
-function closeWikiExcerpt() {
-    wikiIsOpen = false;
+function closeMoreContent() {
+
+    closeGeoInfo();
+    closePanelWiki();
+
+}
+
+function closePanelWiki() {
+    moreContentIsOpen = false;
 
     if (document.getElementById("learnMore").style.display === "inline-block" ||
-        document.getElementById("learnMore").style.display === "block") {
-        if (!document.getElementById("panelWiki").classList.contains("hidden-wiki")) {
-            document.getElementById("panelWiki").classList.add("hidden-wiki");
-            setToggleArrow(document.getElementById("learnMore"), false);
+        document.getElementById("learnMore").style.display === "block" ||
+        document.getElementById("learnMore").style.display === "flex") {
+        if (!document.getElementById("moreContent").classList.contains("collapsed")) {
+            document.getElementById("moreContent").classList.add("collapsed");
+            document.getElementById("learnMore").classList.remove("expanded");
         }
         document.getElementById("panelWiki").innerHTML = "";
+
         document.getElementById("learnMore").style.display = "none";
         document.getElementById("panelContent").classList.remove("scrollable");
     }
 
+}
+
+async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode) {
+
+    await buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence);
+
+    await buildGeoInfo(lat, lng, aiConfidence, aiCountryCode);
+
+    var hasGeo = document.querySelectorAll("#panelGeoInfo .active").length > 0;
+    var hasWiki = document.getElementById("panelWiki").innerHTML.trim().length > 0;
+    document.getElementById("learnMore").style.display = (hasGeo || hasWiki) ? "flex" : "none";
 }
 
 async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
@@ -896,7 +920,10 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
         }
     }
 
-    if (!result) return;
+    if (!result) {
+        document.getElementById("panelWiki").innerHTML = "";
+        return;
+    }
 
     var text = result.extract;
 
@@ -904,8 +931,6 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
         "<strong>" + result.title + "</strong><br>" +
         text + " " +
         (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + READ_MORE_TRANSLATIONS[currentLang] + '</a>' : "");
-
-    document.getElementById("learnMore").style.display = "block";
 
 }
 
@@ -1129,15 +1154,14 @@ document.getElementById("stripToggle").addEventListener("click", function () {
     openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
 });
 document.getElementById("learnMore").addEventListener("click", function () {
-    document.getElementById("panelWiki").classList.toggle("hidden-wiki");
-    var expanded = this.textContent.trim().endsWith("▼");
-    setToggleArrow(this, expanded);
+    document.getElementById("moreContent").classList.toggle("collapsed");
+    this.classList.toggle("expanded");
 
-    wikiIsOpen = !document.getElementById("panelWiki").classList.contains("hidden-wiki");
+    moreContentIsOpen = !document.getElementById("moreContent").classList.contains("collapsed");
     var panelContent = document.getElementById("panelContent");
 
     setTimeout(function () {
-        if (wikiIsOpen || panelContent.scrollHeight > panelContent.clientHeight) {
+        if (moreContentIsOpen || panelContent.scrollHeight > panelContent.clientHeight) {
             panelContent.classList.add("scrollable");
         } else {
             panelContent.scrollTo({ top: 0, behavior: "smooth" });
@@ -1147,9 +1171,9 @@ document.getElementById("learnMore").addEventListener("click", function () {
         }
     }, 250);
 
-    if (wikiIsOpen) {
+    if (moreContentIsOpen) {
         setTimeout(function () {
-            document.getElementById("panelWiki").scrollIntoView({ behavior: "smooth", block: "nearest" });
+            document.getElementById("panelGeoInfo").scrollIntoView({ behavior: "smooth", block: "start" });
         }, 50);
     }
 });
@@ -1232,7 +1256,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     var result = await response.json();
 
-    wikiIsOpen = false;
+    moreContentIsOpen = false;
 
     var placeName = "Unknown location";
     var shortName = "Unknown location";
@@ -1271,7 +1295,11 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         locationPolygon = null;
     }
 
-    await buildWikiExcerpt(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city");
+    var countryCode = (result.address && result.address.country_code)
+        ? result.address.country_code.toUpperCase()
+        : null;
+
+    await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
 
     hideSearching();
     document.getElementById("panelPlaceName").classList.remove("loading");
@@ -1319,17 +1347,17 @@ async function getLocationDataLandmark(queries, aiCountryCode) {
     geocodingFellback = false;
 
     // Loose pass without type filter
-    for (var i = 0; i < queries.length; i++) {
+    for (var j = 0; j < queries.length; j++) {
 
-        if (i === 2) geocodingFellback = true;
+        if (j === 2) geocodingFellback = true;
 
         // Try Nominatim
-        var nominatimResult = await tryNominatim(queries[i], null, aiCountryCode);
+        var nominatimResult = await tryNominatim(queries[j], null, aiCountryCode);
         if (nominatimResult === "error") return null;
         if (nominatimResult) return nominatimResult;
 
         // Try OpenCage
-        var openCageResult = await tryOpenCage(queries[i], null, aiCountryCode);
+        var openCageResult = await tryOpenCage(queries[j], null, aiCountryCode);
         if (openCageResult === "error") return null;
         if (openCageResult) return openCageResult;
     }
@@ -1952,7 +1980,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     geocodingFellback = false;
 
-    wikiIsOpen = false;
+    moreContentIsOpen = false;
 
     document.getElementById("welcome").style.display = "none";
 
@@ -1998,7 +2026,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         var location = await getLocationData(queryLocation, aiResult.confidence, aiResult.countryCode);
 
-        await buildWikiExcerpt(aiResult.place, location.shortName, location.lat, location.lng, aiResult.confidence);
+        await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiResult.confidence, aiResult.countryCode);
 
         hideSearching();
 
@@ -2056,7 +2084,7 @@ function showPanelLoading(photoHtml) {
         locationPolygon = null;
     }
 
-    closeWikiExcerpt();
+    closeMoreContent();
 
     document.getElementById("panelPhoto").innerHTML = photoHtml;
     document.getElementById("panelPlaceName").innerHTML = "<strong> " + translate("searching") + "</strong>";
