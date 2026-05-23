@@ -246,12 +246,34 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 
 #imageInputLabelPanel {
     display: none;
-    font-weight: 800;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-thickness: 1.5px;
-    font-size: 1.15rem;
     transition: left 0.3s ease, top 0.3s ease, transform 0.3s ease;
+}
+
+.uploadArrow {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 24px;
+
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+    transform: scaleX(1.25) translateY(-1px);
+}
+
+.uploadArrow::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 1px;
+    width: 12px;
+    height: 2px;
+    background: currentColor;
+    transform: translateX(-50%);
+    border-radius: 999px;
 }
 
 #resultStrip {
@@ -367,6 +389,7 @@ body.dark #panelWiki {
     justify-content: center;
     text-align: center;
     flex-wrap: wrap;
+    overflow: hidden;
 }
 
 #panelPlaceName.loading {
@@ -715,8 +738,6 @@ body.dark #toggleTheme:hover {
         align-items: center;
         justify-content: center;
         z-index: 1002;
-        font-size: 1rem;
-        text-underline-offset: 4px;
         cursor: pointer;
     }
 
