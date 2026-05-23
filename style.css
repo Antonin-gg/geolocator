@@ -310,7 +310,7 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     padding-left: 12px;
     margin-top: 8px;
     overflow: hidden;
-    max-height: 600px;
+    max-height: 1500px;
     opacity: 1;
     transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
 }
@@ -420,8 +420,8 @@ body.dark #panelWiki {
 
 #wrapperToggles {
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: 10px;
+    right: 10px;
     z-index: 1000;
     display: flex;
     flex-direction: column;
@@ -683,7 +683,7 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         top: 76px;
-        left: 10px;
+        left: 9.5px;
     }
 }
 
@@ -708,8 +708,8 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         position: fixed;
-        width: 30px;
-        height: 32px;
+        width: 31px;
+        height: 31px;
         padding: 0;
         display: none;
         align-items: center;
@@ -746,10 +746,10 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         top: 76px;
-        left: calc(30vw + 10px);
+        left: calc(30vw + 9.5px);
     }
 
     body.strip-open #imageInputLabelPanel {
-        left: 10px;
+        left: 9.5px;
     }
 }
