@@ -34,15 +34,24 @@
 
     <div id="wrapperToggles">
         <div id="wrapperView">
-            <button id="showToggleView" class="box">View ▼</button>
+            <button id="showToggleView" class="box">
+                <span class="toggle-text">View</span>
+                <span class="toggle-chevron"></span>
+            </button>
             <button id="toggleView" class="hidden-view box">Satellite</button>
         </div>
         <div id="wrapperTheme">
-            <button id="showToggleTheme" class="box">Theme ▼</button>
+            <button id="showToggleTheme" class="box">
+                <span class="toggle-text">Theme</span>
+                <span class="toggle-chevron"></span>
+            </button>
             <button id="toggleTheme" class="hidden-theme box">Dark</button>
         </div>
         <div id="wrapperLanguage">
-            <button id="showToggleLanguage" class="box">Language ▼</button>
+            <button id="showToggleLanguage" class="box">
+                <span class="toggle-text">Language</span>
+                <span class="toggle-chevron"></span>
+            </button>
 
             <div id="languageOptions" class="hidden-language">
 
@@ -99,8 +108,44 @@
             <div id="placeNameWithGlobe"><span id="panelSearchingGlobe">🌍</span><span id="panelPlaceName"></span>
             </div>
             <div id="panelMethod"></div>
-            <button id="learnMore">Learn more ▼</button>
-            <div id="panelWiki" class="hidden-wiki"></div>
+            <button id="learnMore">
+                <span class="learn-more-text">En savoir plus</span>
+                <span class="learn-more-arrow"></span>
+            </button>
+            <div id="moreContent" class="collapsed">
+                <div id="panelGeoInfo">
+                    <div id="country">
+                        <div class="emoji"></div>
+                        <div class="value"></div>
+                        <div class="continent"></div>
+                    </div>
+                    <div id="coordinates">
+                        <div class="emoji"></div>
+                        <div class="value"></div>
+                    </div>
+
+                    <div id="altitude">
+                        <div class="emoji"></div>
+                        <div class="value"></div>
+                    </div>
+
+                    <div id="distance">
+                        <div class="emoji"></div>
+                        <div class="value"></div>
+                    </div>
+
+                    <div id="weather">
+                        <div class="emoji"></div>
+                        <div class="value"></div>
+                    </div>
+                    <div id="time">
+                        <div class="emoji"></div>
+                        <div class="value"></div>
+                    </div>
+                </div>
+                <button id="toggleUnits">⇌</button>
+                <div id="panelWiki"></div>
+            </div>
         </div>
         <button id="panelToggle">
             <span class="chevron chevron-left"></span>
@@ -122,6 +167,7 @@
     <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="languages.js"></script>
+    <script src="geoinfo.js"></script>
     <script src="script.js"></script>
 
 </body>
