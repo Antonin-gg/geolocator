@@ -503,9 +503,11 @@ function lockPanelPhotoSize(force) {
 
         var availablePhotoHeight = contentHeight - usedHeight - reservedResultHeight;
 
+        var hitMinPhotoHeight = false;
+
         if (availablePhotoHeight < minPhotoHeight) {
             availablePhotoHeight = minPhotoHeight;
-            panelContent.classList.add("scrollable");
+            hitMinPhotoHeight = true;
         }
 
         lockedPhotoHeight = availablePhotoHeight;
@@ -513,8 +515,10 @@ function lockPanelPhotoSize(force) {
 
         panelPhoto.classList.add("locked");
 
-        if (panelContent.scrollHeight > panelContent.clientHeight) {
+        if (wikiIsOpen || hitMinPhotoHeight) {
             panelContent.classList.add("scrollable");
+        } else {
+            panelContent.classList.remove("scrollable");
         }
     });
 }
