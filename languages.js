@@ -1271,14 +1271,6 @@ function coord(key) {
         || key;
 }
 
-function distance(distance) {
-    var template =
-        DISTANCE_TRANSLATIONS[currentLang] ||
-        DISTANCE_TRANSLATIONS.en;
-
-    return template.replace("{distance}", distance + " " + unit[km]);
-}
-
 function error(key) {
     return (ERROR_TRANSLATIONS[currentLang] && ERROR_TRANSLATIONS[currentLang][key])
         || ERROR_TRANSLATIONS.en[key]
