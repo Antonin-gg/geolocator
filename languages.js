@@ -960,6 +960,217 @@ var CONTINENT_TRANSLATIONS = {
     zh: { "002": "非洲", "019": "美洲", "142": "亚洲", "150": "欧洲", "009": "大洋洲", "010": "南极洲" }
 };
 
+var ERROR_TRANSLATIONS = {
+    en: {
+        network: "Network error. Please try again.",
+        file: "Please upload a JPG or PNG image file."
+    },
+    ar: {
+        network: "حدث خطأ في الشبكة. يُرجى المحاولة مرة أخرى.",
+        file: "يُرجى تحميل ملف صورة بصيغة JPG أو PNG."
+    },
+    bg: {
+        network: "Грешка в мрежата. Моля, опитайте отново.",
+        file: "Моля, качете файл с изображение във формат JPG или PNG."
+    },
+    bn: {
+        network: "নেটওয়ার্ক ত্রুটি। অনুগ্রহ করে আবার চেষ্টা করুন।",
+        file: "অনুগ্রহ করে JPG বা PNG ছবি ফাইল আপলোড করুন।"
+    },
+    cs: {
+        network: "Chyba sítě. Zkuste to prosím znovu.",
+        file: "Nahrajte prosím soubor obrázku ve formátu JPG nebo PNG."
+    },
+    da: {
+        network: "Netværksfejl. Prøv igen.",
+        file: "Upload venligst en billedfil i JPG- eller PNG-format."
+    },
+    de: {
+        network: "Netzwerkfehler. Bitte versuchen Sie es erneut.",
+        file: "Bitte laden Sie eine Bilddatei im JPG- oder PNG-Format hoch."
+    },
+    el: {
+        network: "Σφάλμα δικτύου. Δοκιμάστε ξανά.",
+        file: "Ανεβάστε ένα αρχείο εικόνας σε μορφή JPG ή PNG."
+    },
+    es: {
+        network: "Error de red. Inténtalo de nuevo.",
+        file: "Sube un archivo de imagen en formato JPG o PNG."
+    },
+    et: {
+        network: "Võrguviga. Palun proovige uuesti.",
+        file: "Palun laadige üles JPG- või PNG-vormingus pildifail."
+    },
+    fa: {
+        network: "خطای شبکه. لطفاً دوباره تلاش کنید.",
+        file: "لطفاً یک فایل تصویر با فرمت JPG یا PNG بارگذاری کنید."
+    },
+    fi: {
+        network: "Verkkovirhe. Yritä uudelleen.",
+        file: "Lataa JPG- tai PNG-muotoinen kuvatiedosto."
+    },
+    fr: {
+        network: "Erreur réseau. Veuillez réessayer.",
+        file: "Veuillez télécharger un fichier image au format JPG ou PNG."
+    },
+    he: {
+        network: "שגיאת רשת. נסה שוב.",
+        file: "נא להעלות קובץ תמונה בפורמט JPG או PNG."
+    },
+    hi: {
+        network: "नेटवर्क त्रुटि। कृपया फिर से प्रयास करें।",
+        file: "कृपया JPG या PNG प्रारूप वाली छवि फ़ाइल अपलोड करें।"
+    },
+    hr: {
+        network: "Mrežna pogreška. Pokušajte ponovno.",
+        file: "Prenesite slikovnu datoteku u JPG ili PNG formatu."
+    },
+    hu: {
+        network: "Hálózati hiba. Kérjük, próbálja újra.",
+        file: "Kérjük, töltsön fel JPG vagy PNG formátumú képfájlt."
+    },
+    id: {
+        network: "Kesalahan jaringan. Silakan coba lagi.",
+        file: "Silakan unggah file gambar dalam format JPG atau PNG."
+    },
+    is: {
+        network: "Netvilla. Reyndu aftur.",
+        file: "Hladdu upp myndskrá á JPG- eða PNG-sniði."
+    },
+    it: {
+        network: "Errore di rete. Riprova.",
+        file: "Carica un file immagine in formato JPG o PNG."
+    },
+    ja: {
+        network: "ネットワークエラーです。もう一度お試しください。",
+        file: "JPGまたはPNG形式の画像ファイルをアップロードしてください。"
+    },
+    ko: {
+        network: "네트워크 오류입니다. 다시 시도해 주세요.",
+        file: "JPG 또는 PNG 형식의 이미지 파일을 업로드해 주세요."
+    },
+    lt: {
+        network: "Tinklo klaida. Bandykite dar kartą.",
+        file: "Įkelkite JPG arba PNG formato vaizdo failą."
+    },
+    lv: {
+        network: "Tīkla kļūda. Lūdzu, mēģiniet vēlreiz.",
+        file: "Lūdzu, augšupielādējiet JPG vai PNG formāta attēla failu."
+    },
+    nl: {
+        network: "Netwerkfout. Probeer het opnieuw.",
+        file: "Upload een afbeeldingsbestand in JPG- of PNG-formaat."
+    },
+    no: {
+        network: "Nettverksfeil. Prøv igjen.",
+        file: "Last opp en bildefil i JPG- eller PNG-format."
+    },
+    pl: {
+        network: "Błąd sieci. Spróbuj ponownie.",
+        file: "Prześlij plik obrazu w formacie JPG lub PNG."
+    },
+    pt: {
+        network: "Erro de rede. Tente novamente.",
+        file: "Envie um arquivo de imagem no formato JPG ou PNG."
+    },
+    ro: {
+        network: "Eroare de rețea. Încercați din nou.",
+        file: "Încărcați un fișier imagine în format JPG sau PNG."
+    },
+    ru: {
+        network: "Ошибка сети. Повторите попытку.",
+        file: "Загрузите файл изображения в формате JPG или PNG."
+    },
+    sk: {
+        network: "Chyba siete. Skúste to znova.",
+        file: "Nahrajte súbor obrázka vo formáte JPG alebo PNG."
+    },
+    sl: {
+        network: "Napaka omrežja. Poskusite znova.",
+        file: "Naložite slikovno datoteko v formatu JPG ali PNG."
+    },
+    sr: {
+        network: "Грешка са мрежом. Покушајте поново.",
+        file: "Отпремите датотеку слике у JPG или PNG формату."
+    },
+    sv: {
+        network: "Nätverksfel. Försök igen.",
+        file: "Ladda upp en bildfil i JPG- eller PNG-format."
+    },
+    ta: {
+        network: "நெட்வொர்க் பிழை. மீண்டும் முயற்சிக்கவும்.",
+        file: "JPG அல்லது PNG வடிவிலான படக் கோப்பைப் பதிவேற்றவும்."
+    },
+    th: {
+        network: "เกิดข้อผิดพลาดของเครือข่าย โปรดลองอีกครั้ง",
+        file: "โปรดอัปโหลดไฟล์รูปภาพในรูปแบบ JPG หรือ PNG"
+    },
+    tr: {
+        network: "Ağ hatası. Lütfen tekrar deneyin.",
+        file: "Lütfen JPG veya PNG formatında bir görsel dosyası yükleyin."
+    },
+    uk: {
+        network: "Помилка мережі. Спробуйте ще раз.",
+        file: "Завантажте файл зображення у форматі JPG або PNG."
+    },
+    ur: {
+        network: "نیٹ ورک کی خرابی۔ براہِ کرم دوبارہ کوشش کریں۔",
+        file: "براہِ کرم JPG یا PNG فارمیٹ کی تصویری فائل اپ لوڈ کریں۔"
+    },
+    vi: {
+        network: "Lỗi mạng. Vui lòng thử lại.",
+        file: "Vui lòng tải lên tệp hình ảnh ở định dạng JPG hoặc PNG."
+    },
+    zh: {
+        network: "网络错误。请重试。",
+        file: "请上传 JPG 或 PNG 格式的图片文件。"
+    }
+};
+
+var LOCATE_HINT_TRANSLATIONS = {
+    en: "Click to show distance from you",
+    ar: "انقر لعرض المسافة منك",
+    bg: "Щракнете, за да видите разстоянието от вас",
+    bn: "আপনার থেকে দূরত্ব দেখতে ক্লিক করুন",
+    cs: "Kliknutím zobrazíte vzdálenost od vás",
+    da: "Klik for at vise afstanden fra dig",
+    de: "Klicken, um die Entfernung von dir anzuzeigen",
+    el: "Κάντε κλικ για να δείτε την απόσταση από εσάς",
+    es: "Haz clic para ver la distancia desde ti",
+    et: "Klõpsa, et näha kaugust sinust",
+    fa: "برای نمایش فاصله از شما کلیک کنید",
+    fi: "Näytä etäisyys sinusta napsauttamalla",
+    fr: "Cliquez pour afficher la distance qui vous sépare de ce lieu",
+    he: "לחצו כדי להציג את המרחק ממך",
+    hi: "आपसे दूरी दिखाने के लिए क्लिक करें",
+    hr: "Kliknite za prikaz udaljenosti od vas",
+    hu: "Kattintson a távolság megjelenítéséhez",
+    id: "Klik untuk menampilkan jarak dari Anda",
+    is: "Smelltu til að sýna fjarlægðina frá þér",
+    it: "Clicca per mostrare la distanza da te",
+    ja: "あなたからの距離を表示するにはクリック",
+    ko: "내 위치로부터의 거리를 보려면 클릭하세요",
+    lt: "Spustelėkite, kad matytumėte atstumą nuo jūsų",
+    lv: "Noklikšķiniet, lai parādītu attālumu no jums",
+    nl: "Klik om de afstand vanaf jou te tonen",
+    no: "Klikk for å vise avstanden fra deg",
+    pl: "Kliknij, aby pokazać odległość od Ciebie",
+    pt: "Clique para mostrar a distância de você",
+    ro: "Faceți clic pentru a afișa distanța față de dvs.",
+    ru: "Нажмите, чтобы показать расстояние от вас",
+    sk: "Kliknutím zobrazíte vzdialenosť od vás",
+    sl: "Kliknite za prikaz razdalje od vas",
+    sr: "Кликните да прикажете удаљеност од вас",
+    sv: "Klicka för att visa avståndet från dig",
+    ta: "உங்களிடமிருந்து உள்ள தூரத்தைக் காட்ட கிளிக் செய்யவும்",
+    th: "คลิกเพื่อแสดงระยะทางจากคุณ",
+    tr: "Sizden olan mesafeyi göstermek için tıklayın",
+    uk: "Натисніть, щоб показати відстань від вас",
+    ur: "آپ سے فاصلہ دکھانے کے لیے کلک کریں",
+    vi: "Nhấp để hiển thị khoảng cách từ bạn",
+    zh: "点击显示与你的距离"
+};
+
 var languageInstructions = {
     en: "Respond with field values in English ONLY. Do not switch to any other language regardless of what text, signage, or visual context appears in the image. The user has selected English.",
 
@@ -1068,6 +1279,16 @@ function distance(distance) {
     return template.replace("{distance}", distance + " " + unit[km]);
 }
 
+function error(key) {
+    return (ERROR_TRANSLATIONS[currentLang] && ERROR_TRANSLATIONS[currentLang][key])
+        || ERROR_TRANSLATIONS.en[key]
+        || key;
+}
+
+function locateHintText() {
+    return LOCATE_HINT_TRANSLATIONS[currentLang] || LOCATE_HINT_TRANSLATIONS.en;
+}
+
 function changeLanguage() {
 
     document.title = "🌍 " + translate("title");
@@ -1088,6 +1309,8 @@ function changeLanguage() {
 
     document.querySelector("#showToggleLanguage .toggle-text").textContent = translate("language");
     document.querySelector(".learn-more-text").textContent = translate("moreInformation");
+
+    document.querySelector(".hint-text").textContent = locateHintText();
 
     setTimeout(alignToggleChevrons, 50);
 
