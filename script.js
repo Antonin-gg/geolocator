@@ -12,6 +12,8 @@ var isSatellite = false;
 var isDark = true;
 var photoMarker;
 var currentPlaceName = null;
+var currentLat = null;
+var currentLng = null;
 var currentSentence = null;
 var currentPhotoHtml = null;
 var currentImageFile = null;
@@ -28,6 +30,8 @@ var wikiBlacklisted = 0;
 var lockedPhotoHeight = null;
 var isImperial = false;
 var userCoordinates = null;
+var locateHintShown = false;
+var hasTriedAutoGeolocation = false;
 
 
 
@@ -425,6 +429,7 @@ function showError(message) {
     if (panelOpen) closePanel();
     else if (stripOpen) closeStrip();
 
+    document.getElementById("welcome").style.display = "none";
     document.getElementById("noData").style.display = "block";
     document.getElementById("noData").textContent = message;
     setTimeout(() => {
@@ -513,15 +518,15 @@ function alignToggleChevrons() {
         document.querySelector("#showToggleTheme .toggle-text"),
         document.querySelector("#showToggleLanguage .toggle-text")
     ];
-    
-    toggles.forEach(function(t) { t.style.minWidth = ""; });
-    
+
+    toggles.forEach(function (t) { t.style.minWidth = ""; });
+
     var maxWidth = 0;
-    toggles.forEach(function(t) {
+    toggles.forEach(function (t) {
         if (t.offsetWidth > maxWidth) maxWidth = t.offsetWidth;
     });
-    
-    toggles.forEach(function(t) {
+
+    toggles.forEach(function (t) {
         t.style.minWidth = maxWidth + "px";
     });
 }
@@ -620,6 +625,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     document.getElementById("resultPanel").classList.add('open');
     document.getElementById("map").classList.add('panel-open');
     document.getElementById("wrapper").classList.add('panel-open');
+    document.body.classList.add("panel-open");
 
     document.body.classList.remove("strip-open");
 
@@ -667,6 +673,7 @@ function closePanel() {
     document.getElementById("resultPanel").classList.remove('open');
     document.getElementById("map").classList.remove('panel-open');
     document.getElementById("wrapper").classList.remove('panel-open');
+    document.body.classList.remove("panel-open");
 
     if (photoMarker) {
         map.removeLayer(photoMarker);
@@ -687,6 +694,9 @@ function closePanel() {
     }, 300);
 
     closeMoreContent();
+
+    currentLat = null;
+    currentLng = null;
 }
 
 function getPopupPhotoHtml() {
@@ -700,6 +710,7 @@ function minimizePanel() {
     document.getElementById("resultPanel").classList.remove('open');
     document.getElementById("map").classList.remove('panel-open');
     document.getElementById("wrapper").classList.remove('panel-open');
+    document.body.classList.remove("panel-open");
 
     document.getElementById("resultStrip").style.display = "flex";
 
@@ -746,6 +757,9 @@ function closeStrip() {
     document.getElementById("welcome").style.display = "block";
 
     closeMoreContent();
+
+    currentLat = null;
+    currentLng = null;
 }
 
 function closeMoreContent() {
@@ -775,7 +789,7 @@ function closePanelWiki() {
 
 async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode) {
 
-    await buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence);
+    await buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode);
 
     await buildGeoInfo(lat, lng, aiConfidence, aiCountryCode);
 
@@ -784,35 +798,37 @@ async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiC
     document.getElementById("learnMore").style.display = (hasGeo || hasWiki) ? "flex" : "none";
 }
 
-async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
-
-    wikiBlacklisted = 0;
-
-    var queries = buildWikiFallbackQueries(aiPlace);
+async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode) {
 
     var result = null;
 
+    if (!aiPlace) {
+        var regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+        var countryName = aiCountryCode ? regionNames.of(aiCountryCode.toUpperCase()) : "";
+        var EnGeocodedPlace = geocodedPlace.split(",")[0].trim() + ", " + countryName;
+        result = await getWikiResult(EnGeocodedPlace, geocodedPlace, lat, lng, aiConfidence);
+
+    } else {
+        result = await getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence);
+    }
+
+    if (!result) {
+        document.getElementById("panelWiki").innerHTML = "";
+        return;
+    }
+
+    var text = result.extract;
+
+    document.getElementById("panelWiki").innerHTML =
+        "<strong>" + result.title + "</strong><br>" +
+        text + " " +
+        (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + READ_MORE_TRANSLATIONS[currentLang] + '</a>' : "");
+
+}
+
+async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
     /*
-    Wikipedia fallback logic:
-
-    If `queries` is null, this is an EXIF-based result, so there is no AI place-name
-    query chain to try. In that case:
-    1. Search the current UI-language Wikipedia using the full geocoded shortName.
-    2. If that fails, try current UI-language coordinate geosearch.
-    3. If that still fails, try English Wikipedia using only the primary place name
-       before the first comma.
-    4. If an English result is found and the UI language is not English:
-       a. Try to find the translated article title in the current UI language.
-       b. If that translated article exists, use it.
-       c. Otherwise, keep the English result.
-    5. If primary-name English search fails, try English coordinate geosearch.
-    6. If English geosearch finds a result and the UI language is not English:
-       a. Try to find the translated article title in the current UI language.
-       b. If that translated article exists, use it.
-       c. Otherwise, keep the English geosearch result.
-    7. If nothing works, no Wikipedia result is shown.
-
-    Otherwise, loop through the generated Wikipedia queries:
+    Wikipedia fallback logic
     1. Search English Wikipedia with the current query.
     2. If the query builder added a blacklisted/simplified query, it is handled as
        part of this same loop. `wikiBlacklisted` marks the index where local/geosearch
@@ -831,107 +847,66 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence) 
           then translate that result if possible.
     5. If nothing works, continue to the next generated query.
     */
-    if (!queries) {
-        result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
-        if (!result) result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
+    wikiBlacklisted = 0;
 
-        if (!result && currentLang !== "en") {
-            var primaryExifPlace = geocodedPlace.split(",")[0].trim();
+    var queries = buildWikiFallbackQueries(aiPlace);
 
-            result = await getWikiData(primaryExifPlace, "en", lat, lng, aiConfidence);
+    var result = null;
 
-            if (result) {
-                var translatedExifTitle = getWikiTitleTranslation(result);
+    for (var i = 0; i < queries.length; i++) {
+        result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
 
-                if (translatedExifTitle) {
-                    result =
-                        await getWikiData(translatedExifTitle, currentLang, lat, lng, aiConfidence) ||
-                        result;
+        if (result && currentLang != "en") {
+            var translatedTitle = getWikiTitleTranslation(result);
+            if (translatedTitle) {
+
+                var translatedResult = await getWikiData(translatedTitle, currentLang, lat, lng, aiConfidence) || result;
+                if (translatedResult != result) {
+                    result = translatedResult;
+                    break;
                 }
             }
-
-            if (!result) {
-                result = await wikiGeoSearch(primaryExifPlace, "en", lat, lng, aiConfidence);
-
-                if (result) {
-                    var geoTranslatedExifTitle = getWikiTitleTranslation(result);
-
-                    if (geoTranslatedExifTitle) {
-                        result =
-                            await getWikiData(geoTranslatedExifTitle, currentLang, lat, lng, aiConfidence) ||
-                            result;
-                    }
-                }
-            }
-        }
-
-    } else {
-        for (var i = 0; i < queries.length; i++) {
-            result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
-
-            if (result && currentLang != "en") {
-                var translatedTitle = getWikiTitleTranslation(result);
-                if (translatedTitle) {
-
-                    var translatedResult = await getWikiData(translatedTitle, currentLang, lat, lng, aiConfidence) || result;
-                    if (translatedResult != result) {
-                        result = translatedResult;
-                        break;
-                    }
-                }
-
-                if (i === wikiBlacklisted) {
-                    var enResult = result;
-
-                    result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
-                    if (result) break;
-
-                    result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
-                    if (result) break;
-
-                    result = enResult;
-                }
-
-            }
-
-            if (result) break;
 
             if (i === wikiBlacklisted) {
+                var enResult = result;
+
                 result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
                 if (result) break;
 
                 result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
                 if (result) break;
 
-                if (currentLang != "en") {
-                    result = await wikiGeoSearch(geocodedPlace, "en", lat, lng, aiConfidence);
-                    if (result) {
-                        var geoTranslatedTitle = getWikiTitleTranslation(result);
-                        if (geoTranslatedTitle) {
-
-                            result = await getWikiData(geoTranslatedTitle, currentLang, lat, lng, aiConfidence) || result;
-
-                        }
-                    }
-                    if (result) break;
-                }
+                result = enResult;
             }
 
         }
+
+        if (result) break;
+
+        if (i === wikiBlacklisted) {
+            result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
+            if (result) break;
+
+            result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
+            if (result) break;
+
+            if (currentLang != "en") {
+                result = await wikiGeoSearch(geocodedPlace, "en", lat, lng, aiConfidence);
+                if (result) {
+                    var geoTranslatedTitle = getWikiTitleTranslation(result);
+                    if (geoTranslatedTitle) {
+
+                        result = await getWikiData(geoTranslatedTitle, currentLang, lat, lng, aiConfidence) || result;
+
+                    }
+                }
+                if (result) break;
+            }
+        }
+
     }
 
-    if (!result) {
-        document.getElementById("panelWiki").innerHTML = "";
-        return;
-    }
-
-    var text = result.extract;
-
-    document.getElementById("panelWiki").innerHTML =
-        "<strong>" + result.title + "</strong><br>" +
-        text + " " +
-        (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + READ_MORE_TRANSLATIONS[currentLang] + '</a>' : "");
-
+    return result;
 }
 
 async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
@@ -1003,14 +978,14 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
         var score = wikiTitleScore(r.title || "", query);
 
         if (lat && lng && r.coordinates && r.coordinates[0]) {
-            var dist = squaredDistance(lat, lng, r.coordinates[0].lat, r.coordinates[0].lon);
+            var dist = haversineKm(lat, lng, r.coordinates[0].lat, r.coordinates[0].lon);
 
             var maxDist =
-                aiConfidence === "country" ? 100 :
-                    aiConfidence === "region" ? 4 :
-                        aiConfidence === "city" ? 1 :
-                            aiConfidence === "landmark" ? 0.1 :
-                                0.02;
+                aiConfidence === "country" ? 1000 :
+                    aiConfidence === "region" ? 300 :
+                        aiConfidence === "city" ? 25 :
+                            aiConfidence === "landmark" ? 5 :
+                                1;
 
             if (dist < maxDist) score += 20;
             else score -= 60;
@@ -1031,7 +1006,13 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
         return b.score - a.score || a.index - b.index;
     });
 
-    return scored[0] ? scored[0].page : null;
+    for (var i = 0; i < scored.length; i++) {
+        if (isProperNounAcrossLanguages(scored[i].page)) {
+            return scored[i].page;
+        }
+    }
+
+    return null;
 }
 
 function wikiTitleScore(title, query) {
@@ -1041,7 +1022,21 @@ function wikiTitleScore(title, query) {
 
     if (primaryTokens.length === 0 || titleTokens.length === 0) return -100;
 
-    if (containsTokens(primaryQuery, title) && containsTokens(title, primaryQuery)) {
+    var hasForeignPrefix = false;
+    var normalizedTitle = (title || "").toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    var firstPrimaryToken = primaryTokens[0];
+    var firstTokenPos = normalizedTitle.indexOf(firstPrimaryToken);
+    if (firstTokenPos > 0) {
+        var prefix = normalizedTitle.substring(0, firstTokenPos);
+        var prefixWords = prefix.match(/[\p{L}\p{N}]+/gu) || [];
+        hasForeignPrefix = prefixWords.some(function (w) {
+            return !primaryTokens.includes(w);
+        });
+    }
+
+    if (containsTokens(primaryQuery, title) && containsTokens(title, primaryQuery) && !hasForeignPrefix) {
         return 100;
     }
 
@@ -1054,18 +1049,51 @@ function wikiTitleScore(title, query) {
             return !primaryTokens.includes(token);
         });
 
-        var startsWithTokens = primaryTokens.every(function (token, i) {
-            return titleTokens[i] === token;
-        });
-
         var score = 80 - extraTitleTokens.length * 15;
 
-        if (!startsWithTokens) score -= 35;
+        if (hasForeignPrefix) score -= 35;
 
         return score;
     }
 
     return -100;
+}
+
+function isProperNounAcrossLanguages(page) {
+    if (!page) return true;
+    if (!page.langlinks || page.langlinks.length < 3) return true;
+
+    var allTitles = page.langlinks.map(function (l) { return l["*"]; });
+    allTitles.push(page.title);
+
+    var totalTitles = allTitles.length;
+    var requiredCount = Math.max(Math.ceil(totalTitles * 0.3), 4);
+
+    var normalizedTitles = allTitles.map(function (title) {
+        return (title || "").toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+    });
+
+    var allTokens = new Set();
+    allTitles.forEach(function (title) {
+        tokenizePlaceName(title).forEach(function (token) {
+            allTokens.add(token);
+        });
+    });
+
+    var tokens = Array.from(allTokens);
+
+    for (var i = 0; i < tokens.length; i++) {
+        var token = tokens[i];
+        var matchCount = 0;
+        for (var j = 0; j < normalizedTitles.length; j++) {
+            if (normalizedTitles[j].indexOf(token) !== -1) matchCount++;
+        }
+        if (matchCount >= requiredCount) return true;
+    }
+
+    return false;
 }
 
 function isListPage(page) {
@@ -1191,35 +1219,40 @@ async function aiLocator(image) {
         reader.readAsDataURL(image);
     });
 
-    var aiResponse = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            model: AI_MODEL,
-            max_tokens: 200,
-            messages: [{
-                role: "user",
-                content: [
-                    {
-                        type: "text",
-                        text: promptWithLang
-                    },
-                    {
-                        type: "image_url",
-                        image_url: {
-                            url: imageBase64,
-                            detail: "high"
+    var aiResponse;
+
+    try {
+        aiResponse = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: AI_MODEL,
+                max_tokens: 200,
+                messages: [{
+                    role: "user",
+                    content: [
+                        { type: "text", text: promptWithLang },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: imageBase64,
+                                detail: "high"
+                            }
                         }
-                    }
-                ]
-            }]
-        })
-    });
+                    ]
+                }]
+            })
+        });
+    } catch (e) {
+        console.error(e);
+        showError(error("network"));
+        return null;
+    }
 
     if (!aiResponse.ok) {
-        showError("Network error. Please try again.");
+        showError(error("network"));
         return null;
     }
 
@@ -1250,7 +1283,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     });
 
     if (!response.ok) {
-        showError("Network error. Please try again.");
+        showError(error("network"));
         return null;
     }
 
@@ -1298,6 +1331,10 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     var countryCode = (result.address && result.address.country_code)
         ? result.address.country_code.toUpperCase()
         : null;
+
+
+    currentLat = photoCoordinates.latitude;
+    currentLng = photoCoordinates.longitude;
 
     await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
 
@@ -1432,7 +1469,7 @@ async function tryNominatim(query, aiConfidence, aiCountryCode) {
     });
 
     if (!response.ok) {
-        showError("Network error. Please try again.");
+        showError(error("network"));
         return "error";
     }
 
@@ -1472,14 +1509,14 @@ async function tryOpenCage(query, aiConfidence, aiCountryCode) {
     var response = await fetch(url);
 
     if (!response.ok) {
-        showError("Network error. Please try again.");
+        showError(error("network"));
         return "error";
     }
 
     var data = await response.json();
 
     if (data.status && data.status.code !== 200) {
-        showError("Geocoding error. Please try again.");
+        showError(error("network"));
         return "error";
     }
 
@@ -1601,28 +1638,22 @@ function findClosestExtraResult(results, openCageResult, aiConfidence) {
         typeFilteredResults = results;
     }
 
-    var maxDist = (aiConfidence === "country") ? 100 : (aiConfidence === "region") ? 4 : (aiConfidence === "city") ? 0.2 : (aiConfidence === "landmark") ? 0.05 : null;
+    var maxDist = (aiConfidence === "country") ? 1000 : (aiConfidence === "region") ? 300 : (aiConfidence === "city") ? 25 : (aiConfidence === "landmark") ? 5 : 1;
 
     var sorted = typeFilteredResults
         .filter(function (r) {
             if (!r.geojson || r.geojson.type === "Point") return false;
 
-            var distR = squaredDistance(parseFloat(r.lat), parseFloat(r.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            var distR = haversineKm(parseFloat(r.lat), parseFloat(r.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
             return distR < maxDist;
         })
         .sort(function (a, b) {
-            var distA = squaredDistance(parseFloat(a.lat), parseFloat(a.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
-            var distB = squaredDistance(parseFloat(b.lat), parseFloat(b.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            var distA = haversineKm(parseFloat(a.lat), parseFloat(a.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            var distB = haversineKm(parseFloat(b.lat), parseFloat(b.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
             return distA - distB;
         });
 
     return sorted[0] || null;
-}
-
-function squaredDistance(lat1, lng1, lat2, lng2) {
-    var dLat = lat2 - lat1;
-    var dLng = lng2 - lng1;
-    return dLat * dLat + dLng * dLng;
 }
 
 function getZoomLevel(aiConfidence) {
@@ -2026,6 +2057,9 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         var location = await getLocationData(queryLocation, aiResult.confidence, aiResult.countryCode);
 
+        currentLat = location.lat;
+        currentLng = location.lng;
+
         await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiResult.confidence, aiResult.countryCode);
 
         hideSearching();
@@ -2103,6 +2137,7 @@ function showPanelLoading(photoHtml) {
         document.getElementById("resultPanel").classList.add('open');
         document.getElementById("map").classList.add('panel-open');
         document.getElementById("wrapper").classList.add('panel-open');
+        document.body.classList.add("panel-open");
     }
 
     document.getElementById("welcome").style.display = "none";
@@ -2144,9 +2179,13 @@ async function locateImage(input) {
 
     var image = input.files[0];
 
+    var allowedTypes = ["image/jpeg", "image/png"];
+
     if (!image) return;
-    if (!image.type.startsWith('image/')) {
-        showError("Please upload an image file.");
+
+    if (!allowedTypes.includes(image.type)) {
+        showError(error("file"));
+        input.value = "";
         return;
     }
 
@@ -2178,6 +2217,8 @@ async function locateImage(input) {
         await placeMarkerFromAI(image, photoImgHtml);
 
     }
+
+    input.value = "";
 }
 
 if (isDark) {
