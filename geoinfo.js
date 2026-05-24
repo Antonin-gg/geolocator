@@ -1,6 +1,11 @@
-var userCoordinates = null;
 var userCoordinatesPromise = null;
-var userDeniedGeolocation = false;
+
+var userLocationIcon = L.divIcon({
+    className: "user-location-marker",
+    html: '<div class="user-location-dot"></div>',
+    iconSize: [18, 18],
+    iconAnchor: [9, 9]
+});
 
 function getUserCoordinates() {
     if (userCoordinates) {
@@ -25,17 +30,12 @@ function getUserCoordinates() {
                     position.coords.longitude
                 ];
 
-                userDeniedGeolocation = false;
+
                 userCoordinatesPromise = null;
                 resolve(userCoordinates);
             },
             function (err) {
                 console.warn("Geolocation failed:", err);
-
-                if (err && err.code === 1) {
-                    userDeniedGeolocation = true;
-                }
-
                 userCoordinatesPromise = null;
                 resolve(null);
             },
@@ -56,89 +56,207 @@ function updateLocateUserButton() {
     var button = document.getElementById("locateUserButton");
     if (!button) return;
 
-    if (!("geolocation" in navigator)) {
+    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+
+    var shouldShow = hasUploadedFirstPhoto && (panelOpen || stripOpen);
+
+    clearTimeout(locateButtonTimeout);
+
+    if (!("geolocation" in navigator) || !shouldShow) {
         button.style.display = "none";
         return;
     }
 
-    clearTimeout(locateButtonTimeout);
     locateButtonTimeout = setTimeout(function () {
-        button.style.display = userCoordinates ? "none" : "flex";
-        if (button.style.display === "flex" && !locateHintShown) {
+        button.style.display = "flex";
+        if (!locateHintShown) {
             showLocateUserHint();
             locateHintShown = true;
         }
     }, 320);
 }
 
-document.getElementById("locateUserButton").addEventListener("click", async function () {
-    userCoordinates = null;
-    userCoordinatesPromise = null;
+function showUserLocationPreview() {
+    if (locationPreviewInProgress) return;
+    if (!userCoordinates || currentLat == null || currentLng == null) return;
 
-    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
-    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    locationPreviewInProgress = true;
 
-    var coords = await getUserCoordinates();
-
-    if (!coords) {
-        updateLocateUserButton();
-        return;
+    if (locationPreviewTimeout1) {
+        clearTimeout(locationPreviewTimeout1);
+    }
+    if (locationPreviewTimeout2) {
+        clearTimeout(locationPreviewTimeout2);
     }
 
-    userCoordinates = coords;
-    updateLocateUserButton();
+    var userLat = userCoordinates[0];
+    var userLng = userCoordinates[1];
 
-    if (!panelOpen && !stripOpen) return;
-
-    if (currentLat == null || currentLng == null) return;
-
-    var needsPanelOpenDelay = false;
-
-    if (stripOpen && !panelOpen) {
-        openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
-        needsPanelOpenDelay = true;
+    if (!userMarker) {
+        userMarker = L.marker([userLat, userLng], {
+            icon: userLocationIcon,
+            interactive: false,
+            zIndexOffset: 1000
+        }).addTo(map);
+    } else {
+        userMarker.setLatLng([userLat, userLng]);
+        userMarker.addTo(map);
     }
 
-    var delay = needsPanelOpenDelay ? 350 : 0;
+    var bounds = L.latLngBounds([
+        [currentLat, currentLng],
+        [userLat, userLng]
+    ]);
 
+    map.setView([userLat, userLng], 13, {
+        animate: true
+    });
 
-    await buildDistanceItem(currentLat, currentLng);
-    balanceGeoInfoLayout();
+    locationPreviewTimeout1 = setTimeout(function () {
+        map.flyToBounds(bounds, {
+            padding: [60, 60],
+            animate: true
+        });
+        map.once("moveend", function () {
+            showUserDistanceLine(userLat, userLng);
+            locationPreviewTimeout2 = setTimeout(function () {
+                if (locationPolygon) {
+                    map.fitBounds(locationPolygon.getBounds(), {
+                        padding: [40, 40],
+                        animate: true,
+                        duration: 0.9,
+                        easeLinearity: 0.25
+                    });
+                } else {
+                    map.flyTo([currentLat, currentLng], 13, {
+                        animate: true
+                    });
+                }
+                if (userDistanceLine) map.removeLayer(userDistanceLine);
+                if (userDistanceLabel) map.removeLayer(userDistanceLabel);
+                map.once("moveend", function () {
+                    if (userMarker) {
+                        map.removeLayer(userMarker);
+                    }
+                    locationPreviewInProgress = false;
+                });
+            }, 2000);
+        });
 
+    }, 1000);
     setTimeout(function () {
-        var moreContent = document.getElementById("moreContent");
-        var panelContent = document.getElementById("panelContent");
-        var geoInfo = document.getElementById("panelGeoInfo");
-        var learnMore = document.getElementById("learnMore");
+        locationPreviewInProgress = false;
+    }, 3000);
+}
 
-        if (moreContent.classList.contains("collapsed")) {
-            moreContent.classList.remove("collapsed");
-            moreContentIsOpen = true;
-            learnMore.classList.add("expanded");
+function showUserDistanceLine(userLat, userLng) {
+    if (userDistanceLine) map.removeLayer(userDistanceLine);
+    if (userDistanceLabel) map.removeLayer(userDistanceLabel);
+
+    userDistanceLine = L.polyline(
+        [[currentLat, currentLng], [userLat, userLng]],
+        {
+            className: "user-distance-line",
+            weight: 3,
+            dashArray: "2 10",
+            opacity: 1,
+            interactive: false
+        }
+    ).addTo(map);
+
+    var midLat = (currentLat + userLat) / 2;
+    var midLng = (currentLng + userLng) / 2;
+
+    var distance = formatDistance(geoInfoCache.distanceKm);
+
+    userDistanceLabel = L.marker([midLat, midLng], {
+        interactive: false,
+        icon: L.divIcon({
+            className: "distance-line-label",
+            html: '<div>' + distance + '</div>',
+            iconSize: null
+        })
+    }).addTo(map);
+}
+
+document.getElementById("locateUserButton").addEventListener("click", async function () {
+
+    if (!hasAcceptedLocationOnce) {
+        userCoordinates = null;
+        userCoordinatesPromise = null;
+
+        var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+        var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+
+        var coords = await getUserCoordinates();
+
+        if (!coords) {
+            updateLocateUserButton();
+            return;
         }
 
-        requestAnimationFrame(function () {
-            if (panelContent.scrollHeight > panelContent.clientHeight) {
-                panelContent.classList.add("scrollable");
+        hasAcceptedLocationOnce = true;
 
-                geoInfo.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest"
-                });
+        updateLocateUserButton();
+
+        if (!panelOpen && !stripOpen) return;
+
+        if (currentLat == null || currentLng == null) return;
+
+        var needsPanelOpenDelay = false;
+
+        if (stripOpen && !panelOpen) {
+            openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
+            needsPanelOpenDelay = true;
+        }
+
+        var delay = needsPanelOpenDelay ? 350 : 0;
+
+
+        await buildDistanceItem(currentLat, currentLng);
+        balanceGeoInfoLayout();
+
+        setTimeout(function () {
+            var moreContent = document.getElementById("moreContent");
+            var panelContent = document.getElementById("panelContent");
+            var geoInfo = document.getElementById("panelGeoInfo");
+            var learnMore = document.getElementById("learnMore");
+
+            if (moreContent.classList.contains("collapsed")) {
+                moreContent.classList.remove("collapsed");
+                moreContentIsOpen = true;
+                learnMore.classList.add("expanded");
             }
-        });
-    }, delay);
+
+            requestAnimationFrame(function () {
+                if (panelContent.scrollHeight > panelContent.clientHeight) {
+                    panelContent.classList.add("scrollable");
+
+                    geoInfo.scrollIntoView({
+                        behavior: "smooth",
+                        block: "nearest"
+                    });
+                }
+            });
+        }, delay);
+    }
+
+    showUserLocationPreview();
 });
+
+var hintHideTimeout = null;
 
 function showLocateUserHint() {
     var hint = document.getElementById("locateUserHint");
     if (!hint) return;
 
+    clearTimeout(hintHideTimeout);
     hint.classList.add("visible");
 
-    setTimeout(function () {
+    hintHideTimeout = setTimeout(function () {
         hint.classList.remove("visible");
-    }, 3000);
+    }, 4000);
 }
 
 var geoInfoCache = {
@@ -237,21 +355,13 @@ function formatCoordinatesDMS(lat, lng) {
 }
 
 async function buildDistanceItem(lat, lng) {
-;
-    if (!userCoordinates && !hasTriedAutoGeolocation) {
-        hasTriedAutoGeolocation = true;
-        userCoordinates = await getUserCoordinates();
-    }
-
     var distanceEl = document.getElementById("distance");
 
     if (!userCoordinates) {
         distanceEl.innerHTML = '<div class="value"></div>';
         distanceEl.classList.remove("active");
-        updateLocateUserButton();
         return;
     }
-    updateLocateUserButton();
     var userLat = userCoordinates[0];
     var userLong = userCoordinates[1];
     geoInfoCache.distanceKm = Math.floor(haversineKm(lat, lng, userLat, userLong));
@@ -313,7 +423,7 @@ async function buildAltitudeItem(lat, lng, elevation) {
     var altitude = document.getElementById("altitude");
     var altitudeMeters = null;
 
-    if (elevation || elevation === 0) {
+    if (elevation != null) {
         altitude.innerHTML =
             '<div class="emoji">🏔️</div>' +
             '<div class="value">' +
