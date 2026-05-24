@@ -306,7 +306,13 @@ body.panel-open #locateUserHint {
 
 .hint-arrow {
     display: inline-block;
+    font-weight: 900;
     animation: hintArrowNudge 0.9s ease-in-out infinite;
+}
+
+@keyframes hintArrowNudge {
+    0%, 100% { transform: translate(0, -1px); }
+    50% { transform: translate(-4px, -1px); }
 }
 
 .hint-text {
@@ -321,18 +327,6 @@ body.panel-open #locateUserHint {
 
 body.dark .hint-text {
     color: rgba(210, 220, 230, 0.75);
-}
-
-@keyframes hintArrowNudge {
-
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    50% {
-        transform: translateX(-4px);
-    }
 }
 
 .uploadArrow {
