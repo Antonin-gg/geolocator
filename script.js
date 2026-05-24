@@ -31,7 +31,14 @@ var lockedPhotoHeight = null;
 var isImperial = false;
 var userCoordinates = null;
 var locateHintShown = false;
-var hasTriedAutoGeolocation = false;
+var hasUploadedFirstPhoto = false;
+var hasAcceptedLocationOnce = false;
+var userMarker = null;
+var locationPreviewTimeout1 = null;
+var locationPreviewTimeout2 = null;
+var userDistanceLine = null;
+var userDistanceLabel = null;
+var locationPreviewInProgress = false;
 
 
 
@@ -688,6 +695,7 @@ function closePanel() {
     document.getElementById("imageInputLabel").style.display = "flex";
     document.getElementById("imageInputLabelPanel").style.display = "none";
 
+    updateLocateUserButton();
     setTimeout(function () {
         map.invalidateSize();
         document.getElementById("welcome").style.display = "block";
@@ -757,6 +765,8 @@ function closeStrip() {
     document.getElementById("welcome").style.display = "block";
 
     closeMoreContent();
+
+    updateLocateUserButton();
 
     currentLat = null;
     currentLng = null;
@@ -2217,7 +2227,8 @@ async function locateImage(input) {
         await placeMarkerFromAI(image, photoImgHtml);
 
     }
-
+    hasUploadedFirstPhoto = true;
+    updateLocateUserButton();
     input.value = "";
 }
 
