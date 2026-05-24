@@ -1,25 +1,144 @@
+var userCoordinates = null;
 var userCoordinatesPromise = null;
+var userDeniedGeolocation = false;
 
 function getUserCoordinates() {
-    if (userCoordinatesPromise) return userCoordinatesPromise;
+    if (userCoordinates) {
+        return Promise.resolve(userCoordinates);
+    }
+
+    if (userCoordinatesPromise) {
+        return userCoordinatesPromise;
+    }
 
     userCoordinatesPromise = new Promise(function (resolve) {
         if (!("geolocation" in navigator)) {
+            userCoordinatesPromise = null;
             resolve(null);
             return;
         }
+
         navigator.geolocation.getCurrentPosition(
             function (position) {
-                resolve([position.coords.latitude, position.coords.longitude]);
+                userCoordinates = [
+                    position.coords.latitude,
+                    position.coords.longitude
+                ];
+
+                userDeniedGeolocation = false;
+                userCoordinatesPromise = null;
+                resolve(userCoordinates);
             },
-            function () {
+            function (err) {
+                console.warn("Geolocation failed:", err);
+
+                if (err && err.code === 1) {
+                    userDeniedGeolocation = true;
+                }
+
+                userCoordinatesPromise = null;
                 resolve(null);
             },
-            { timeout: 5000, maximumAge: 600000 }
+            {
+                enableHighAccuracy: false,
+                timeout: 10000,
+                maximumAge: 600000
+            }
         );
     });
 
     return userCoordinatesPromise;
+}
+
+var locateButtonTimeout = null;
+
+function updateLocateUserButton() {
+    var button = document.getElementById("locateUserButton");
+    if (!button) return;
+
+    if (!("geolocation" in navigator)) {
+        button.style.display = "none";
+        return;
+    }
+
+    clearTimeout(locateButtonTimeout);
+    locateButtonTimeout = setTimeout(function () {
+        button.style.display = userCoordinates ? "none" : "flex";
+        if (button.style.display === "flex" && !locateHintShown) {
+            showLocateUserHint();
+            locateHintShown = true;
+        }
+    }, 320);
+}
+
+document.getElementById("locateUserButton").addEventListener("click", async function () {
+    userCoordinates = null;
+    userCoordinatesPromise = null;
+
+    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+
+    var coords = await getUserCoordinates();
+
+    if (!coords) {
+        updateLocateUserButton();
+        return;
+    }
+
+    userCoordinates = coords;
+    updateLocateUserButton();
+
+    if (!panelOpen && !stripOpen) return;
+
+    if (currentLat == null || currentLng == null) return;
+
+    var needsPanelOpenDelay = false;
+
+    if (stripOpen && !panelOpen) {
+        openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
+        needsPanelOpenDelay = true;
+    }
+
+    var delay = needsPanelOpenDelay ? 350 : 0;
+
+
+    await buildDistanceItem(currentLat, currentLng);
+    balanceGeoInfoLayout();
+
+    setTimeout(function () {
+        var moreContent = document.getElementById("moreContent");
+        var panelContent = document.getElementById("panelContent");
+        var geoInfo = document.getElementById("panelGeoInfo");
+        var learnMore = document.getElementById("learnMore");
+
+        if (moreContent.classList.contains("collapsed")) {
+            moreContent.classList.remove("collapsed");
+            moreContentIsOpen = true;
+            learnMore.classList.add("expanded");
+        }
+
+        requestAnimationFrame(function () {
+            if (panelContent.scrollHeight > panelContent.clientHeight) {
+                panelContent.classList.add("scrollable");
+
+                geoInfo.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest"
+                });
+            }
+        });
+    }, delay);
+});
+
+function showLocateUserHint() {
+    var hint = document.getElementById("locateUserHint");
+    if (!hint) return;
+
+    hint.classList.add("visible");
+
+    setTimeout(function () {
+        hint.classList.remove("visible");
+    }, 3000);
 }
 
 var geoInfoCache = {
@@ -30,8 +149,6 @@ var geoInfoCache = {
     timeZone: null,
     isDay: null
 };
-
-
 
 async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
     if (aiConfidence !== "country") {
@@ -120,17 +237,21 @@ function formatCoordinatesDMS(lat, lng) {
 }
 
 async function buildDistanceItem(lat, lng) {
-
-    userCoordinates = await getUserCoordinates();
+;
+    if (!userCoordinates && !hasTriedAutoGeolocation) {
+        hasTriedAutoGeolocation = true;
+        userCoordinates = await getUserCoordinates();
+    }
 
     var distanceEl = document.getElementById("distance");
 
     if (!userCoordinates) {
         distanceEl.innerHTML = '<div class="value"></div>';
         distanceEl.classList.remove("active");
+        updateLocateUserButton();
         return;
     }
-
+    updateLocateUserButton();
     var userLat = userCoordinates[0];
     var userLong = userCoordinates[1];
     geoInfoCache.distanceKm = Math.floor(haversineKm(lat, lng, userLat, userLong));
@@ -454,10 +575,10 @@ function formatTemperature(celsius) {
 
 function getContinentName(countryCode) {
     if (!countryCode) return null;
-    
+
     var continentCode = COUNTRY_TO_CONTINENT[countryCode.toUpperCase()];
     if (!continentCode) return null;
-    
+
     var langTable = CONTINENT_TRANSLATIONS[currentLang] || CONTINENT_TRANSLATIONS.en;
     return langTable[continentCode] || CONTINENT_TRANSLATIONS.en[continentCode] || null;
 }
