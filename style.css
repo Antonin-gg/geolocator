@@ -967,13 +967,19 @@ body.dark #toggleTheme:hover {
     }
 
     #locateUserButton {
-        left: 10px;
         top: 116px;
     }
 
     #locateUserHint {
-        left:48px;
         top: calc(116px + 15px);
+    }
+
+    body.panel-open #locateUserButton {
+        left: 48px;
+    }
+
+    body.panel-open #locateUserHint {
+        left: 48px;
     }
 }
 
