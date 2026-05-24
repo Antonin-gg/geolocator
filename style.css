@@ -245,7 +245,7 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 #locateUserButton {
     display: none;
     position: fixed;
-    
+
     top: 76px;
     left: 10px;
     z-index: 1002;
@@ -324,9 +324,12 @@ body.dark .hint-text {
 }
 
 @keyframes hintArrowNudge {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateX(0);
     }
+
     50% {
         transform: translateX(-4px);
     }
@@ -546,13 +549,13 @@ body.dark #panelWiki {
     margin-bottom: 4px;
 }
 
-#panelGeoInfo > #country .value {
+#panelGeoInfo>#country .value {
     font-size: 1rem;
     font-weight: 600;
     line-height: 1.2;
 }
 
-#panelGeoInfo > #country .continent {
+#panelGeoInfo>#country .continent {
     font-size: 0.65rem;
     font-weight: 700;
     opacity: 0.4;
@@ -967,7 +970,7 @@ body.dark #toggleTheme:hover {
     }
 
     #locateUserButton {
-        top: 116px;
+        top: 113px;
     }
 
     #locateUserHint {
@@ -1042,7 +1045,7 @@ body.dark #toggleTheme:hover {
     }
 
     #imageInputLabelPanel {
-        bottom: 50px;
+        bottom: 10px;
         left: calc(30vw + 10px);
     }
 
@@ -1051,10 +1054,11 @@ body.dark #toggleTheme:hover {
     }
 
     #locateUserButton {
-        bottom: 10px;
+        bottom: 47px;
     }
 
     #locateUserHint {
-        top: calc(116px + 15px);
+        bottom: calc(47px + 15px);
+        transform: translateY(50%);
     }
 }
