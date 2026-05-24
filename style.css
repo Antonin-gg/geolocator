@@ -963,7 +963,7 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         top: 76px;
-        left: 9.5px;
+        left: 10px;
     }
 
     #locateUserButton {
@@ -1004,8 +1004,8 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         position: fixed;
-        width: 31px;
-        height: 31px;
+        width: 30px;
+        height: 30px;
         padding: 0;
         display: none;
         align-items: center;
@@ -1043,15 +1043,15 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         top: 76px;
-        left: calc(30vw + 9.5px);
+        left: calc(30vw + 10px);
     }
 
     body.strip-open #imageInputLabelPanel {
-        left: 9.5px;
+        left: 10px;
     }
 
     #locateUserButton {
-        top: 116px;
+        bottom: 10px;
     }
 
     #locateUserHint {
