@@ -298,7 +298,7 @@ function buildCountryItem(lat, lng, aiCountryCode) {
     country.innerHTML =
         '<div class="emoji">' + flagHtml + '</div>' +
         '<div class="value">' + countryName + '</div>' +
-        (continentName ? '<div class="subvalue">' + continentName + '</div>' : '');
+        (continentName ? '<div class="continent">' + continentName + '</div>' : '');
 
     country.classList.add("active");
 }
