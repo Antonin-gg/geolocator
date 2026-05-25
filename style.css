@@ -337,30 +337,25 @@ body.dark .hint-text {
 }
 
 .uploadArrow {
-    position: relative;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    width: 26px;
-    height: 24px;
-
-    font-size: 22px;
-    font-weight: 900;
-    line-height: 1;
-    transform: scaleX(1.5) translateY(-3px);
 }
 
-.uploadArrow::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    bottom: 2px;
-    width: 12px;
-    height: 2px;
-    background: currentColor;
-    transform: translateX(-50%);
-    border-radius: 999px;
+.uploadArrow svg {
+    width: 26px;
+    height: 26px;
+    overflow: visible;
+}
+
+.uploadArrow path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 #resultStrip {
@@ -1121,6 +1116,7 @@ body.dark #toggleTheme:hover {
         width: 40px;
         height: 40px;
         top: 56px;
+        font-size: 1.75rem !important;
     }
 
     #locateUserHint {
