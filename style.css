@@ -434,6 +434,7 @@ body.dark #learnMore:hover {
     flex-wrap: wrap;
     gap: 65px 4px;
     justify-content: space-around;
+    margin-top: 6px;
 }
 
 #coordinates .value {
@@ -441,6 +442,23 @@ body.dark #learnMore:hover {
     overflow: visible;
     text-overflow: ellipsis;
     max-width: 100%;
+}
+
+.geo-info-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    color: rgba(40, 40, 40, 0.65);
+    margin-bottom: 4px;
+}
+
+body.dark .geo-info-icon {
+    color: rgba(240, 240, 240, 0.72);
 }
 
 #toggleUnits {
@@ -475,7 +493,7 @@ body.dark #learnMore:hover {
     line-height: 1.5;
     border-left: 3px solid rgba(0, 0, 0, 0.2);
     padding-left: 12px;
-    margin-top: 8px;
+    margin-top: 12px;
 }
 
 #panelWiki:empty {
@@ -764,7 +782,9 @@ body.dark .distance-line-label div {
 
 .lang-option:hover,
 #toggleView:hover,
-#toggleTheme:hover {
+#toggleTheme:hover,
+#locateUserButton:hover,
+#imageInputLabel:hover {
     background: rgba(0, 0, 0, 0.08) !important;
     cursor: pointer;
 }
@@ -776,7 +796,9 @@ body.dark .distance-line-label div {
 
 body.dark .lang-option:hover,
 body.dark #toggleView:hover,
-body.dark #toggleTheme:hover {
+body.dark #toggleTheme:hover,
+body.dark #locateUserButton:hover,
+body.dark #imageInputLabel:hover {
     background: rgba(255, 255, 255, 0.30) !important;
 }
 
@@ -832,6 +854,7 @@ body.dark #toggleTheme:hover {
     align-items: center;
     justify-content: center;
     gap: 6px;
+    cursor: pointer;
 }
 
 .toggle-text {
@@ -1024,7 +1047,7 @@ body.dark #toggleTheme:hover {
     }
 
     body.panel-open #locateUserHint {
-        left: 58px;
+        left: 56px;
     }
 }
 
@@ -1053,10 +1076,7 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         position: fixed;
-        width: 40px;
-        height: 40px;
         top: 10px;
-        padding: 0;
         display: none;
         align-items: center;
         justify-content: center;
@@ -1065,27 +1085,123 @@ body.dark #toggleTheme:hover {
     }
 
     .upload-icon {
-        width: 26px;
-        height: 26px;
+        width: 24px;
+        height: 24px;
         display: block;
         fill: none;
         stroke: currentColor;
-        stroke-width: 2.3;
+        stroke-width: 2.2;
         stroke-linecap: round;
         stroke-linejoin: round;
     }
 
     #locateUserButton {
-        width: 40px;
-        height: 40px;
         top: 56px;
         font-size: 1.75rem !important;
     }
 
     #locateUserHint {
         top: calc(56px + 20px);
-        left: 58px;
+        left: 56px;
         transform: translateY(-50%);
+    }
+
+    #wrapperToggles {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        z-index: 1003;
+        gap: 6px;
+        align-items: flex-end;
+    }
+
+    #showToggleLanguage,
+    #toggleView,
+    #toggleTheme {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px !important;
+    }
+
+    #showToggleLanguage,
+    #toggleView,
+    #toggleTheme,
+    #locateUserButton,
+    #imageInputLabelPanel {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        min-height: 38px;
+        padding: 0 !important;
+    }
+
+    #showToggleView,
+    #showToggleTheme {
+        display: none !important;
+    }
+
+    #showToggleLanguage .toggle-chevron {
+        display: none;
+    }
+
+    #showToggleLanguage .toggle-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #languageOptions {
+        position: fixed;
+        top: 75px;
+        left: 75px;
+        right: 75px;
+        bottom: 75px;
+
+        width: auto;
+        max-height: none;
+        overflow-y: auto;
+
+        border-radius: 14px !important;
+        z-index: 3000;
+    }
+
+    .lang-option {
+        width: 100%;
+        border-radius: 0 !important;
+        padding: 10px 14px;
+    }
+
+    .lang-option:first-child {
+        border-top-left-radius: 14px !important;
+        border-top-right-radius: 14px !important;
+    }
+
+    .lang-option:last-child {
+        border-bottom-left-radius: 14px !important;
+        border-bottom-right-radius: 14px !important;
+    }
+
+    .mobile-toggle-icon {
+        width: 24px;
+        height: 24px;
+        display: block;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    #showToggleLanguage:hover,
+    #imageInputLabelPanel:hover {
+        background: rgba(0, 0, 0, 0.08) !important;
+        cursor: pointer;
+    }
+
+    body.dark #showToggleLanguage:hover,
+    body.dark #imageInputLabelPanel:hover {
+        background: rgba(255, 255, 255, 0.30) !important;
     }
 }
 
@@ -1120,6 +1236,6 @@ body.dark #toggleTheme:hover {
     }
 
     body.panel-open #locateUserHint {
-        left: calc(30vw + 58px);
+        left: calc(30vw + 56px);
     }
 }
