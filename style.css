@@ -240,6 +240,11 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
 #imageInputLabelPanel {
     display: none;
     transition: left 0.3s ease, top 0.3s ease, transform 0.3s ease;
+    color: #1f2933;
+}
+
+body.dark #imageInputLabelPanel {
+    color: #f0f0f0;
 }
 
 #locateUserButton {
