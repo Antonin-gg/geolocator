@@ -2112,7 +2112,9 @@ async function placeMarkerFromAI(image, photoHtml) {
         photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
         if (location.bounds) {
-            map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]]);
+            map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]], {
+                padding: [15, 15]
+            });
         } else {
             map.flyTo([location.lat, location.lng], getZoomLevel(aiResult.confidence));
         }
