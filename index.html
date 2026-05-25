@@ -29,7 +29,13 @@
     </div>
 
     <label for="imageInput" id="imageInputLabelPanel" class="box">
-        <span class="uploadArrow">⬆</span>
+        <span class="uploadArrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 17V5"></path>
+                <path d="M7 10l5-5 5 5"></path>
+                <path d="M5 19h14"></path>
+            </svg>
+        </span>
     </label>
 
     <button id="locateUserButton" class="box" aria-label="Use my location">⌖</button>
