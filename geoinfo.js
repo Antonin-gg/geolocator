@@ -109,45 +109,78 @@ function showUserLocationPreview() {
         [userLat, userLng]
     ]);
 
-    map.setView([userLat, userLng], 13, {
-        animate: true
-    });
+    map.setView([userLat, userLng], 13);
+    lockMapInteraction();
 
     locationPreviewTimeout1 = setTimeout(function () {
         map.flyToBounds(bounds, {
-            padding: [60, 60],
-            animate: true
+            padding: [40, 40],
         });
         map.once("moveend", function () {
             showUserDistanceLine(userLat, userLng);
             locationPreviewTimeout2 = setTimeout(function () {
-                if (locationPolygon) {
-                    map.fitBounds(locationPolygon.getBounds(), {
-                        padding: [40, 40],
-                        animate: true,
-                        duration: 0.9,
-                        easeLinearity: 0.25
-                    });
-                } else {
-                    map.flyTo([currentLat, currentLng], 13, {
-                        animate: true
-                    });
+                if (userDistanceLine) {
+                    var lineEl = userDistanceLine.getElement();
+                    if (lineEl) lineEl.classList.add("fading-out");
                 }
-                if (userDistanceLine) map.removeLayer(userDistanceLine);
-                if (userDistanceLabel) map.removeLayer(userDistanceLabel);
+                if (userDistanceLabel) {
+                    var labelEl = userDistanceLabel.getElement();
+                    if (labelEl) labelEl.classList.add("fading-out");
+                }
+                setTimeout(function () {
+                    if (userDistanceLine) {
+                        map.removeLayer(userDistanceLine);
+                        userDistanceLine = null;
+                    }
+                    if (userDistanceLabel) {
+                        map.removeLayer(userDistanceLabel);
+                        userDistanceLabel = null;
+                    }
+                    if (locationPolygon) {
+                        map.flyToBounds(locationPolygon.getBounds(), {
+                            padding: [40, 40]
+                        });
+                    } else {
+                        map.flyTo([currentLat, currentLng], 13);
+                    }
+                }, 700);
                 map.once("moveend", function () {
                     if (userMarker) {
                         map.removeLayer(userMarker);
                     }
                     locationPreviewInProgress = false;
+                    unlockMapInteraction();
                 });
-            }, 2000);
+            }, 2500);
         });
 
     }, 1000);
     setTimeout(function () {
-        locationPreviewInProgress = false;
-    }, 3000);
+        if (locationPreviewInProgress) {
+            locationPreviewInProgress = false;
+            unlockMapInteraction();
+        }
+    }, 12000);
+}
+
+function lockMapInteraction() {
+    map.dragging.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.boxZoom.disable();
+    map.keyboard.disable();
+    if (map.tap) map.tap.disable();
+}
+
+function unlockMapInteraction() {
+    map.dragging.enable();
+    map.touchZoom.enable();
+    map.doubleClickZoom.enable();
+    map.scrollWheelZoom.enable();
+    map.boxZoom.enable();
+    map.keyboard.enable();
+    if (map.tap) map.tap.enable();
 }
 
 function showUserDistanceLine(userLat, userLng) {
@@ -159,8 +192,6 @@ function showUserDistanceLine(userLat, userLng) {
         {
             className: "user-distance-line",
             weight: 3,
-            dashArray: "2 10",
-            opacity: 1,
             interactive: false
         }
     ).addTo(map);
@@ -204,42 +235,8 @@ document.getElementById("locateUserButton").addEventListener("click", async func
 
         if (currentLat == null || currentLng == null) return;
 
-        var needsPanelOpenDelay = false;
-
-        if (stripOpen && !panelOpen) {
-            openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
-            needsPanelOpenDelay = true;
-        }
-
-        var delay = needsPanelOpenDelay ? 350 : 0;
-
-
         await buildDistanceItem(currentLat, currentLng);
         balanceGeoInfoLayout();
-
-        setTimeout(function () {
-            var moreContent = document.getElementById("moreContent");
-            var panelContent = document.getElementById("panelContent");
-            var geoInfo = document.getElementById("panelGeoInfo");
-            var learnMore = document.getElementById("learnMore");
-
-            if (moreContent.classList.contains("collapsed")) {
-                moreContent.classList.remove("collapsed");
-                moreContentIsOpen = true;
-                learnMore.classList.add("expanded");
-            }
-
-            requestAnimationFrame(function () {
-                if (panelContent.scrollHeight > panelContent.clientHeight) {
-                    panelContent.classList.add("scrollable");
-
-                    geoInfo.scrollIntoView({
-                        behavior: "smooth",
-                        block: "nearest"
-                    });
-                }
-            });
-        }, delay);
     }
 
     showUserLocationPreview();
@@ -256,7 +253,7 @@ function showLocateUserHint() {
 
     hintHideTimeout = setTimeout(function () {
         hint.classList.remove("visible");
-    }, 4000);
+    }, 7000);
 }
 
 var geoInfoCache = {
