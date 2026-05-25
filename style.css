@@ -1120,11 +1120,12 @@ body.dark #toggleTheme:hover {
     #locateUserButton {
         width: 40px;
         height: 40px;
-        top: 61px;
+        top: 56px;
     }
 
     #locateUserHint {
         top: calc(61px + 20px);
+        left: 58px;
         transform: translateY(-50%);
     }
 }
