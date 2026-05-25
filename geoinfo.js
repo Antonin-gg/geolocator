@@ -328,7 +328,7 @@ function buildCoordinatesItem(lat, lng) {
     var formatted = formatCoordinatesDMS(lat, lng);
 
     coordinates.innerHTML =
-        '<div class="emoji">📍</div>' +
+        '<div class="emoji">' + GEO_ICONS.coordinates + '</div>' +
         '<div class="value">' + formatted + '</div>';
 
     coordinates.classList.add("active");
@@ -422,7 +422,7 @@ async function buildAltitudeItem(lat, lng, elevation) {
 
     if (elevation != null) {
         altitude.innerHTML =
-            '<div class="emoji">🏔️</div>' +
+            '<div class="emoji">' + GEO_ICONS.altitude + '</div>' +
             '<div class="value">' +
             '<span class="convertible" data-type="altitude" data-meters="' + elevation + '">' +
             formatAltitude(elevation) +
@@ -498,7 +498,7 @@ function buildTimeItem(timezone) {
     }
 
     time.innerHTML =
-        '<div class="emoji">🕐</div>' +
+        '<div class="emoji">' + GEO_ICONS.time + '</div>' +
         '<div class="value">' + localTime + '</div>';
     time.classList.add("active");
 }
@@ -820,4 +820,14 @@ var WEATHER_ICONS = {
     95: { day: "⛈️", night: "⛈️" },   // Thunderstorm
     96: { day: "⛈️", night: "⛈️" },   // Thunderstorm with slight hail
     99: { day: "⛈️", night: "⛈️" }    // Thunderstorm with heavy hail
+};
+
+var GEO_ICONS = {
+    altitude: '<svg class="geo-info-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"/></svg>',
+
+    time: '<svg class="geo-info-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4-2"/></svg>',
+
+    coordinates: '<svg class="geo-info-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 13v8"/><path d="M12 3v3"/><path d="M2.354 10.354a1.207 1.207 0 0 1 0-1.708l2.06-2.06A2 2 0 0 1 5.828 6h12.344a2 2 0 0 1 1.414.586l2.06 2.06a1.207 1.207 0 0 1 0 1.708l-2.06 2.06a2 2 0 0 1-1.414.586H5.828a2 2 0 0 1-1.414-.586z"/></svg>',
+
+    distance: '<svg class="geo-info-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 15v-3"/><path d="M14 15v-3"/><path d="M18 15v-3"/><path d="M2 8V4"/><path d="M22 6H2"/><path d="M22 8V4"/><path d="M6 15v-3"/><rect x="2" y="12" width="20" height="8" rx="2"/></svg>'
 };
