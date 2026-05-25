@@ -386,14 +386,6 @@ body.dark .hint-text {
     transition: background 0.2s;
 }
 
-#learnMore:hover {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-body.dark #learnMore:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
 .learn-more-arrow {
     display: inline-block;
     width: 8px;
@@ -780,26 +772,9 @@ body.dark .distance-line-label div {
     border-radius: 0 !important;
 }
 
-.lang-option:hover,
-#toggleView:hover,
-#toggleTheme:hover,
-#locateUserButton:hover,
-#imageInputLabel:hover {
-    background: rgba(0, 0, 0, 0.08) !important;
-    cursor: pointer;
-}
-
 .active-lang {
     font-weight: bold;
     pointer-events: none;
-}
-
-body.dark .lang-option:hover,
-body.dark #toggleView:hover,
-body.dark #toggleTheme:hover,
-body.dark #locateUserButton:hover,
-body.dark #imageInputLabel:hover {
-    background: rgba(255, 255, 255, 0.30) !important;
 }
 
 #languageOptions {
@@ -1192,17 +1167,6 @@ body.dark #imageInputLabel:hover {
         stroke-linecap: round;
         stroke-linejoin: round;
     }
-
-    #showToggleLanguage:hover,
-    #imageInputLabelPanel:hover {
-        background: rgba(0, 0, 0, 0.08) !important;
-        cursor: pointer;
-    }
-
-    body.dark #showToggleLanguage:hover,
-    body.dark #imageInputLabelPanel:hover {
-        background: rgba(255, 255, 255, 0.30) !important;
-    }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
@@ -1237,5 +1201,54 @@ body.dark #imageInputLabel:hover {
 
     body.panel-open #locateUserHint {
         left: calc(30vw + 56px);
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    #toggleView:hover,
+    #toggleTheme:hover,
+    #showToggleLanguage:hover,
+    #locateUserButton:hover,
+    #imageInputLabel:hover,
+    #imageInputLabelPanel:hover,
+    #learnMore:hover,
+    .lang-option:hover {
+        background: rgba(0, 0, 0, 0.08) !important;
+        cursor: pointer;
+    }
+
+    body.dark #toggleView:hover,
+    body.dark #toggleTheme:hover,
+    body.dark #showToggleLanguage:hover,
+    body.dark #locateUserButton:hover,
+    body.dark #imageInputLabel:hover,
+    body.dark #imageInputLabelPanel:hover,
+    body.dark #learnMore:hover,
+    body.dark .lang-option:hover {
+        background: rgba(255, 255, 255, 0.30) !important;
+    }
+}
+
+@media (hover: none), (pointer: coarse) {
+    #toggleView:active,
+    #toggleTheme:active,
+    #showToggleLanguage:active,
+    #locateUserButton:active,
+    #imageInputLabel:active,
+    #imageInputLabelPanel:active,
+    #learnMore:active,
+    .lang-option:active {
+        background: rgba(0, 0, 0, 0.08) !important;
+    }
+
+    body.dark #toggleView:active,
+    body.dark #toggleTheme:active,
+    body.dark #showToggleLanguage:active,
+    body.dark #locateUserButton:active,
+    body.dark #imageInputLabel:active,
+    body.dark #imageInputLabelPanel:,
+    body.dark #learnMore:active,
+    body.dark .lang-option:active {
+        background: rgba(255, 255, 255, 0.30) !important;
     }
 }
