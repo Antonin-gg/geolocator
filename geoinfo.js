@@ -114,7 +114,7 @@ function showUserLocationPreview() {
 
     locationPreviewTimeout1 = setTimeout(function () {
         map.flyToBounds(bounds, {
-            padding: [40, 40],
+            padding: [15, 15],
         });
         map.once("moveend", function () {
             showUserDistanceLine(userLat, userLng);
@@ -138,7 +138,7 @@ function showUserLocationPreview() {
                     }
                     if (locationPolygon) {
                         map.flyToBounds(locationPolygon.getBounds(), {
-                            padding: [40, 40]
+                            padding: [15, 15]
                         });
                     } else {
                         map.flyTo([currentLat, currentLng], 13);
