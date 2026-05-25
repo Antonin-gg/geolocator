@@ -1124,8 +1124,8 @@ body.dark #toggleTheme:hover {
     }
 
     #locateUserHint {
-        top: calc(61px + 20px);
-        left: 58px;
+        top: calc(56px + 20px);
+        left: 68px;
         transform: translateY(-50%);
     }
 }
