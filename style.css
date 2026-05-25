@@ -311,8 +311,15 @@ body.panel-open #locateUserHint {
 }
 
 @keyframes hintArrowNudge {
-    0%, 100% { transform: translate(0, -1px); }
-    50% { transform: translate(-4px, -1px); }
+
+    0%,
+    100% {
+        transform: translate(0, -1px);
+    }
+
+    50% {
+        transform: translate(-4px, -1px);
+    }
 }
 
 .hint-text {
@@ -447,7 +454,7 @@ body.dark #learnMore:hover {
 #panelGeoInfo {
     display: flex;
     flex-wrap: wrap;
-    gap: 30px 4px;
+    gap: 65px 4px;
     justify-content: space-around;
 }
 
@@ -594,7 +601,7 @@ body.dark #panelWiki {
     border-radius: 50%;
     background: #1f8cff;
     border: 3px solid white;
-    box-shadow: 0 0 0 3px rgba(31, 140, 255, 0.25), 0 2px 8px rgba(0,0,0,0.35);
+    box-shadow: 0 0 0 3px rgba(31, 140, 255, 0.25), 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .distance-line-label div {
@@ -608,7 +615,7 @@ body.dark #panelWiki {
     white-space: nowrap;
 }
 
-.user-distance-line {
+/*.user-distance-line {
     stroke: #1f5f9f;
     stroke-linecap: round;
     animation: distanceDash 0.9s linear infinite;
@@ -627,6 +634,31 @@ body.dark .user-distance-line {
     to {
         stroke-dashoffset: -12;
     }
+}*/
+
+.user-distance-line {
+    stroke: #1f5f9f;
+    stroke-linecap: round;
+    stroke-dasharray: 2 10;
+    opacity: 0;
+    animation:
+        fadeIn 0.6s ease-out forwards,
+        marchingAnts 0.9s linear infinite;
+}
+
+@keyframes marchingAnts {
+    from {
+        stroke-dashoffset: 0;
+    }
+
+    to {
+        stroke-dashoffset: -12;
+    }
+}
+
+body.dark .user-distance-line {
+    stroke: #c8cdd2;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
 }
 
 .distance-line-label div {
@@ -638,9 +670,27 @@ body.dark .user-distance-line {
     font-weight: 800;
     letter-spacing: 0.02em;
     white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+.fading-out {
+    animation: fadeOut 0.5s ease-in forwards !important;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+    }
 }
 
 body.dark .distance-line-label div {
@@ -1019,16 +1069,7 @@ body.dark #toggleTheme:hover {
     }
 
     #imageInputLabelPanel {
-        top: 76px;
         left: 10px;
-    }
-
-    #locateUserButton {
-        top: 113px;
-    }
-
-    #locateUserHint {
-        top: calc(116px + 15px);
     }
 
     body.panel-open #locateUserButton {
@@ -1042,6 +1083,10 @@ body.dark #toggleTheme:hover {
 
 @media (max-width: 768px),
 (max-height: 500px) {
+
+    .leaflet-control-zoom {
+        display: none;
+    }
 
     #panelPhoto {
         display: flex;
@@ -1061,8 +1106,9 @@ body.dark #toggleTheme:hover {
 
     #imageInputLabelPanel {
         position: fixed;
-        width: 30px;
-        height: 30px;
+        width: 45px;
+        height: 45px;
+        top: 10px;
         padding: 0;
         display: none;
         align-items: center;
@@ -1071,8 +1117,13 @@ body.dark #toggleTheme:hover {
         cursor: pointer;
     }
 
-    #panelGeoInfo {
-        gap: 45px 4px;
+    #locateUserButton {
+        top: 61px;
+    }
+
+    #locateUserHint {
+        top: calc(61px + 22.5px);
+        transform: translateY(-50%);
     }
 }
 
@@ -1099,22 +1150,10 @@ body.dark #toggleTheme:hover {
     }
 
     #imageInputLabelPanel {
-        bottom: 10px;
         left: calc(30vw + 10px);
     }
 
     body.strip-open #imageInputLabelPanel {
         left: 10px;
-    }
-
-    #locateUserButton {
-        top: auto;
-        bottom: 47px;
-    }
-
-    #locateUserHint {
-        top:auto;
-        bottom: calc(47px + 15px);
-        transform: translateY(50%);
     }
 }
