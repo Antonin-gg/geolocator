@@ -1246,7 +1246,7 @@ body.dark .distance-line-label div {
     body.dark #showToggleLanguage:active,
     body.dark #locateUserButton:active,
     body.dark #imageInputLabel:active,
-    body.dark #imageInputLabelPanel:,
+    body.dark #imageInputLabelPanel:active,
     body.dark #learnMore:active,
     body.dark .lang-option:active {
         background: rgba(255, 255, 255, 0.30) !important;
