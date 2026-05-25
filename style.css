@@ -1129,7 +1129,6 @@ body.dark #toggleTheme:hover {
         transform: translateY(-50%);
     }
 }
-}
 
 @media (max-height: 500px) and (orientation: landscape) {
     #panelPhoto {
@@ -1162,5 +1161,6 @@ body.dark #toggleTheme:hover {
     }
 
     body.panel-open #locateUserHint {
-    left: calc(30vw + 58px);
+        left: calc(30vw + 58px);
+    }
 }
