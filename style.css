@@ -1077,7 +1077,7 @@ body.dark #toggleTheme:hover {
     }
 
     body.panel-open #locateUserHint {
-        left: 48px;
+        left: 58px;
     }
 }
 
@@ -1125,9 +1125,10 @@ body.dark #toggleTheme:hover {
 
     #locateUserHint {
         top: calc(56px + 20px);
-        left: 68px;
+        left: 58px;
         transform: translateY(-50%);
     }
+}
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
@@ -1159,4 +1160,7 @@ body.dark #toggleTheme:hover {
     body.strip-open #imageInputLabelPanel {
         left: 10px;
     }
+
+    body.panel-open #locateUserHint {
+    left: calc(30vw + 58px);
 }
