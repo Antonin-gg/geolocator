@@ -734,7 +734,12 @@ function minimizePanel() {
         map.invalidateSize();
         if (photoMarker) {
             var popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
-            var miniPopup = L.popup({ closeButton: false, maxWidth: popupWidth })
+            var miniPopup = L.popup({
+                closeButton: false,
+                maxWidth: popupWidth,
+                closeOnClick: false,
+                autoClose: false
+            })
                 .setContent(getPopupPhotoHtml());
             photoMarker.bindPopup(miniPopup).openPopup();
         }
