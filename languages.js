@@ -1304,6 +1304,8 @@ function changeLanguage() {
 
     document.querySelector(".hint-text").textContent = locateHintText();
 
+    updateToggles();
+
     setTimeout(alignToggleChevrons, 50);
 
 }
