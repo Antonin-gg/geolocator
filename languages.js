@@ -1282,30 +1282,16 @@ function locateHintText() {
 }
 
 function changeLanguage() {
-
     document.title = "🌍 " + translate("title");
 
     document.getElementById("welcome").textContent = translate("welcome");
-
     document.getElementById("searchingText").innerHTML = " " + translate("searching");
-
     document.getElementById("imageInputLabel").textContent = translate("upload");
 
-    document.querySelector("#showToggleView .toggle-text").textContent = translate("view");
-    if (!isSatellite) document.getElementById("toggleView").textContent = translate("satellite");
-    else document.getElementById("toggleView").textContent = translate("street");
-
-    document.querySelector("#showToggleTheme .toggle-text").textContent = translate("theme");
-    if (!isDark) document.getElementById("toggleTheme").textContent = translate("dark");
-    else document.getElementById("toggleTheme").textContent = translate("light");
-
-    document.querySelector("#showToggleLanguage .toggle-text").textContent = translate("language");
     document.querySelector(".learn-more-text").textContent = translate("moreInformation");
-
     document.querySelector(".hint-text").textContent = locateHintText();
 
     updateToggles();
 
     setTimeout(alignToggleChevrons, 50);
-
 }
