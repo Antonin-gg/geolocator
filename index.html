@@ -28,40 +28,43 @@
 
     </div>
 
-    <label for="imageInput" id="imageInputLabelPanel" class="box">
-        <svg class="upload-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21" />
-            <path d="m14 19.5 3-3 3 3" />
-            <path d="M17 22v-5.5" />
-            <circle cx="9" cy="9" r="2" />
-        </svg>
-    </label>
-
-    <button id="locateUserButton" class="box" aria-label="Use my location">⌖</button>
+    <button id="locateUserButton" class="box desktop-toggle-label" aria-label="Use my location">⌖</button>
 
     <div id="locateUserHint" class="box">
-        <span class="hint-arrow">←</span>
+        <span class="hint-arrow hint-arrow-left">←</span>
         <span class="hint-text"></span>
+        <span class="hint-arrow hint-arrow-right">→</span>
     </div>
 
     <div id="wrapperToggles">
         <div id="wrapperView">
             <button id="showToggleView" class="box">
-                <span class="toggle-text">View</span>
+                <span class="desktop-toggle-label toggle-text">View</span>
                 <span class="toggle-chevron"></span>
             </button>
-            <button id="toggleView" class="hidden-view box">Satellite</button>
+
+            <button id="toggleView" class="hidden-view box">
+                <span class="desktop-toggle-label">Satellite</span>
+                <span class="mobile-toggle-label"></span>
+            </button>
         </div>
+
         <div id="wrapperTheme">
             <button id="showToggleTheme" class="box">
-                <span class="toggle-text">Theme</span>
+                <span class="desktop-toggle-label toggle-text">Theme</span>
                 <span class="toggle-chevron"></span>
             </button>
-            <button id="toggleTheme" class="hidden-theme box">Dark</button>
+
+            <button id="toggleTheme" class="hidden-theme box">
+                <span class="desktop-toggle-label">Dark</span>
+                <span class="mobile-toggle-label"></span>
+            </button>
         </div>
+
         <div id="wrapperLanguage">
             <button id="showToggleLanguage" class="box">
-                <span class="toggle-text">Language</span>
+                <span class="desktop-toggle-label toggle-text">Language</span>
+                <span class="mobile-toggle-label"></span>
                 <span class="toggle-chevron"></span>
             </button>
 
@@ -112,6 +115,17 @@
 
             </div>
         </div>
+        <label for="imageInput" id="imageInputLabelPanel" class="box mobile-control-only">
+            <svg class="upload-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                    d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21" />
+                <path d="m14 19.5 3-3 3 3" />
+                <path d="M17 22v-5.5" />
+                <circle cx="9" cy="9" r="2" />
+            </svg>
+        </label>
+
+        <button id="locateUserButtonMobile" class="box mobile-control-only" aria-label="Use my location">⌖</button>
     </div>
     <div id="resultPanel">
         <button id="panelClose">✕</button>
