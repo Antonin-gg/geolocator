@@ -167,6 +167,34 @@ function showUserLocationPreview() {
     }, 12000);
 }
 
+function stopUserLocationPreview() {
+    locationPreviewInProgress = false;
+
+    clearTimeout(locationPreviewTimeout1);
+    clearTimeout(locationPreviewTimeout2);
+    locationPreviewTimeout1 = null;
+    locationPreviewTimeout2 = null;
+
+    map.off("moveend");
+
+    if (userMarker) {
+        map.removeLayer(userMarker);
+        userMarker = null;
+    }
+
+    if (userDistanceLine) {
+        map.removeLayer(userDistanceLine);
+        userDistanceLine = null;
+    }
+
+    if (userDistanceLabel) {
+        map.removeLayer(userDistanceLabel);
+        userDistanceLabel = null;
+    }
+
+    unlockMapInteraction();
+}
+
 function lockMapInteraction() {
     map.dragging.disable();
     map.touchZoom.disable();
