@@ -53,23 +53,27 @@ function getUserCoordinates() {
 var locateButtonTimeout = null;
 
 function updateLocateUserButton() {
-    var button = document.getElementById("locateUserButton");
-    if (!button) return;
+    var desktopButton = document.getElementById("locateUserButton");
+    var mobileButton = document.getElementById("locateUserButtonMobile");
+    if (!desktopButton || !mobileButton) return;
 
     var panelOpen = document.getElementById("resultPanel").classList.contains("open");
     var stripOpen = document.getElementById("resultStrip").style.display === "flex";
 
-    var shouldShow = hasUploadedFirstPhoto && (panelOpen || stripOpen);
+    var shouldShow = (panelOpen || stripOpen)&&!isSearching;
 
     clearTimeout(locateButtonTimeout);
 
     if (!("geolocation" in navigator) || !shouldShow) {
-        button.style.display = "none";
+        desktopButton.classList.remove("visible");
+        mobileButton.classList.remove("visible");
         return;
     }
 
     locateButtonTimeout = setTimeout(function () {
-        button.style.display = "flex";
+        desktopButton.classList.add("visible");
+        mobileButton.classList.add("visible");
+
         if (!locateHintShown) {
             showLocateUserHint();
             locateHintShown = true;
@@ -240,6 +244,10 @@ document.getElementById("locateUserButton").addEventListener("click", async func
     }
 
     showUserLocationPreview();
+});
+
+document.getElementById("locateUserButtonMobile").addEventListener("click", async function () {
+    document.getElementById("locateUserButton").click();
 });
 
 var hintHideTimeout = null;
@@ -578,7 +586,14 @@ async function getWeatherData(lat, lng) {
             isDay: data.current && data.current.is_day === 1,
         };
     } catch (e) {
-        return null;
+        //return null;
+        return {
+            elevation: null,
+            timezone: null,
+            temperature: null,
+            weatherCode: null,
+            isDay: null
+        };
     }
 }
 
