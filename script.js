@@ -559,18 +559,34 @@ function alignToggleChevrons() {
 }
 
 function updateToggles() {
+    document.querySelector("#toggleView .desktop-toggle-label").textContent =
+        isSatellite ? translate("street") : translate("satellite");
+
+    document.querySelector("#toggleTheme .desktop-toggle-label").textContent =
+        isDark ? translate("light") : translate("dark");
+
+    document.querySelector("#showToggleLanguage .desktop-toggle-label").textContent =
+        translate("language");
+
+    document.querySelector("#toggleView .mobile-toggle-label").innerHTML =
+        isSatellite ? ICONS.map : ICONS.satellite;
+
+    document.querySelector("#toggleTheme .mobile-toggle-label").innerHTML =
+        isDark ? ICONS.sun : ICONS.moon;
+
+    document.querySelector("#showToggleLanguage .mobile-toggle-label").innerHTML =
+        ICONS.language;
+}
+
+function updateUploadButtons() {
     var isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
+    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
 
-    if (!isMobile) {
-        document.getElementById("toggleView").textContent = isSatellite ? translate("street") : translate("satellite");
-        document.getElementById("toggleTheme").textContent = isDark ? translate("light") : translate("dark");
-        document.querySelector("#showToggleLanguage .toggle-text").textContent = translate("language");
-        return;
-    }
+    var showMobileUpload = isMobile && (panelOpen || stripOpen);
 
-    document.getElementById("toggleTheme").innerHTML = isDark ? ICONS.sun : ICONS.moon;
-    document.getElementById("toggleView").innerHTML = isSatellite ? ICONS.map : ICONS.satellite;
-    document.querySelector("#showToggleLanguage .toggle-text").innerHTML = ICONS.language;
+    document.getElementById("imageInputLabel").classList.toggle("mobile-hidden", showMobileUpload);
+    document.getElementById("imageInputLabelPanel").classList.toggle("visible", showMobileUpload);
 }
 
 var resizeTimeout;
@@ -596,21 +612,8 @@ window.addEventListener("resize", function () {
 
         }
 
-        else if (document.getElementById("resultStrip").style.display === "flex") {
-
-            if ((window.innerWidth <= 768 && window.innerHeight > window.innerWidth) ||
-                (window.innerHeight <= 500 && window.innerWidth > window.innerHeight)) {
-
-                document.getElementById("imageInputLabel").style.display = "none";
-
-            } else {
-
-                document.getElementById("imageInputLabel").style.display = "flex";
-
-            }
-
-        }
-
+        updateUploadButtons();
+        updateLocateUserButton();
         map.invalidateSize();
 
     }, 150);
@@ -679,18 +682,8 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     document.getElementById("welcome").style.display = "none";
 
-    if ((window.innerWidth <= 768 && window.innerHeight > window.innerWidth) ||
-        (window.innerHeight <= 500 && window.innerWidth > window.innerHeight)) {
-
-        document.getElementById("imageInputLabel").style.display = "none";
-        document.getElementById("imageInputLabelPanel").style.display = "flex";
-
-    } else {
-
-        document.getElementById("imageInputLabel").style.display = "flex";
-        document.getElementById("imageInputLabelPanel").style.display = "none";
-
-    }
+    updateUploadButtons();
+    updateLocateUserButton();
 
     if (moreContentIsOpen) {
         document.getElementById("moreContent").classList.remove("collapsed");
@@ -727,11 +720,12 @@ function closePanel() {
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
+    document.getElementById("locateUserHint").classList.remove("visible");
 
-    document.getElementById("imageInputLabel").style.display = "flex";
-    document.getElementById("imageInputLabelPanel").style.display = "none";
+    updateUploadButtons();
 
     updateLocateUserButton();
+
     setTimeout(function () {
         map.invalidateSize();
         document.getElementById("welcome").style.display = "block";
@@ -797,9 +791,9 @@ function closeStrip() {
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
+    document.getElementById("locateUserHint").classList.remove("visible");
 
-    document.getElementById("imageInputLabel").style.display = "flex";
-    document.getElementById("imageInputLabelPanel").style.display = "none";
+    updateUploadButtons();
 
     document.body.classList.remove("strip-open");
 
@@ -918,7 +912,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
                 }
             }
 
-            if (i === wikiBlacklisted) {
+            if (i === wikiBlacklisted + geocodingFellback) {
                 var enResult = result;
 
                 result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
@@ -934,7 +928,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
 
         if (result) break;
 
-        if (i === wikiBlacklisted) {
+        if (i === wikiBlacklisted + geocodingFellback) {
             result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
             if (result) break;
 
@@ -1066,11 +1060,18 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
                             aiConfidence === "city" ? 50 :
                                 aiConfidence === "landmark" ? 30 :
                                     1;
+            if (geocodingFellback) maxDist = 800;
 
             isClose = dist < maxDist;
             if (isClose) score += 20;
             else if (score >= 95) score -= 15;
             else score -= 60;
+        } else if (
+            lat != null &&
+            lng != null &&
+            (aiConfidence === "region" || aiConfidence === "city" || aiConfidence === "landmark")
+        ) {
+            score -= 15;
         }
 
         score -= index;
@@ -1090,7 +1091,7 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
     });
 
     for (var i = 0; i < scored.length; i++) {
-        if (scored[i].close) return scored[i].page;
+        if (scored[i].close && scored[i].score >= 90) return scored[i].page;
         if (isProperNounAcrossLanguages(scored[i].page)) {
             return scored[i].page;
         }
@@ -1120,7 +1121,24 @@ function wikiTitleScore(title, query) {
         });
     }
 
-    if (containsTokens(primaryQuery, title) && containsTokens(title, primaryQuery) && !hasForeignPrefix) {
+    var queryHasAccent = hasAccent(primaryQuery);
+    var titleHasAccent = hasAccent(title);
+
+    var accentInsensitiveMatch =
+        stripAccents(primaryQuery) === stripAccents(title);
+
+    var badAccentDirection =
+        queryHasAccent &&
+        !titleHasAccent &&
+        accentInsensitiveMatch;
+
+    if (
+        containsTokens(primaryQuery, title) &&
+        containsTokens(title, primaryQuery) &&
+        !hasForeignPrefix
+    ) {
+        if (badAccentDirection) return -100;
+
         return 100;
     }
 
@@ -1160,6 +1178,8 @@ function wikiTitleScore(title, query) {
 }
 
 function isProperNounAcrossLanguages(page) {
+    console.log("PROPER NOUN CALLED", page && page.title);
+
     if (!page) return true;
     if (!page.langlinks || page.langlinks.length < 3) return true;
 
@@ -1184,6 +1204,14 @@ function isProperNounAcrossLanguages(page) {
 
     var tokens = Array.from(allTokens);
 
+    console.log("PROPER NOUN FAIL", {
+        pageTitle: page.title,
+        requiredCount: requiredCount,
+        totalTitles: totalTitles,
+        tokens: tokens,
+        allTitles: allTitles
+    });
+
     for (var i = 0; i < tokens.length; i++) {
         var token = tokens[i];
         var matchCount = 0;
@@ -1194,6 +1222,17 @@ function isProperNounAcrossLanguages(page) {
     }
 
     return false;
+}
+
+function hasAccent(str) {
+    return /[\u0300-\u036f]/.test((str || "").normalize("NFD"));
+}
+
+function stripAccents(str) {
+    return (str || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 }
 
 function isListPage(page) {
@@ -1886,6 +1925,23 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
 
     var preferredTypes = getPreferredTypes(aiConfidence);
 
+    console.log("NOMINATIM DEBUG START", {
+        aiPlace: aiPlace,
+        aiConfidence: aiConfidence,
+        preferredTypes: preferredTypes,
+        rawResults: results.map(function (r) {
+            return {
+                name: r.name,
+                display_name: r.display_name,
+                type: r.type,
+                addresstype: r.addresstype,
+                class: r.class,
+                importance: r.importance,
+                namedetails: r.namedetails
+            };
+        })
+    });
+
     var typeFilteredResults = results;
 
     if (aiConfidence && aiConfidence !== "landmark") {
@@ -1900,6 +1956,23 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
         });
     }
 
+    console.log("NOMINATIM AFTER TYPE FILTER", {
+        count: typeFilteredResults.length,
+        results: typeFilteredResults.map(function (r) {
+            return {
+                name: r.name,
+                display_name: r.display_name,
+                type: r.type,
+                addresstype: r.addresstype,
+                class: r.class,
+                matchedType:
+                    preferredTypes.includes(r.type) ||
+                    preferredTypes.includes(r.addresstype),
+                namedetails: r.namedetails
+            };
+        })
+    });
+
     if (typeFilteredResults.length === 0) return null;
 
     var tokenMatches = typeFilteredResults.filter(function (r) {
@@ -1909,15 +1982,60 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
         var primaryPart = aiPlace.split(",")[0].trim();
 
 
-        return (usefulName(nameEn) && bidirectionalTokenMatch(aiPlace, nameEn)) ||
+        var checks = (usefulName(nameEn) && bidirectionalTokenMatch(aiPlace, nameEn)) ||
             (usefulName(localName) && bidirectionalTokenMatch(aiPlace, localName)) ||
             bidirectionalTokenMatch(aiPlace, display) ||
             (usefulName(nameEn) && primaryPart.length > 2 && bidirectionalTokenMatch(primaryPart, nameEn)) ||
             (primaryPart.length > 2 && bidirectionalTokenMatch(primaryPart, display));
+
+        var passed = Object.keys(checks).some(function (key) {
+            return checks[key];
+        });
+
+
+        console.log("NOMINATIM TOKEN CHECK", {
+            aiPlace: aiPlace,
+            primaryPart: primaryPart,
+            candidateName: r.name,
+            display: display,
+            nameEn: nameEn,
+            localName: localName,
+            type: r.type,
+            addresstype: r.addresstype,
+            checks: checks,
+            passed: passed
+        });
+
+        return checks;
+    });
+
+    console.log("NOMINATIM TOKEN MATCHES", {
+        count: tokenMatches.length,
+        results: tokenMatches.map(function (r) {
+            return {
+                name: r.name,
+                display_name: r.display_name,
+                type: r.type,
+                addresstype: r.addresstype,
+                importance: r.importance
+            };
+        })
     });
 
     if (tokenMatches.length > 0) {
-        return sortByImportance(tokenMatches)[0];
+        var picked = sortByImportance(tokenMatches)[0];
+
+        console.log("NOMINATIM PICKED", {
+            name: picked.name,
+            display_name: picked.display_name,
+            type: picked.type,
+            addresstype: picked.addresstype,
+            importance: picked.importance,
+            lat: picked.lat,
+            lon: picked.lon
+        });
+
+        return picked;
     }
 
     return null;
@@ -2037,6 +2155,7 @@ function getPreferredTypes(confidence) {
         "district",
         "administrative",
         "state_district",
+        "historic",
 
         // large geographic regions
         "archipelago",
@@ -2119,9 +2238,14 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     if (!aiResult) return;
 
-    var aiLocation = aiResult.place;
+    var aiLocation = aiResult.place || "";
 
-    if (aiLocation == "unknown") {
+    var aiConfidence = aiResult.confidence || "";
+
+    if (aiLocation.toLowerCase().trim() === "unknown" ||
+        aiLocation === "" ||
+        aiConfidence.toLowerCase().trim() === "unknown" ||
+        aiConfidence === "") {
 
         hideSearching();
 
@@ -2149,64 +2273,61 @@ async function placeMarkerFromAI(image, photoHtml) {
             true
         );
 
+        return;
     }
 
-    else {
+    var queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
 
-        var queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
+    var location = await getLocationData(queryLocation, aiConfidence, aiResult.countryCode);
 
-        var location = await getLocationData(queryLocation, aiResult.confidence, aiResult.countryCode);
-
-        currentLat = location.lat;
-        currentLng = location.lng;
-
-        await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiResult.confidence, aiResult.countryCode);
-
-        hideSearching();
-
-        document.getElementById("panelPlaceName").classList.remove("loading");
-        document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
-        document.getElementById("panelSearchingGlobe").style.display = "none";
-
-        if (photoMarker) {
-            map.removeLayer(photoMarker);
-            photoMarker = null;
-        }
-
-        if (locationPolygon) {
-            map.removeLayer(locationPolygon);
-            locationPolygon = null;
-        }
-
-        if (!location) {
-            openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location", true);
-            document.getElementById("panelPlaceName").innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
-            return;
-        }
-
-        if (location.showPolygon && location.polygon) {
-            locationPolygon = L.geoJSON(location.polygon, {
-                style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
-            }).addTo(map);
-        }
-
-        currentSentence = aiResult.displaySentence;
-
-        openPanel(location.shortName, photoHtml, aiResult.method, location.shortName, true);
-
-        photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
-
-        if (location.bounds) {
-            map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]], {
-                padding: [15, 15]
-            });
-        } else {
-            map.flyTo([location.lat, location.lng], getZoomLevel(aiResult.confidence));
-        }
-
-        document.getElementById("welcome").style.display = "none";
-
+    if (!location) {
+        openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location", true);
+        document.getElementById("panelPlaceName").innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
+        return;
     }
+
+    currentLat = location.lat;
+    currentLng = location.lng;
+
+    await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode);
+
+    hideSearching();
+
+    document.getElementById("panelPlaceName").classList.remove("loading");
+    document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+    document.getElementById("panelSearchingGlobe").style.display = "none";
+
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
+
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
+    }
+
+    if (location.showPolygon && location.polygon) {
+        locationPolygon = L.geoJSON(location.polygon, {
+            style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
+        }).addTo(map);
+    }
+
+    currentSentence = aiResult.displaySentence;
+
+    openPanel(location.shortName, photoHtml, aiResult.method, location.shortName, true);
+
+    photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+
+    if (location.bounds) {
+        map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]], {
+            padding: [15, 15]
+        });
+    } else {
+        map.flyTo([location.lat, location.lng], getZoomLevel(aiConfidence));
+    }
+
+    document.getElementById("welcome").style.display = "none";
 }
 
 function showPanelLoading(photoHtml) {
@@ -2221,7 +2342,7 @@ function showPanelLoading(photoHtml) {
     }
 
     closeMoreContent();
-    document.getElementById("locateUserButton").style.display = "none";
+
     document.getElementById("locateUserHint").classList.remove("visible");
     clearTimeout(locateButtonTimeout);
 
@@ -2247,17 +2368,8 @@ function showPanelLoading(photoHtml) {
 
     document.getElementById("welcome").style.display = "none";
 
-    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
-
-        document.getElementById("imageInputLabel").style.display = "none";
-        document.getElementById("imageInputLabelPanel").style.display = "flex";
-
-    } else {
-
-        document.getElementById("imageInputLabel").style.display = "flex";
-        document.getElementById("imageInputLabelPanel").style.display = "none";
-
-    }
+    updateUploadButtons();
+    updateLocateUserButton();
 
     setTimeout(function () { map.invalidateSize(); }, 300);
 }
@@ -2323,7 +2435,6 @@ async function locateImage(input) {
 
     }
     hasUploadedFirstPhoto = true;
-    updateLocateUserButton();
     input.value = "";
 }
 
