@@ -1220,7 +1220,7 @@ body.dark .distance-line-label div {
     }
 
     #locateUserHint .hint-text {
-        text-align: right;
+        text-align: center;
     }
 
     .hint-arrow-left {
