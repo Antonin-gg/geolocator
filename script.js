@@ -1054,19 +1054,22 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
 
     var scored = results.map(function (r, index) {
         var score = wikiTitleScore(r.title || "", query);
+        var isClose = false;
 
-        if (lat && lng && r.coordinates && r.coordinates[0]) {
+        if (lat != null && lng != null && r.coordinates && r.coordinates[0]) {
             var dist = haversineKm(lat, lng, r.coordinates[0].lat, r.coordinates[0].lon);
 
             var maxDist =
                 aiConfidence === "country" ? 1000 :
                     aiConfidence === "region" ? 300 :
                         aiConfidence === "exif" ? 70 :
-                            aiConfidence === "city" ? 30 :
+                            aiConfidence === "city" ? 50 :
                                 aiConfidence === "landmark" ? 30 :
                                     1;
 
-            if (dist < maxDist) score += 20;
+            isClose = dist < maxDist;
+            if (isClose) score += 20;
+            else if (score >= 95) score -= 15;
             else score -= 60;
         }
 
@@ -1075,7 +1078,8 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
         return {
             page: r,
             score: score,
-            index: index
+            index: index,
+            close: isClose
         };
     }).filter(function (item) {
         return item.score >= 50;
@@ -1086,6 +1090,7 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
     });
 
     for (var i = 0; i < scored.length; i++) {
+        if (scored[i].close) return scored[i].page;
         if (isProperNounAcrossLanguages(scored[i].page)) {
             return scored[i].page;
         }
@@ -1146,7 +1151,7 @@ function isProperNounAcrossLanguages(page) {
     allTitles.push(page.title);
 
     var totalTitles = allTitles.length;
-    var requiredCount = Math.max(Math.ceil(totalTitles * 0.2), 4);
+    var requiredCount = Math.max(Math.ceil(totalTitles * 0.3), 4);
 
     var normalizedTitles = allTitles.map(function (title) {
         return (title || "").toLowerCase()
