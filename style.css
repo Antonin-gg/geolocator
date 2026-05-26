@@ -237,16 +237,6 @@ body.dark #panelContent::-webkit-scrollbar-thumb {
     flex-shrink: 0;
 }
 
-#imageInputLabelPanel {
-    display: none;
-    transition: left 0.3s ease, top 0.3s ease, transform 0.3s ease;
-    color: #1f2933;
-}
-
-body.dark #imageInputLabelPanel {
-    color: #f0f0f0;
-}
-
 #locateUserButton {
     display: none;
     position: fixed;
@@ -268,6 +258,14 @@ body.dark #imageInputLabelPanel {
     cursor: pointer;
 
     transition: left 0.3s ease, top 0.3s ease, transform 0.3s ease;
+}
+
+#locateUserButton.visible {
+    display: flex;
+}
+
+#locateUserButtonMobile.visible {
+    display: none;
 }
 
 body.panel-open #locateUserButton {
@@ -312,10 +310,9 @@ body.panel-open #locateUserHint {
 .hint-arrow {
     display: inline-block;
     font-weight: 900;
-    animation: hintArrowNudge 0.9s ease-in-out infinite;
 }
 
-@keyframes hintArrowNudge {
+@keyframes hintArrowNudgeLeft {
 
     0%,
     100% {
@@ -325,6 +322,26 @@ body.panel-open #locateUserHint {
     50% {
         transform: translate(-4px, -1px);
     }
+}
+
+@keyframes hintArrowNudgeRight {
+
+    0%,
+    100% {
+        transform: translate(0, -1px);
+    }
+
+    50% {
+        transform: translate(4px, -1px);
+    }
+}
+
+.hint-arrow-left {
+    animation: hintArrowNudgeLeft 0.9s ease-in-out infinite;
+}
+
+.hint-arrow-right {
+    animation: hintArrowNudgeRight 0.9s ease-in-out infinite;
 }
 
 .hint-text {
@@ -697,6 +714,18 @@ body.dark .distance-line-label div {
     word-break: break-word;
 }
 
+#imageInputLabelPanel {
+    display: none;
+}
+
+#imageInputLabel.mobile-hidden {
+    display: none;
+}
+
+#imageInputLabelPanel.visible {
+    display: flex;
+}
+
 #panelPlaceName.loading {
     background: linear-gradient(90deg,
             currentColor 0%,
@@ -948,6 +977,22 @@ body.dark .distance-line-label div {
     }
 }
 
+.hint-arrow-right {
+    display: none;
+}
+
+.hint-arrow-left {
+    display: inline-block;
+}
+
+.mobile-toggle-label {
+    display: none;
+}
+
+.mobile-control-only {
+    display: none;
+}
+
 @media (max-width: 768px) and (orientation: portrait) {
 
     #resultPanel {
@@ -1012,18 +1057,6 @@ body.dark .distance-line-label div {
         margin-left: 0;
         width: 100%;
     }
-
-    #imageInputLabelPanel {
-        left: 10px;
-    }
-
-    body.panel-open #locateUserButton {
-        left: 10px;
-    }
-
-    body.panel-open #locateUserHint {
-        left: 56px;
-    }
 }
 
 @media (max-width: 768px),
@@ -1050,12 +1083,7 @@ body.dark .distance-line-label div {
     }
 
     #imageInputLabelPanel {
-        position: fixed;
-        top: 10px;
         display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 1002;
         cursor: pointer;
     }
 
@@ -1070,24 +1098,65 @@ body.dark .distance-line-label div {
         stroke-linejoin: round;
     }
 
-    #locateUserButton {
-        top: 56px;
-        font-size: 1.75rem !important;
+    #locateUserButton.visible {
+        display: none;
     }
 
-    #locateUserHint {
-        top: calc(56px + 20px);
-        left: 56px;
-        transform: translateY(-50%);
+    #locateUserButtonMobile.visible {
+        display: flex;
+    }
+
+    #locateUserButtonMobile {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.25rem !important;
+        font-weight: 600;
+        border-radius: 10px !important;
+        color: #1f5f9f !important;
+    }
+
+    body.dark #locateUserButtonMobile {
+        color: #7ab8ff !important;
     }
 
     #wrapperToggles {
         top: 10px;
         right: 10px;
-        width: 40px;
+        width: 38px;
         z-index: 1003;
         gap: 6px;
         align-items: flex-end;
+    }
+
+    .desktop-toggle-label,
+    .toggle-chevron,
+    #showToggleView,
+    #showToggleTheme {
+        display: none;
+    }
+
+    .mobile-control-only {
+        display: none;
+    }
+
+    .mobile-toggle-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #toggleView,
+    #toggleTheme,
+    #showToggleLanguage,
+    #imageInputLabelPanel {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        align-items: center;
+        justify-content: center;
     }
 
     #showToggleLanguage,
@@ -1097,33 +1166,6 @@ body.dark .distance-line-label div {
         align-items: center;
         justify-content: center;
         border-radius: 10px !important;
-    }
-
-    #showToggleLanguage,
-    #toggleView,
-    #toggleTheme,
-    #locateUserButton,
-    #imageInputLabelPanel {
-        width: 38px;
-        height: 38px;
-        min-width: 38px;
-        min-height: 38px;
-        padding: 0 !important;
-    }
-
-    #showToggleView,
-    #showToggleTheme {
-        display: none !important;
-    }
-
-    #showToggleLanguage .toggle-chevron {
-        display: none;
-    }
-
-    #showToggleLanguage .toggle-text {
-        display: flex;
-        align-items: center;
-        justify-content: center;
     }
 
     #languageOptions {
@@ -1167,6 +1209,27 @@ body.dark .distance-line-label div {
         stroke-linecap: round;
         stroke-linejoin: round;
     }
+
+    body.panel-open #locateUserHint,
+    body.strip-open #locateUserHint,
+    #locateUserHint {
+        right: 56px;
+        left: auto;
+        top: 206px;
+        transform: translateY(-50%);
+    }
+
+    #locateUserHint .hint-text {
+        text-align: right;
+    }
+
+    .hint-arrow-left {
+        display: none;
+    }
+
+    .hint-arrow-right {
+        display: inline-block;
+    }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
@@ -1190,25 +1253,15 @@ body.dark .distance-line-label div {
     #stripPlaceName {
         display: none;
     }
-
-    #imageInputLabelPanel {
-        left: calc(30vw + 10px);
-    }
-
-    body.strip-open #imageInputLabelPanel {
-        left: 10px;
-    }
-
-    body.panel-open #locateUserHint {
-        left: calc(30vw + 56px);
-    }
 }
 
 @media (hover: hover) and (pointer: fine) {
+
     #toggleView:hover,
     #toggleTheme:hover,
     #showToggleLanguage:hover,
     #locateUserButton:hover,
+    #locateUserButtonMobile:hover,
     #imageInputLabel:hover,
     #imageInputLabelPanel:hover,
     #learnMore:hover,
@@ -1221,6 +1274,7 @@ body.dark .distance-line-label div {
     body.dark #toggleTheme:hover,
     body.dark #showToggleLanguage:hover,
     body.dark #locateUserButton:hover,
+    body.dark #locateUserButtonMobile:hover,
     body.dark #imageInputLabel:hover,
     body.dark #imageInputLabelPanel:hover,
     body.dark #learnMore:hover,
@@ -1229,11 +1283,14 @@ body.dark .distance-line-label div {
     }
 }
 
-@media (hover: none), (pointer: coarse) {
+@media (hover: none),
+(pointer: coarse) {
+
     #toggleView:active,
     #toggleTheme:active,
     #showToggleLanguage:active,
     #locateUserButton:active,
+    #locateUserButtonMobile:active,
     #imageInputLabel:active,
     #imageInputLabelPanel:active,
     #learnMore:active,
@@ -1245,6 +1302,7 @@ body.dark .distance-line-label div {
     body.dark #toggleTheme:active,
     body.dark #showToggleLanguage:active,
     body.dark #locateUserButton:active,
+    body.dark #locateUserButtonMobile:active,
     body.dark #imageInputLabel:active,
     body.dark #imageInputLabelPanel:active,
     body.dark #learnMore:active,
