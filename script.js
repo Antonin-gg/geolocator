@@ -705,6 +705,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
 function closePanel() {
     map.stop();
+    stopUserLocationPreview();
 
     document.getElementById("resultPanel").classList.remove('open');
     document.getElementById("map").classList.remove('panel-open');
@@ -779,6 +780,7 @@ function minimizePanel() {
 function closeStrip() {
 
     map.stop();
+    stopUserLocationPreview();
 
     document.getElementById("resultStrip").style.display = "none";
 
