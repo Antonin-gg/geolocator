@@ -453,9 +453,8 @@ body.dark .hint-text {
     max-width: 100%;
 }
 
-.geo-info-icon {
-    width: 18px;
-    height: 18px;
+.geo-info-icon,
+.weather-icon {
     display: block;
     fill: none;
     stroke: currentColor;
@@ -466,7 +465,18 @@ body.dark .hint-text {
     margin-bottom: 4px;
 }
 
-body.dark .geo-info-icon {
+.geo-info-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.weather-icon {
+    width: 28px;
+    height: 28px;
+}
+
+body.dark .geo-info-icon,
+body.dark .weather-icon {
     color: rgba(240, 240, 240, 0.72);
 }
 
