@@ -1,3 +1,7 @@
+// Spinning globe SVG/CSS adapted from Phoenix Fox
+// Source: https://codepen.io/bluebie/pen/JjdoaLG
+// License: MIT — copyright (c) 2026 Phoenix Fox
+
 var userCoordinatesPromise = null;
 
 var userLocationIcon = L.divIcon({
