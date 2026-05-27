@@ -60,7 +60,7 @@ function updateLocateUserButton() {
     var panelOpen = document.getElementById("resultPanel").classList.contains("open");
     var stripOpen = document.getElementById("resultStrip").style.display === "flex";
 
-    var shouldShow = (panelOpen || stripOpen)&&!isSearching;
+    var shouldShow = (panelOpen || stripOpen) && !isSearching;
 
     clearTimeout(locateButtonTimeout);
 
@@ -735,7 +735,7 @@ function getContinentName(countryCode) {
 
 function getWeatherEmoji(code, isDay) {
     var entry = WEATHER_ICONS[code];
-    if (!entry) return "🌡️";
+    if (!entry) return WEATHER_SVGS.thermometer;
     return isDay ? entry.day : entry.night;
 }
 
@@ -815,54 +815,82 @@ var COUNTRY_TO_CONTINENT = {
     "AQ": "010", "BV": "010", "TF": "010", "HM": "010", "GS": "010"
 };
 
+var WEATHER_SVGS = {
+    sun: `<svg class="weather-icon lucide lucide-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
+
+    moonStar: `<svg class="weather-icon lucide lucide-moon-star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5h4"/><path d="M20 3v4"/><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>`,
+
+    cloudSun: `<svg class="weather-icon lucide lucide-cloud-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>`,
+
+    cloudMoon: `<svg class="weather-icon lucide lucide-cloud-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 16a3 3 0 0 1 0 6H7a5 5 0 1 1 4.9-6z"/><path d="M18.376 14.512a6 6 0 0 0 3.461-4.127c.148-.625-.659-.97-1.248-.714a4 4 0 0 1-5.259-5.26c.255-.589-.09-1.395-.716-1.248a6 6 0 0 0-4.594 5.36"/></svg>`,
+
+    cloudy: `<svg class="weather-icon lucide lucide-cloudy" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 12a1 1 0 1 1 0 9H9.006a7 7 0 1 1 6.702-9z"/><path d="M21.832 9A3 3 0 0 0 19 7h-2.207a5.5 5.5 0 0 0-10.72.61"/></svg>`,
+
+    fog: `<svg class="weather-icon lucide lucide-cloud-fog" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 17H7"/><path d="M17 21H9"/></svg>`,
+
+    cloudSunRain: `<svg class="weather-icon lucide lucide-cloud-sun-rain" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M3 20a5 5 0 1 1 8.9-4H13a3 3 0 0 1 2 5.24"/><path d="M11 20v2"/><path d="M7 19v2"/></svg>`,
+
+    cloudMoonRain: `<svg class="weather-icon lucide lucide-cloud-moon-rain" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20v2"/><path d="M18.376 14.512a6 6 0 0 0 3.461-4.127c.148-.625-.659-.97-1.248-.714a4 4 0 0 1-5.259-5.26c.255-.589-.09-1.395-.716-1.248a6 6 0 0 0-4.594 5.36"/><path d="M3 20a5 5 0 1 1 8.9-4H13a3 3 0 0 1 2 5.24"/><path d="M7 19v2"/></svg>`,
+
+    cloudRain: `<svg class="weather-icon lucide lucide-cloud-rain" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>`,
+
+    cloudRainWind: `<svg class="weather-icon lucide lucide-cloud-rain-wind" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m9.2 22 3-7"/><path d="m9 13-3 7"/><path d="m17 13-3 7"/></svg>`,
+
+    cloudSnow: `<svg class="weather-icon lucide lucide-cloud-snow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M8 15h.01"/><path d="M8 19h.01"/><path d="M12 17h.01"/><path d="M12 21h.01"/><path d="M16 15h.01"/><path d="M16 19h.01"/></svg>`,
+
+    snowflake: `<svg class="weather-icon lucide lucide-snowflake" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/></svg>`,
+
+    thunderstorm: `<svg class="weather-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+        <g transform="scale(0.5)">
+            <path d="M9.45455 30.9942C6.14242 28.461 4 24.4278 4 19.8851C4 12.2166 10.1052 6 17.6364 6C23.9334 6 29.2336 10.3462 30.8015 16.2533C32.0353 15.6159 33.431 15.2567 34.9091 15.2567C39.9299 15.2567 44 19.4011 44 24.5135C44 28.3094 41.7562 31.5716 38.5455 33"/>
+            <path d="M17.4141 22.5858L14.5856 25.4142"/>
+            <path d="M26.9996 24L19 32.0012H29.004L21.0003 40.018"/>
+            <path d="M33.4141 38.5858L30.5856 41.4142"/>
+        </g>
+    </svg>`,
+
+    thermometer: `<svg class="weather-icon lucide lucide-thermometer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>`
+};
+
 var WEATHER_ICONS = {
-    // Clear / Cloudy
-    0: { day: "☀️", night: "🌙" },   // Clear sky
-    1: { day: "🌤️", night: "🌙" },   // Mainly clear
-    2: { day: "⛅", night: "☁️" },   // Partly cloudy
-    3: { day: "☁️", night: "☁️" },   // Overcast
+    0: { day: WEATHER_SVGS.sun, night: WEATHER_SVGS.moonStar },
+    1: { day: WEATHER_SVGS.sun, night: WEATHER_SVGS.moonStar },
 
-    // Fog
-    45: { day: "🌫️", night: "🌫️" },  // Fog
-    48: { day: "🌫️", night: "🌫️" },  // Depositing rime fog
+    2: { day: WEATHER_SVGS.cloudSun, night: WEATHER_SVGS.cloudMoon },
+    3: { day: WEATHER_SVGS.cloudy, night: WEATHER_SVGS.cloudy },
 
-    // Drizzle
-    51: { day: "🌦️", night: "🌧️" },  // Light drizzle
-    53: { day: "🌦️", night: "🌧️" },  // Moderate drizzle
-    55: { day: "🌧️", night: "🌧️" },  // Dense drizzle
+    45: { day: WEATHER_SVGS.fog, night: WEATHER_SVGS.fog },
+    48: { day: WEATHER_SVGS.fog, night: WEATHER_SVGS.fog },
 
-    // Freezing drizzle
-    56: { day: "🌧️", night: "🌧️" },  // Light freezing drizzle
-    57: { day: "🌧️", night: "🌧️" },  // Dense freezing drizzle
+    51: { day: WEATHER_SVGS.cloudSunRain, night: WEATHER_SVGS.cloudMoonRain },
+    53: { day: WEATHER_SVGS.cloudRain, night: WEATHER_SVGS.cloudRain },
+    55: { day: WEATHER_SVGS.cloudRain, night: WEATHER_SVGS.cloudRain },
 
-    // Rain
-    61: { day: "🌦️", night: "🌧️" },  // Slight rain
-    63: { day: "🌧️", night: "🌧️" },  // Moderate rain
-    65: { day: "🌧️", night: "🌧️" },  // Heavy rain
+    56: { day: WEATHER_SVGS.cloudRain, night: WEATHER_SVGS.cloudRain },
+    57: { day: WEATHER_SVGS.cloudRain, night: WEATHER_SVGS.cloudRain },
 
-    // Freezing rain
-    66: { day: "🌧️", night: "🌧️" },  // Light freezing rain
-    67: { day: "🌧️", night: "🌧️" },  // Heavy freezing rain
+    61: { day: WEATHER_SVGS.cloudSunRain, night: WEATHER_SVGS.cloudMoonRain },
+    63: { day: WEATHER_SVGS.cloudRain, night: WEATHER_SVGS.cloudRain },
+    65: { day: WEATHER_SVGS.cloudRainWind, night: WEATHER_SVGS.cloudRainWind },
 
-    // Snow
-    71: { day: "🌨️", night: "🌨️" },  // Slight snow fall
-    73: { day: "🌨️", night: "🌨️" },  // Moderate snow fall
-    75: { day: "❄️", night: "❄️" },   // Heavy snow fall
-    77: { day: "❄️", night: "❄️" },   // Snow grains
+    66: { day: WEATHER_SVGS.cloudRain, night: WEATHER_SVGS.cloudRain },
+    67: { day: WEATHER_SVGS.cloudRainWind, night: WEATHER_SVGS.cloudRainWind },
 
-    // Rain showers
-    80: { day: "🌦️", night: "🌧️" },  // Slight rain showers
-    81: { day: "🌧️", night: "🌧️" },  // Moderate rain showers
-    82: { day: "⛈️", night: "⛈️" },   // Violent rain showers
+    71: { day: WEATHER_SVGS.cloudSnow, night: WEATHER_SVGS.cloudSnow },
+    73: { day: WEATHER_SVGS.cloudSnow, night: WEATHER_SVGS.cloudSnow },
+    75: { day: WEATHER_SVGS.snowflake, night: WEATHER_SVGS.snowflake },
+    77: { day: WEATHER_SVGS.snowflake, night: WEATHER_SVGS.snowflake },
 
-    // Snow showers
-    85: { day: "🌨️", night: "🌨️" },  // Slight snow showers
-    86: { day: "❄️", night: "❄️" },   // Heavy snow showers
+    80: { day: WEATHER_SVGS.cloudSunRain, night: WEATHER_SVGS.cloudMoonRain },
+    81: { day: WEATHER_SVGS.cloudRain, night: WEATHER_SVGS.cloudRain },
+    82: { day: WEATHER_SVGS.cloudRainWind, night: WEATHER_SVGS.cloudRainWind },
 
-    // Thunderstorms
-    95: { day: "⛈️", night: "⛈️" },   // Thunderstorm
-    96: { day: "⛈️", night: "⛈️" },   // Thunderstorm with slight hail
-    99: { day: "⛈️", night: "⛈️" }    // Thunderstorm with heavy hail
+    85: { day: WEATHER_SVGS.cloudSnow, night: WEATHER_SVGS.cloudSnow },
+    86: { day: WEATHER_SVGS.snowflake, night: WEATHER_SVGS.snowflake },
+
+    95: { day: WEATHER_SVGS.thunderstorm, night: WEATHER_SVGS.thunderstorm },
+    96: { day: WEATHER_SVGS.thunderstorm, night: WEATHER_SVGS.thunderstorm },
+    99: { day: WEATHER_SVGS.thunderstorm, night: WEATHER_SVGS.thunderstorm }
 };
 
 var GEO_ICONS = {
