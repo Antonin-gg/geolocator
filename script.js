@@ -539,6 +539,9 @@ function lockPanelPhotoSize(force) {
 }
 
 function alignToggleChevrons() {
+
+    if (window.innerWidth <= 768 || window.innerHeight <= 500) return;
+
     var toggles = [
         document.querySelector("#showToggleView .toggle-text"),
         document.querySelector("#showToggleTheme .toggle-text"),
@@ -613,6 +616,7 @@ window.addEventListener("resize", function () {
 
         updateUploadButtons();
         updateLocateUserButton();
+        alignToggleChevrons();
         map.invalidateSize();
 
     }, 150);
