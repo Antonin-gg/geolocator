@@ -1287,8 +1287,8 @@ function changeLanguage() {
     document.getElementById("welcome").textContent = translate("welcome");
     document.getElementById("searchingText").innerHTML = " " + translate("searching");
     document.getElementById("imageInputLabel").textContent = translate("upload");
-    document.querySelector("showToggleView .toggle-text").textContent = translate("view");
-    document.querySelector("showToggleTheme .toggle-text").textContent = translate("theme");
+    document.querySelector("#showToggleView .toggle-text").textContent = translate("view");
+    document.querySelector("#showToggleTheme .toggle-text").textContent = translate("theme");
 
     document.querySelector(".learn-more-text").textContent = translate("moreInformation");
     document.querySelector(".hint-text").textContent = locateHintText();
