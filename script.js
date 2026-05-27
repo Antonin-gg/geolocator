@@ -240,6 +240,10 @@ document.getElementById("showToggleTheme").addEventListener("click", function ()
     if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
         document.getElementById("languageOptions").classList.add("hidden-language");
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+        if (isTouchDevice) {
+            history.back();
+            historyDepth--;
+        }
     }
 
     document.getElementById("toggleTheme").classList.toggle("hidden-theme");
@@ -288,6 +292,10 @@ document.getElementById("showToggleView").addEventListener("click", function () 
     if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
         document.getElementById("languageOptions").classList.add("hidden-language");
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+        if (isTouchDevice) {
+            history.back();
+            historyDepth--;
+        }
     }
 
     document.getElementById("toggleView").classList.toggle("hidden-view");
@@ -354,6 +362,15 @@ document.getElementById("showToggleLanguage").addEventListener("click", function
     var isOpen = !document.getElementById("languageOptions").classList.contains("hidden-language");
     if (isOpen) {
         document.getElementById("languageOptions").scrollTop = 0;
+        if (isTouchDevice) {
+            history.pushState({}, "");
+            historyDepth++;
+        }
+    } else {
+        if (isMobile) {
+            history.back();
+            historyDepth--;
+        }
     }
     this.classList.toggle("dropdown-open", isOpen);
 });
@@ -374,6 +391,11 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
         document.getElementById("languageOptions").classList.add("hidden-language");
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+
+        if (isTouchDevice) {
+            history.back();
+            historyDepth--;
+        }
 
         document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
 
@@ -634,6 +656,18 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     currentMethod = method;
     currentShortName = shortName;
     currentIsAI = isAI;
+
+    if (isTouchDevice) {
+        if (document.body.classList.contains("strip-open")) {
+            history.pushState({}, "");
+            historyDepth++;
+        }
+        if (!document.body.classList.contains("strip-open") && !document.body.classList.contains("panel-open")) {
+            history.pushState({}, "");
+            history.pushState({}, "");
+            historyDepth += 2;
+        }
+    }
 
     document.getElementById("panelContent").scrollTop = 0;
 
@@ -1183,7 +1217,6 @@ function wikiTitleScore(title, query) {
 }
 
 function isProperNounAcrossLanguages(page) {
-    console.log("PROPER NOUN CALLED", page && page.title);
 
     if (!page) return true;
     if (!page.langlinks || page.langlinks.length < 3) return true;
@@ -1208,14 +1241,6 @@ function isProperNounAcrossLanguages(page) {
     });
 
     var tokens = Array.from(allTokens);
-
-    console.log("PROPER NOUN FAIL", {
-        pageTitle: page.title,
-        requiredCount: requiredCount,
-        totalTitles: totalTitles,
-        tokens: tokens,
-        allTitles: allTitles
-    });
 
     for (var i = 0; i < tokens.length; i++) {
         var token = tokens[i];
@@ -1929,23 +1954,6 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
 
     var preferredTypes = getPreferredTypes(aiConfidence);
 
-    console.log("NOMINATIM DEBUG START", {
-        aiPlace: aiPlace,
-        aiConfidence: aiConfidence,
-        preferredTypes: preferredTypes,
-        rawResults: results.map(function (r) {
-            return {
-                name: r.name,
-                display_name: r.display_name,
-                type: r.type,
-                addresstype: r.addresstype,
-                class: r.class,
-                importance: r.importance,
-                namedetails: r.namedetails
-            };
-        })
-    });
-
     var typeFilteredResults = results;
 
     if (aiConfidence && aiConfidence !== "landmark") {
@@ -1960,23 +1968,6 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
         });
     }
 
-    console.log("NOMINATIM AFTER TYPE FILTER", {
-        count: typeFilteredResults.length,
-        results: typeFilteredResults.map(function (r) {
-            return {
-                name: r.name,
-                display_name: r.display_name,
-                type: r.type,
-                addresstype: r.addresstype,
-                class: r.class,
-                matchedType:
-                    preferredTypes.includes(r.type) ||
-                    preferredTypes.includes(r.addresstype),
-                namedetails: r.namedetails
-            };
-        })
-    });
-
     if (typeFilteredResults.length === 0) return null;
 
     var tokenMatches = typeFilteredResults.filter(function (r) {
@@ -1985,61 +1976,15 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
         var display = r.display_name || "";
         var primaryPart = aiPlace.split(",")[0].trim();
 
-
-        var checks = (usefulName(nameEn) && bidirectionalTokenMatch(aiPlace, nameEn)) ||
+        return (usefulName(nameEn) && bidirectionalTokenMatch(aiPlace, nameEn)) ||
             (usefulName(localName) && bidirectionalTokenMatch(aiPlace, localName)) ||
             bidirectionalTokenMatch(aiPlace, display) ||
             (usefulName(nameEn) && primaryPart.length > 2 && bidirectionalTokenMatch(primaryPart, nameEn)) ||
             (primaryPart.length > 2 && bidirectionalTokenMatch(primaryPart, display));
-
-        var passed = Object.keys(checks).some(function (key) {
-            return checks[key];
-        });
-
-
-        console.log("NOMINATIM TOKEN CHECK", {
-            aiPlace: aiPlace,
-            primaryPart: primaryPart,
-            candidateName: r.name,
-            display: display,
-            nameEn: nameEn,
-            localName: localName,
-            type: r.type,
-            addresstype: r.addresstype,
-            checks: checks,
-            passed: passed
-        });
-
-        return checks;
-    });
-
-    console.log("NOMINATIM TOKEN MATCHES", {
-        count: tokenMatches.length,
-        results: tokenMatches.map(function (r) {
-            return {
-                name: r.name,
-                display_name: r.display_name,
-                type: r.type,
-                addresstype: r.addresstype,
-                importance: r.importance
-            };
-        })
     });
 
     if (tokenMatches.length > 0) {
-        var picked = sortByImportance(tokenMatches)[0];
-
-        console.log("NOMINATIM PICKED", {
-            name: picked.name,
-            display_name: picked.display_name,
-            type: picked.type,
-            addresstype: picked.addresstype,
-            importance: picked.importance,
-            lat: picked.lat,
-            lon: picked.lon
-        });
-
-        return picked;
+        return sortByImportance(tokenMatches)[0];
     }
 
     return null;
@@ -2452,6 +2397,11 @@ if (isSatellite) {
     satelliteLayer.addTo(map);
 }
 updateToggles();
+
+if (isTouchDevice) {
+    attachStripGestures();
+    attachPanelGestures();
+}
 
 
 
