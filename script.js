@@ -421,7 +421,7 @@ function showSearching() {
 
     document.getElementById("welcome").style.display = "none";
 
-    document.getElementById("searching").style.display = "block";
+    document.getElementById("searching").style.display = "flex";
 
     document.getElementById("searchingText")
         .classList.add("searching-active");
@@ -449,7 +449,6 @@ function showError(message) {
         if (isSearching) {
             document.getElementById("panelPlaceName").classList.remove("loading");
             document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
-            document.getElementById("panelSearchingGlobe").style.display = "none";
             isSearching = false;
         }
     } else if (isSearching) hideSearching();
@@ -1482,7 +1481,6 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     hideSearching();
     document.getElementById("panelPlaceName").classList.remove("loading");
     document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
-    document.getElementById("panelSearchingGlobe").style.display = "none";
 
     openPanel(placeName, photoHtml, translate("methodGPS"), shortName, false);
 
@@ -2253,7 +2251,6 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         document.getElementById("panelPlaceName").classList.remove("loading");
         document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
-        document.getElementById("panelSearchingGlobe").style.display = "none";
 
         if (photoMarker) {
             map.removeLayer(photoMarker);
@@ -2297,7 +2294,6 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     document.getElementById("panelPlaceName").classList.remove("loading");
     document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
-    document.getElementById("panelSearchingGlobe").style.display = "none";
 
     if (photoMarker) {
         map.removeLayer(photoMarker);
@@ -2351,7 +2347,6 @@ function showPanelLoading(photoHtml) {
     document.getElementById("panelPhoto").innerHTML = photoHtml;
     document.getElementById("panelPlaceName").innerHTML = "<strong> " + translate("searching") + "</strong>";
     document.getElementById("panelPlaceName").classList.add("loading");
-    document.getElementById("panelSearchingGlobe").style.display = "block";
     document.getElementById("panelSearchingGlobe").classList.add("globe-active");
     document.getElementById("panelMethod").textContent = "";
 
