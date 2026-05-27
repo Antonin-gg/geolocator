@@ -1282,7 +1282,7 @@ function locateHintText() {
 }
 
 function changeLanguage() {
-    document.title = "🌍 " + translate("title");
+    document.title = translate("title");
 
     document.getElementById("welcome").textContent = translate("welcome");
     document.getElementById("searchingText").innerHTML = " " + translate("searching");
