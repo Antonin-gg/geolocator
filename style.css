@@ -1073,6 +1073,123 @@ body.dark .world {
     }
 }
 
+body.touch #panelClose,
+body.touch #panelToggle,
+body.touch #stripClose,
+body.touch #stripToggle {
+    display: none !important;
+}
+
+#panelHandle {
+    display: none;
+}
+
+body.touch #panelHandle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 44px;
+    cursor: grab;
+    z-index: 2;
+    border-radius: inherit;
+    transition: background 0.3s ease;
+}
+
+.handle-line {
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: currentColor;
+    opacity: 0.25;
+}
+
+.handle-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.35;
+}
+
+.handle-chevron svg {
+    width: 20px;
+    height: 7px;
+    display: block;
+}
+
+/* strip → show chevron-up only (above line) */
+body.touch.strip-open #panelHandle .handle-chevron-up { display: flex; }
+body.touch.strip-open #panelHandle .handle-line        { display: block; }
+body.touch.strip-open #panelHandle .handle-chevron-down { display: none; }
+
+/* panel → show all three */
+body.touch.panel-open #panelHandle .handle-chevron-up  { display: flex; }
+body.touch.panel-open #panelHandle .handle-line        { display: block; }
+body.touch.panel-open #panelHandle .handle-chevron-down { display: flex; }
+
+/* ultra → chevron-down below line only */
+body.touch.ultra-open #panelHandle .handle-chevron-up  { display: none; }
+body.touch.ultra-open #panelHandle .handle-line        { display: block; }
+body.touch.ultra-open #panelHandle .handle-chevron-down { display: flex; }
+
+/* Default hidden state (no result open) */
+body.touch #panelHandle .handle-chevron-up   { display: none; }
+body.touch #panelHandle .handle-line         { display: none; }
+body.touch #panelHandle .handle-chevron-down { display: none; }
+
+body.touch.ultra-open #resultPanel {
+    /* override whatever portrait/landscape height is set */
+    height: calc(100dvh - 30px) !important;
+    transform: translateY(0) !important;
+}
+
+body.touch #resultPanel {
+    transition: transform 0.3s ease, height 0.3s ease;
+}
+
+body.touch #panelHandle {
+    --handle-bg: transparent;
+    background: var(--handle-bg);
+}
+
+body.touch #resultPanel:has(#panelContent.scrollable) #panelHandle {
+    animation: handleScrollablePulse 0.6s ease-out forwards;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.dark.touch.panel-scrollable #panelHandle {
+    animation: handleScrollablePulseDark 0.6s ease-out forwards;
+}
+
+@keyframes handleScrollablePulse {
+    0%   { background: rgba(0, 0, 0, 0.12); }
+    100% { background: rgba(0, 0, 0, 0.04); }
+}
+
+@keyframes handleScrollablePulseDark {
+    0%   { background: rgba(255, 255, 255, 0.14); }
+    100% { background: rgba(255, 255, 255, 0.05); }
+}
+
+body.touch #resultStrip {
+    /* slightly taller for touch comfort */
+    min-height: 52px;
+}
+
+body.touch #resultStrip {
+    will-change: transform;
+}
+
+body.touch #resultPanel {
+    will-change: transform;
+}
+
 @media (max-width: 768px) and (orientation: portrait) {
 
     #resultPanel {
