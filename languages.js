@@ -1287,6 +1287,8 @@ function changeLanguage() {
     document.getElementById("welcome").textContent = translate("welcome");
     document.getElementById("searchingText").innerHTML = " " + translate("searching");
     document.getElementById("imageInputLabel").textContent = translate("upload");
+    document.getElementById("showToggleView").textContent = translate("view");
+    document.getElementById("showToggleTheme").textContent = translate("theme");
 
     document.querySelector(".learn-more-text").textContent = translate("moreInformation");
     document.querySelector(".hint-text").textContent = locateHintText();
