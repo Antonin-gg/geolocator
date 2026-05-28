@@ -241,6 +241,7 @@ document.getElementById("showToggleTheme").addEventListener("click", function ()
         document.getElementById("languageOptions").classList.add("hidden-language");
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
         if (isTouchDevice && !handlingPopstate) {
+            handlingPopstate = true;
             history.back();
             historyDepth--;
         }
@@ -293,6 +294,7 @@ document.getElementById("showToggleView").addEventListener("click", function () 
         document.getElementById("languageOptions").classList.add("hidden-language");
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
         if (isTouchDevice && !handlingPopstate) {
+            handlingPopstate = true;
             history.back();
             historyDepth--;
         }
@@ -368,6 +370,7 @@ document.getElementById("showToggleLanguage").addEventListener("click", function
         }
     } else {
         if (isTouchDevice && !handlingPopstate) {
+            handlingPopstate = true;
             history.back();
             historyDepth--;
         }
@@ -393,6 +396,7 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
 
         if (isTouchDevice && !handlingPopstate) {
+            handlingPopstate = true;
             history.back();
             historyDepth--;
         }
@@ -784,6 +788,7 @@ function getPopupPhotoHtml() {
 
 function minimizePanel() {
     if (isTouchDevice && !handlingPopstate) {
+        handlingPopstate = true;
         history.back();
         historyDepth--;
     }
@@ -821,6 +826,7 @@ function minimizePanel() {
 
 function closeStrip() {
     if (isTouchDevice && !handlingPopstate) {
+        handlingPopstate = true;
         history.back();
         historyDepth--;
     }
