@@ -367,7 +367,7 @@ document.getElementById("showToggleLanguage").addEventListener("click", function
             historyDepth++;
         }
     } else {
-        if (isMobile && !handlingPopstate) {
+        if (isTouchDevice && !handlingPopstate) {
             history.back();
             historyDepth--;
         }
@@ -783,7 +783,7 @@ function getPopupPhotoHtml() {
 }
 
 function minimizePanel() {
-    if (isMobile && !handlingPopstate) {
+    if (isTouchDevice && !handlingPopstate) {
         history.back();
         historyDepth--;
     }
@@ -820,7 +820,7 @@ function minimizePanel() {
 }
 
 function closeStrip() {
-    if (isMobile && !handlingPopstate) {
+    if (isTouchDevice && !handlingPopstate) {
         history.back();
         historyDepth--;
     }
