@@ -240,7 +240,7 @@ document.getElementById("showToggleTheme").addEventListener("click", function ()
     if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
         document.getElementById("languageOptions").classList.add("hidden-language");
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
-        if (isTouchDevice) {
+        if (isTouchDevice && !handlingPopstate) {
             history.back();
             historyDepth--;
         }
@@ -292,7 +292,7 @@ document.getElementById("showToggleView").addEventListener("click", function () 
     if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
         document.getElementById("languageOptions").classList.add("hidden-language");
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
-        if (isTouchDevice) {
+        if (isTouchDevice && !handlingPopstate) {
             history.back();
             historyDepth--;
         }
@@ -367,7 +367,7 @@ document.getElementById("showToggleLanguage").addEventListener("click", function
             historyDepth++;
         }
     } else {
-        if (isMobile) {
+        if (isMobile && !handlingPopstate) {
             history.back();
             historyDepth--;
         }
@@ -392,7 +392,7 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
         document.getElementById("languageOptions").classList.add("hidden-language");
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
 
-        if (isTouchDevice) {
+        if (isTouchDevice && !handlingPopstate) {
             history.back();
             historyDepth--;
         }
@@ -783,6 +783,11 @@ function getPopupPhotoHtml() {
 }
 
 function minimizePanel() {
+    if (isMobile && !handlingPopstate) {
+        history.back();
+        historyDepth--;
+    }
+
     document.getElementById("resultPanel").classList.remove('open');
     document.getElementById("map").classList.remove('panel-open');
     document.getElementById("wrapper").classList.remove('panel-open');
@@ -815,6 +820,10 @@ function minimizePanel() {
 }
 
 function closeStrip() {
+    if (isMobile && !handlingPopstate) {
+        history.back();
+        historyDepth--;
+    }
 
     map.stop();
     stopUserLocationPreview();
