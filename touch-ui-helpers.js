@@ -17,6 +17,7 @@ function maximizePanel() {
 function unmaximizePanel() {
     document.body.classList.remove("ultra-open");
     if (!handlingPopstate) {
+    handlingPopstate = true;
     history.back();
     historyDepth--;
     }
