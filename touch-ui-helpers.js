@@ -27,6 +27,10 @@ function unmaximizePanel() {
 }
 
 window.addEventListener("popstate", function () {
+    if (handlingPopstate) {
+        handlingPopstate = false;
+        return;
+    }
     handlingPopstate = true;
     if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
         document.getElementById("languageOptions").classList.add("hidden-language");
