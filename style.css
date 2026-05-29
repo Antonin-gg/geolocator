@@ -1232,12 +1232,24 @@ body.touch #resultPanel {
     will-change: transform;
 }
 
-body.touch.dragging-panel-down #map.panel-open {
+body.touch.dragging-panel #map.panel-open {
     position: fixed;
-    inset: 0;
-    width: 100%;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    width: 100vw;
+    height: 100vh;
     height: 100dvh;
+
     margin-left: 0;
+    z-index: 0;
+    background: #dbeafe;
+}
+
+body.dark.touch.dragging-panel #map.panel-open {
+    background: #0f172a;
 }
 
 body.touch.dragging-panel-up #resultPanel {
