@@ -335,6 +335,9 @@ function clearPanelDragPreviewAfterTransition() {
 
         document.body.classList.remove("dragging-panel");
         document.body.classList.remove("dragging-panel-up");
+        requestAnimationFrame(function () {
+            map.invalidateSize({ pan: false, debounceMoveend: true });
+        });
 
         panel.removeEventListener("transitionend", cleanup);
     }
