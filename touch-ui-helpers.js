@@ -232,8 +232,9 @@ function attachPanelGestures() {
             if (!isUltra) {
                 document.body.classList.add("dragging-panel");
                 requestAnimationFrame(function () {
+                    var center = getNewLogicalCenterCoordinates();
                     map.invalidateSize({ pan: false, debounceMoveend: true });
-                    map.setView(getNewLogicalCenterCoordinates(),map.getZoom(),{
+                    map.setView(center,map.getZoom(),{
                         animate: false
                     })
                 });
@@ -313,8 +314,9 @@ function attachPanelGestures() {
             } else {
                 clearPanelDragPreviewAfterTransition();
                 requestAnimationFrame(function () {
+                    var center = getNewLogicalCenterCoordinates();
                     map.invalidateSize({ pan: false, debounceMoveend: true });
-                    map.setView(getNewLogicalCenterCoordinates(),map.getZoom(),{
+                    map.setView(center,map.getZoom(),{
                         animate: false
                     })
                 });
