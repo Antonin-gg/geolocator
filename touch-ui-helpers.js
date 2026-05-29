@@ -349,9 +349,12 @@ function clearPanelDragPreviewAfterTransition() {
         document.body.classList.remove("dragging-panel");
         document.body.classList.remove("dragging-panel-up");
         if (!comittedDrag) {
+            var mapEl = document.getElementById("map");
+            mapEl.style.transition = "none";  
             map.invalidateSize({ pan: false, debounceMoveend: true });
-            map.setView(getNewLogicalCenterCoordinates(), map.getZoom(), {
-                animate: false
+            map.setView(getNewLogicalCenterCoordinates(), map.getZoom(), { animate: false });
+            requestAnimationFrame(function () {
+                mapEl.style.transition = "";  
             });
         }
 
