@@ -1,0 +1,1457 @@
+// ── CONSTANTS & CONFIG ─────────────────────────────────────────────
+var OPENCAGE_API_KEY = "49b47c25108242779832267ff8062473";
+var WORKER_URL = "https://geolocator-ai.a-gg.workers.dev";
+var AI_MODEL = "gpt-4o";
+var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nLANGUAGE — CRITICAL: All user-facing text fields (method, displaySentence) MUST be written in the language specified in the system instructions appended to this prompt. Only the \"place\" field stays in English (it is used for geocoding lookups, not displayed to the user). If you are uncertain which language to use, default to English. Never mix languages within a single response.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify, ALWAYS in English for geocoding\",\n  \"countryCode\": \"ISO 3166-1 alpha-2 country code for the identified location, uppercase, or empty string if unknown\",\n  \"confidence\": \"landmark\" | \"city\" | \"region\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location, written in the user's language\",\n  \"displaySentence\": \"a complete, grammatically natural sentence in the user's language announcing where the photo was taken, with the place name written naturally in that language and woven into the sentence. Empty string if confidence is unknown.\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots of apps or websites, social media posts, food delivery or e-commerce interfaces, video game captures, memes, or any digital interface with visible UI elements — you MUST set confidence to \"unknown\", place to \"unknown\", countryCode to an empty string, method to \"This image is not a real photograph.\" (translated to the user's language), and displaySentence to an empty string. This rule cannot be overridden by any other consideration. Text mentioning a city or country inside an app or website does not mean the image was captured there.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, road markings, architecture, culturally specific objects.\n- License plates indicate where a vehicle is registered, not necessarily where the photo was taken. Treat them as supporting evidence only, never as the sole basis for a location. A foreign-registered vehicle in a scene with local signage means the photo was taken in the country shown by the signage.\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Generic modern architecture (glass facades, clean lines, light wood interiors, minimalist design, contemporary airports, shopping centers, office buildings) is NOT sufficient evidence on its own. These styles are global. Return \"unknown\" for modern buildings unless distinctive non-architectural clues are present (visible signage in a specific language, flags, named branding, identifiable surroundings).\n- Partial views of buildings (close-ups, sections, interiors without clear identifying features) cannot be confidently identified unless they contain a recognisable named element. A glass wall, a staircase, a generic interior — these are not identifiable. Return \"unknown\".\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- Spanish-speaking countries can be confused easily: Spain, Mexico, Argentina, Colombia and others share language and some architectural styles. Look for distinguishing details — license plates, flags, peninsular vs Latin American architecture, regional vegetation, or text using country-specific vocabulary.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n\nFormatting rules (for the English \"place\" field):\n- Always separate parts of a location with commas. Never join two place names with just a space. Correct: \"Luxembourg, Luxembourg\", \"Mexico City, Mexico\", \"Panama City, Panama\". Incorrect: \"Luxembourg Luxembourg\", \"Mexico Mexico\".\n- Use commas to separate the place from its region or country in every confidence level.\n\nIdentification rules (for the English \"place\" field):\n- Confidence is fundamentally about how the place appears on a map. A landmark is a pinpoint — something you would mark with a single pin. A city/neighborhood/district is an urban area. A region is an outlined large area — something you would draw as a polygon. Use this mental test whenever you are uncertain.\n- Use \"landmark\" ONLY for a specific, individually named physical object or site with a small footprint on a map: a single building, monument, tower, bridge, statue, station, temple, church, museum, stadium, waterfall, cliff viewpoint, or named attraction. Include city/region and country (e.g. \"Eiffel Tower, Paris, France\", \"Berliner Dom, Berlin, Germany\", \"Cliffs of Moher, County Clare, Ireland\").\n- Do NOT use \"landmark\" for named urban areas. Named districts, business districts, financial districts, neighborhoods, suburbs, quarters, boroughs, city zones, plazas used as districts, and urban redevelopment areas are \"city\", not \"landmark\". Examples: \"La Défense, Île-de-France, France\" is \"city\"; \"Manhattan, New York, USA\" is \"city\"; \"Shibuya, Tokyo, Japan\" is \"city\"; \"Canary Wharf, London, United Kingdom\" is \"city\". Only use \"landmark\" if the image clearly identifies one specific building, monument, station, bridge, tower, statue, or attraction inside that area.\n- If the place name can refer both to an area and to a specific object, choose \"city\" unless the specific object is visually identifiable. For example, \"La Défense\" alone is a district, not a landmark; \"Grande Arche de la Défense, Puteaux, France\" is a landmark.\n- Use \"city\" for any urban area with high certainty: village, town, suburb, neighborhood, district, business district, financial district, quarter, borough, city zone, or city. Include region/state if ambiguous (e.g. \"Portland, Oregon, USA\"). When the city and country share a name, format with a comma between them (e.g. \"Luxembourg, Luxembourg\", \"Singapore, Singapore\", \"Monaco, Monaco\").\n- Use \"region\" for any large named area that covers significant geographic extent rather than a single point: states, provinces, country subdivisions, recognised natural regions (Patagonia, Tuscany, Bavaria, Provence, Cornwall, Sahara), national parks and protected areas (Yellowstone, Serengeti), archipelagos and major islands (Lofoten, Galápagos, Easter Island), mountain ranges, peninsulas, and similar large features. Use this whenever the place is something you would draw on a map as an outlined area rather than a pin.\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n- For locations that span multiple countries (waterfalls, mountains, lakes on borders): pick ONE country to anchor the location — the most photographed side or the side most visible in the image — rather than listing both. E.g. \"Iguazu Falls, Paraná, Brazil\" or \"Iguazu Falls, Misiones, Argentina\" — never \"Iguazu Falls, Argentina/Brazil\". The same applies to any cross-border feature.\n\nGeocodability rules — the \"place\" field will be sent to Nominatim and OpenCage for lookup. Optimize for these geocoders:\n- Use the most common and shortest official name. Not \"The Republic of South Africa\" but \"South Africa\".\n- Drop English-attached descriptors that aren't part of the canonical name: \"Lofoten\" not \"Lofoten Islands\", \"Atacama\" not \"Atacama Desert\", \"Galápagos\" not \"Galápagos Islands\". Use descriptors ONLY when they're part of the official name (e.g., \"Great Barrier Reef\", \"Easter Island\").\n- ALWAYS include the administrative parent (region/state/province) between a natural feature and the country (e.g., \"Lofoten, Nordland, Norway\", not \"Lofoten, Norway\").\n- Never use slashes or \"or\": \"Iguazu Falls, Misiones, Argentina\" not \"Iguazu Falls, Argentina/Brazil\".\n- Use English exonyms for places that have well-known English names: \"Munich\" not \"München\", \"Florence\" not \"Firenze\", \"Moscow\" not \"Москва\".\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location, in the user's language.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples (shown in English but should be written in the user's language):\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"Road signage in Portuguese combined with the tropical urban landscape points to Brazil.\"\n- If confidence is \"unknown\", set method to a single sentence in the user's language explaining why the location could not be determined.\n\ndisplaySentence rules:\n- The displaySentence must be a complete, grammatically natural sentence in the user's language announcing where the photo was taken. It is shown directly to the user.\n- Write the place name naturally in the user's language inside the sentence: translate country names, region names, and well-known city names; keep proper nouns (specific landmark names, small place names) in their original form when no translation exists.\n- Weave the place name into the sentence according to the grammar of the user's language. Different languages place prepositions, particles, and word order differently — write whatever sounds natural.\n- Examples for the location \"Berliner Dom, Berlin, Germany\":\n  - English: \"This photo was taken at Berliner Dom in Berlin, Germany.\"\n  - French: \"Cette photo a été prise à la Cathédrale de Berlin, à Berlin, en Allemagne.\"\n  - Spanish: \"Esta foto fue tomada en la Catedral de Berlín, en Berlín, Alemania.\"\n  - German: \"Dieses Foto wurde am Berliner Dom in Berlin, Deutschland aufgenommen.\"\n  - Japanese: \"この写真はドイツのベルリンにあるベルリン大聖堂で撮影されました。\"\n  - Arabic: \"تم التقاط هذه الصورة عند كاتدرائية برلين في برلين، ألمانيا.\"\n  - Chinese: \"这张照片拍摄于德国柏林的柏林大教堂。\"\n- If confidence is \"unknown\", set displaySentence to an empty string \"\".\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: is this a real photograph? If not, return \"unknown\", countryCode to an empty string, and set displaySentence to \"\".\n- Ask: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n- Verify that method and displaySentence are in the user's specified language. Do not mix languages.\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
+
+
+
+// ── STATE ──────────────────────────────────────────────────────────
+var isSatellite = false;
+var isDark = false;
+var photoMarker;
+var currentPlaceName = null;
+var currentSentence = null;
+var currentPhotoHtml = null;
+var currentImageFile = null;
+var currentMethod = null;
+var currentShortName = null;
+var currentIsAI = false;
+var locationPolygon = null;
+var currentLang = "en";
+var isSearching = false;
+
+
+
+// ── MAP & INITIAL SETUP ────────────────────────────────────────────
+// L.map, tile layers, icons, attribution
+var browserLang = navigator.language.split("-")[0];
+if (TRANSLATIONS[browserLang]) {
+    currentLang = browserLang;
+    changeLanguage();
+}
+
+var savedDark = localStorage.getItem("isDark");
+if (savedDark !== null) isDark = savedDark === "true";
+
+var savedSatellite = localStorage.getItem("isSatellite");
+if (savedSatellite !== null) isSatellite = savedSatellite === "true";
+
+var savedLang = localStorage.getItem("currentLang");
+if (savedLang !== null && TRANSLATIONS[savedLang]) {
+    currentLang = savedLang;
+    changeLanguage();
+}
+
+document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
+
+var map = L.map('map').setView([0, 0], 2);
+
+var streetLayerLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap © CARTO'
+});
+
+var streetLayerDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap © CARTO'
+});
+
+var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 18,
+    attribution: '© Esri'
+});
+
+streetLayerLight.addTo(map);
+
+map.attributionControl.setPrefix('<a href="https://github.com/antonin-gg" target="_blank">© A.G.</a>');
+
+document.getElementById("welcome").textContent = translate("welcome");
+
+var fileInput = document.getElementById('imageInput');
+if (/Android/i.test(navigator.userAgent)) {
+    fileInput.accept = 'image/*,model/gltf+json';
+} else {
+    fileInput.accept = 'image/*';
+}
+
+
+
+// ── THEME, LAYER & LANGUAGE TOGGLERS───────────────────────────────
+// darkPopupStyle, toLightTheme, toDarkTheme, eventListeners
+var darkPopupStyle = document.createElement("style");
+darkPopupStyle.textContent = `
+            .leaflet-popup-content-wrapper {
+                background: rgba(15, 15, 25, 0.6) !important;
+                color: #f0f0f0 !important;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;
+            }
+            .leaflet-popup-tip {
+                background: rgba(15, 15, 25, 0.6) !important;
+            }
+        `;
+
+function toLightTheme() {
+    const elements = document.getElementsByClassName("box");
+
+    for (let el of elements) {
+        el.style.background = "rgba(255,255,255,0.4)";
+        el.style.color = "#000000";
+        el.style.border = "1px solid rgba(0,0,0,0.15)";
+        el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+    }
+
+    var zoomButtons = document.querySelectorAll(".leaflet-control-zoom a");
+
+    zoomButtons.forEach(function (el) {
+        el.style.background = "rgba(255,255,255,0.4)";
+        el.style.color = "#000000";
+        el.style.border = "1px solid rgba(0,0,0,0.15)";
+        el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
+    });
+
+    darkPopupStyle.remove();
+
+    document.querySelector(".leaflet-control-attribution").style.background = "rgba(255,255,255,0.4)";
+    document.querySelector(".leaflet-control-attribution").style.color = "#000";
+
+    document.getElementById("resultPanel").style.background = "rgba(255, 255, 255, 0.95)";
+    document.getElementById("resultPanel").style.color = "#000000";
+    document.getElementById("panelMethod").style.color = "#666666";
+    document.getElementById("panelClose").style.background = "rgba(0,0,0,0.08)";
+    document.getElementById("panelToggle").style.background = "rgba(0,0,0,0.08)";
+    document.getElementById("panelClose").style.color = "#000000";
+    document.getElementById("panelToggle").style.color = "#000000";
+    document.getElementById("stripClose").style.background = "rgba(0,0,0,0.08)";
+    document.getElementById("stripClose").style.color = "#000000";
+    document.getElementById("stripToggle").style.background = "rgba(0,0,0,0.08)";
+    document.getElementById("stripToggle").style.color = "#000000";
+
+
+    if (photoMarker && !isSatellite) photoMarker.setIcon(cameraIconLight);
+
+    document.body.classList.remove("dark");
+
+}
+
+function toDarkTheme() {
+
+    const elements = document.getElementsByClassName("box");
+
+    for (let el of elements) {
+        el.style.background = "rgba(15, 15, 25, 0.75)";
+        el.style.color = "#f0f0f0";
+        el.style.border = "1px solid rgba(255, 255, 255, 0.12)";
+        el.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.5)";
+    }
+
+    var zoomButtons = document.querySelectorAll(".leaflet-control-zoom a");
+
+    zoomButtons.forEach(function (el) {
+        el.style.background = "rgba(15, 15, 25, 0.75)";
+        el.style.color = "#f0f0f0";
+        el.style.border = "1px solid rgba(255, 255, 255, 0.12)";
+        el.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.5)";
+    });
+
+    document.head.appendChild(darkPopupStyle);
+
+    document.querySelector(".leaflet-control-attribution").style.background = "rgba(15,15,25,0.75)";
+    document.querySelector(".leaflet-control-attribution").style.color = "#f0f0f0";
+
+    document.getElementById("resultPanel").style.background = "rgba(15, 15, 25, 0.95)";
+    document.getElementById("resultPanel").style.color = "#f0f0f0";
+    document.getElementById("panelMethod").style.color = "#aaaaaa";
+    document.getElementById("panelClose").style.background = "rgba(255,255,255,0.12)";
+    document.getElementById("panelToggle").style.background = "rgba(255,255,255,0.12)";
+    document.getElementById("panelClose").style.color = "#f0f0f0";
+    document.getElementById("panelToggle").style.color = "#f0f0f0";
+    document.getElementById("stripClose").style.background = "rgba(255,255,255,0.12)";
+    document.getElementById("stripClose").style.color = "#f0f0f0";
+    document.getElementById("stripToggle").style.background = "rgba(255,255,255,0.12)";
+    document.getElementById("stripToggle").style.color = "#f0f0f0";
+
+    if (photoMarker && !isSatellite) photoMarker.setIcon(cameraIconDark);
+
+    document.body.classList.add("dark");
+
+}
+
+var cameraIconLight = new L.Icon({
+    iconUrl: 'https://antonin-gg.github.io/geolocator/cameraIconLight.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [31, 41],
+    iconAnchor: [15, 41],
+    popupAnchor: [1, -41],
+    shadowSize: [41, 41]
+});
+
+var cameraIconDark = new L.Icon({
+    iconUrl: 'https://antonin-gg.github.io/geolocator/cameraIconDark.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [31, 41],
+    iconAnchor: [15, 41],
+    popupAnchor: [1, -41],
+    shadowSize: [41, 41]
+});
+
+document.getElementById("showToggleTheme").addEventListener("click", function () {
+    if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
+        document.getElementById("toggleView").classList.add("hidden-view");
+        setToggleArrow(document.getElementById("showToggleView"), false);
+        document.getElementById("showToggleView").classList.remove("dropdown-open");
+    }
+    if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
+        document.getElementById("languageOptions").classList.add("hidden-language");
+        setToggleArrow(document.getElementById("showToggleLanguage"), false);
+        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+    }
+
+    document.getElementById("toggleTheme").classList.toggle("hidden-theme");
+    var isOpen = !document.getElementById("toggleTheme").classList.contains("hidden-theme");
+    this.classList.toggle("dropdown-open", isOpen);
+    var expanded = this.textContent.trim().endsWith("▼");
+    setToggleArrow(this, expanded);
+});
+
+document.getElementById("toggleTheme").addEventListener("click", function () {
+    if (isDark) {
+        toLightTheme();
+        this.textContent = translate("dark");
+        isDark = false;
+        if (!isSatellite) {
+            map.removeLayer(streetLayerDark);
+            streetLayerLight.addTo(map);
+        }
+    } else {
+        toDarkTheme();
+        this.textContent = translate("light");
+        isDark = true;
+        if (!isSatellite) {
+            map.removeLayer(streetLayerLight);
+            streetLayerDark.addTo(map);
+        }
+    }
+
+    if (locationPolygon) {
+        locationPolygon.setStyle({ color: getPolygonColor() });
+    }
+
+    this.classList.toggle("hidden-theme");
+    setToggleArrow(document.getElementById("showToggleTheme"), false);
+    document.getElementById("showToggleTheme").classList.remove("dropdown-open");
+
+    localStorage.setItem("isDark", isDark);
+});
+
+document.getElementById("showToggleView").addEventListener("click", function () {
+    if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
+        document.getElementById("toggleTheme").classList.add("hidden-theme");
+        setToggleArrow(document.getElementById("showToggleTheme"), false);
+        document.getElementById("showToggleTheme").classList.remove("dropdown-open");
+    }
+    if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
+        document.getElementById("languageOptions").classList.add("hidden-language");
+        setToggleArrow(document.getElementById("showToggleLanguage"), false);
+        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+    }
+
+    document.getElementById("toggleView").classList.toggle("hidden-view");
+    var isOpen = !document.getElementById("toggleView").classList.contains("hidden-view");
+    this.classList.toggle("dropdown-open", isOpen);
+    var expanded = this.textContent.trim().endsWith("▼");
+    setToggleArrow(this, expanded);
+});
+
+document.getElementById("toggleView").addEventListener("click", function () {
+
+    if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
+        document.getElementById("toggleTheme").classList.add("hidden-theme");
+        setToggleArrow(document.getElementById("showToggleTheme"), false);
+    }
+
+    if (isSatellite) {
+        map.removeLayer(satelliteLayer);
+        if (isDark) {
+            streetLayerDark.addTo(map);
+            if (photoMarker) photoMarker.setIcon(cameraIconDark);
+        }
+        else {
+            streetLayerLight.addTo(map);
+        }
+        this.textContent = translate("satellite");
+        isSatellite = false;
+    } else {
+        if (isDark) {
+            map.removeLayer(streetLayerDark);
+            if (photoMarker) photoMarker.setIcon(cameraIconLight);
+        }
+        else {
+            map.removeLayer(streetLayerLight);
+        }
+        satelliteLayer.addTo(map);
+        this.textContent = translate("street");
+        isSatellite = true;
+    }
+
+    if (locationPolygon) {
+        locationPolygon.setStyle({ color: getPolygonColor() });
+    }
+
+    this.classList.toggle("hidden-view");
+    setToggleArrow(document.getElementById("showToggleView"), false);
+    document.getElementById("showToggleView").classList.remove("dropdown-open");
+
+    localStorage.setItem("isSatellite", isSatellite);
+});
+
+document.getElementById("showToggleLanguage").addEventListener("click", function () {
+    if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
+        document.getElementById("toggleTheme").classList.add("hidden-theme");
+        setToggleArrow(document.getElementById("showToggleTheme"), false);
+        document.getElementById("showToggleTheme").classList.remove("dropdown-open");
+    }
+    if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
+        document.getElementById("toggleView").classList.add("hidden-view");
+        setToggleArrow(document.getElementById("showToggleView"), false);
+        document.getElementById("showToggleView").classList.remove("dropdown-open");
+    }
+
+    document.getElementById("languageOptions").classList.toggle("hidden-language");
+    var isOpen = !document.getElementById("languageOptions").classList.contains("hidden-language");
+    if (isOpen) {
+        document.getElementById("languageOptions").scrollTop = 0;
+    }
+    this.classList.toggle("dropdown-open", isOpen);
+    var expanded = this.textContent.trim().endsWith("▼");
+    setToggleArrow(this, expanded);
+});
+
+document.querySelectorAll(".lang-option").forEach(function (button) {
+
+    button.addEventListener("click", function () {
+
+        if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
+            document.getElementById("languageOptions").classList.add("hidden-language");
+            setToggleArrow(document.getElementById("showToggleLanguage"), false);
+        }
+
+        document.querySelector('[data-lang="' + currentLang + '"]').classList.remove("active-lang");
+
+        currentLang = this.getAttribute("data-lang");
+
+        changeLanguage();
+
+        document.getElementById("languageOptions").classList.add("hidden-language");
+        setToggleArrow(document.getElementById("showToggleLanguage"), false);
+        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+
+        document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
+
+        localStorage.setItem("currentLang", currentLang);
+
+        var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+        var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+
+        if ((panelOpen || stripOpen) && currentImageFile) {
+            rerunSearch();
+        }
+    });
+
+});
+
+function setToggleArrow(element, expanded) {
+    var text = element.textContent.slice(0, -1).trim();
+    element.textContent = text + (expanded ? " ▲" : " ▼");
+}
+
+map.on("click", function () {
+    if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
+        document.getElementById("toggleView").classList.add("hidden-view");
+        setToggleArrow(document.getElementById("showToggleView"), false);
+        document.getElementById("showToggleView").classList.remove("dropdown-open");
+    }
+    if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
+        document.getElementById("toggleTheme").classList.add("hidden-theme");
+        setToggleArrow(document.getElementById("showToggleTheme"), false);
+        document.getElementById("showToggleTheme").classList.remove("dropdown-open");
+    }
+    if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
+        document.getElementById("languageOptions").classList.add("hidden-language");
+        setToggleArrow(document.getElementById("showToggleLanguage"), false);
+        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+    }
+});
+
+
+
+// ── UI HELPERS ─────────────────────────────────────────────────────
+// showSearching, hideSearching, showError, onCloseClick
+function showSearching() {
+    isSearching = true;
+
+    document.getElementById("searching").style.display = "block";
+
+    document.getElementById("searchingText")
+        .classList.add("searching-active");
+
+    document.getElementById("searchingGlobe")
+        .classList.add("globe-active");
+}
+
+function hideSearching() {
+    isSearching = false;
+
+    document.getElementById("searching").style.display = "none";
+
+    document.getElementById("searchingText")
+        .classList.remove("searching-active");
+
+    document.getElementById("searchingGlobe")
+        .classList.remove("globe-active");
+}
+
+function showError(message) {
+    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    if (panelOpen || stripOpen) {
+        if (isSearching) {
+            document.getElementById("panelPlaceName").classList.remove("loading");
+            document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+            document.getElementById("panelSearchingGlobe").style.display = "none";
+            isSearching = false;
+        }
+    } else if (isSearching) hideSearching();
+    if (panelOpen) closePanel();
+    else if (stripOpen) closeStrip();
+
+    document.getElementById("noData").style.display = "block";
+    document.getElementById("noData").textContent = message;
+    setTimeout(() => {
+        document.getElementById("noData").style.display = "none";
+        document.getElementById("noData").textContent = null;
+        document.getElementById("welcome").style.display = "block";
+    }, 3000);
+}
+
+function getPolygonColor() {
+    if (isSatellite) return "#ffdd00";
+    if (isDark) return "#7ab8ff";
+    return "#4a90d9";
+}
+
+var resizeTimeout;
+
+window.addEventListener("resize", function () {
+
+    clearTimeout(resizeTimeout);
+
+    resizeTimeout = setTimeout(function () {
+
+        if (document.getElementById("resultPanel").classList.contains("open")) {
+
+            openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
+
+        }
+
+        else if (document.getElementById("resultStrip").style.display === "flex") {
+
+            if (window.innerWidth <= 768 &&
+                window.innerHeight > window.innerWidth) {
+
+                document.getElementById("imageInputLabel").style.display = "none";
+
+            } else {
+
+                document.getElementById("imageInputLabel").style.display = "flex";
+
+            }
+
+        }
+
+        map.invalidateSize();
+
+    }, 150);
+
+});
+
+
+
+// ── PANEL CONTROLS ─────────────────────────────────────────────────
+function openPanel(placeName, photoHtml, method, shortName, isAI) {
+
+    currentPlaceName = placeName;
+    currentPhotoHtml = photoHtml;
+    currentMethod = method;
+    currentShortName = shortName;
+    currentIsAI = isAI;
+
+    if (photoMarker) photoMarker.closePopup();
+
+    document.getElementById("panelPhoto").innerHTML = photoHtml;
+    if (!isAI) {
+        var sentence = translate("photoTakenIn").replace("{place}", placeName.replace(shortName, "<strong>" + shortName + "</strong>"));
+        document.getElementById("panelPlaceName").innerHTML = sentence;
+    } else {
+        var sentence = currentSentence;
+        var boldedSentence = sentence.replace(
+            shortName,
+            "<strong>" + shortName + "</strong>"
+        );
+
+        if (boldedSentence === sentence) {
+            document.getElementById("panelPlaceName").innerHTML = "<strong>" + sentence + "</strong>";
+        } else {
+            document.getElementById("panelPlaceName").innerHTML = boldedSentence;
+        }
+    }
+    document.getElementById("panelMethod").textContent = method;
+    document.getElementById("resultPanel").classList.add('open');
+    document.getElementById("map").classList.add('panel-open');
+    document.getElementById("wrapper").classList.add('panel-open');
+
+    var strip = document.getElementById("resultStrip");
+    if (strip.style.display === "flex") {
+        strip.style.display = "none";
+    }
+
+    document.getElementById("welcome").style.display = "none";
+
+    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+
+        document.getElementById("imageInputLabel").style.display = "none";
+        document.getElementById("imageInputLabelPanel").style.display = "flex";
+
+    } else {
+
+        document.getElementById("imageInputLabel").style.display = "flex";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+
+    }
+
+    setTimeout(function () {
+        map.invalidateSize();
+    }, 300);
+}
+
+function closePanel() {
+    map.stop();
+
+    document.getElementById("resultPanel").classList.remove('open');
+    document.getElementById("map").classList.remove('panel-open');
+    document.getElementById("wrapper").classList.remove('panel-open');
+
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
+
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
+    }
+
+    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+        document.getElementById("imageInputLabel").style.display = "flex";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+    }
+
+    setTimeout(function () {
+        map.invalidateSize();
+        document.getElementById("welcome").style.display = "block";
+    }, 300);
+}
+
+function minimizePanel() {
+    document.getElementById("resultPanel").classList.remove('open');
+    document.getElementById("map").classList.remove('panel-open');
+    document.getElementById("wrapper").classList.remove('panel-open');
+
+    document.getElementById("resultStrip").style.display = "flex";
+
+    if (isSearching) {
+        document.getElementById("stripPlaceName").textContent = translate("searching");
+    } else {
+        document.getElementById("stripPlaceName").textContent = currentShortName;
+    }
+
+    setTimeout(function () {
+        map.invalidateSize();
+        if (photoMarker) {
+            var popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
+            var miniPopup = L.popup({ closeButton: false, maxWidth: popupWidth })
+                .setContent(currentPhotoHtml);
+            photoMarker.bindPopup(miniPopup).openPopup();
+        }
+    }, 300);
+}
+
+function closeStrip() {
+    map.stop();
+
+    document.getElementById("resultStrip").style.display = "none";
+
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
+
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
+    }
+
+    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+        document.getElementById("imageInputLabel").style.display = "flex";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+    }
+
+    document.getElementById("welcome").style.display = "block";
+}
+
+document.getElementById("panelClose").addEventListener("click", closePanel);
+document.getElementById("stripClose").addEventListener("click", closeStrip);
+document.getElementById("panelToggle").addEventListener("click", minimizePanel);
+document.getElementById("stripToggle").addEventListener("click", function () {
+    openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
+});
+
+
+
+// ── LOGICAL CORE ───────────────────────────────────────────────────
+// aiLocator, placeMarkerFromEXIF, placeMarkerFromAI, getZoomLevel, locateImage
+async function aiLocator(image) {
+    var promptWithLang = languageInstructions[currentLang] + "\n\n" + AI_PROMPT;
+
+    var imageBase64 = await new Promise(function (resolve) {
+        var reader = new FileReader();
+        reader.onload = function (e) { resolve(e.target.result); };
+        reader.readAsDataURL(image);
+    });
+
+    var aiResponse = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model: AI_MODEL,
+            max_tokens: 200,
+            messages: [{
+                role: "user",
+                content: [
+                    {
+                        type: "text",
+                        text: promptWithLang
+                    },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: imageBase64,
+                            detail: "high"
+                        }
+                    }
+                ]
+            }]
+        })
+    });
+
+    if (!aiResponse.ok) {
+        showError("Network error. Please try again.");
+        return null;
+    }
+
+    var data = await aiResponse.json();
+    var raw = data.choices[0].message.content;
+    var clean = raw.replace(/```json|```/g, "").trim();
+    try {
+        return JSON.parse(clean);
+    } catch (e) {
+        return {
+            place: "unknown",
+            confidence: "unknown",
+            method: "Could not parse the AI response.",
+            displaySentence: ""
+        };
+    }
+
+}
+
+async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
+
+    var url = "https://nominatim.openstreetmap.org/reverse?lat=" +
+        photoCoordinates.latitude + "&lon=" + photoCoordinates.longitude +
+        "&format=json&zoom=18&addressdetails=1&accept-language=" + currentLang;
+
+    var response = await fetch(url, {
+        headers: { "User-Agent": "PhotoGeolocator/1.0" }
+    });
+
+    if (!response.ok) {
+        showError("Network error. Please try again.");
+        return null;
+    }
+
+    var result = await response.json();
+
+    var placeName = "Unknown location";
+    var shortName = "Unknown location";
+
+    if (result && result.address) {
+        var address = result.address;
+        var city = address.city || address.town || address.village || address.municipality || address.county || "";
+        var country = address.country || "";
+        shortName = city && country ? city + ", " + country : (result.display_name || "Unknown location");
+
+        var streetName =
+            address.road ||
+            address.pedestrian ||
+            address.footway ||
+            address.path ||
+            address.residential;
+
+        var street = [address.house_number, streetName]
+            .filter(Boolean)
+            .join(" ");
+
+        var prefix = street ? street + ", " : "";
+        placeName = prefix + shortName;
+    } else if (result && result.display_name) {
+        placeName = result.display_name;
+        shortName = result.display_name;
+    }
+
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
+
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
+    }
+
+    hideSearching();
+    document.getElementById("panelPlaceName").classList.remove("loading");
+    document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+    document.getElementById("panelSearchingGlobe").style.display = "none";
+
+    openPanel(placeName, photoHtml, translate("methodGPS"), shortName, false);
+    photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+
+    map.flyTo([photoCoordinates.latitude, photoCoordinates.longitude], 13);
+
+    document.getElementById("welcome").style.display = "none";
+
+}
+
+async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
+
+    var queries = generateFallbackQueries(aiPlace);
+
+    // Strict Nomminatim pass with type filter
+    for (var i = 0; i < queries.length; i++) {
+        var url = "https://nominatim.openstreetmap.org/search?q=" +
+            encodeURIComponent(queries[i]) +
+            "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+
+        if (aiCountryCode) {
+            url += "&countrycodes=" + aiCountryCode.toLowerCase();
+        }
+
+        var response = await fetch(url, {
+            headers: { "User-Agent": "PhotoGeolocator/1.0" }
+        });
+
+        if (!response.ok) {
+            showError("Network error. Please try again.");
+            return null;
+        }
+
+        var results = await response.json();
+
+        if (results.length > 0) {
+            var result = pickBestNominatimResult(results, queries[i], aiConfidence);
+
+            if (result) {
+                return {
+                    lat: parseFloat(result.lat),
+                    lng: parseFloat(result.lon),
+                    bounds: result.boundingbox,
+                    polygon: result.geojson,
+                    displayName: queries[i],
+                    shortName: buildShortName(result),
+                    showPolygon: showPolygon(aiConfidence, result.geojson)
+                };
+            }
+        }
+    }
+
+    // Loose Nomminatim pass without type filter
+    for (var i = 0; i < queries.length; i++) {
+        var url = "https://nominatim.openstreetmap.org/search?q=" +
+            encodeURIComponent(queries[i]) +
+            "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+
+        if (aiCountryCode) {
+            url += "&countrycodes=" + aiCountryCode.toLowerCase();
+        }
+
+        var response = await fetch(url, {
+            headers: { "User-Agent": "PhotoGeolocator/1.0" }
+        });
+
+        if (!response.ok) {
+            showError("Network error. Please try again.");
+            return null;
+        }
+
+        var results = await response.json();
+
+        if (results.length > 0) {
+            var result = pickBestNominatimResult(results, queries[i], null);
+
+            if (result) {
+                return {
+                    lat: parseFloat(result.lat),
+                    lng: parseFloat(result.lon),
+                    bounds: result.boundingbox,
+                    polygon: result.geojson,
+                    displayName: queries[i],
+                    shortName: buildShortName(result),
+                    showPolygon: showPolygon(aiConfidence, result.geojson)
+                };
+            }
+        }
+    }
+
+    // Strict OpenCage pass with type filter
+    for (var i = 0; i < queries.length; i++) {
+        var url = "https://api.opencagedata.com/geocode/v1/json?q=" +
+            encodeURIComponent(queries[i]) +
+            "&key=" + OPENCAGE_API_KEY +
+            "&limit=5" +
+            "&no_annotations=1" +
+            "&language=en";
+
+        if (aiCountryCode) {
+            url += "&countrycode=" + aiCountryCode.toLowerCase();
+        }
+        var response = await fetch(url);
+
+        if (!response.ok) {
+            showError("Network error. Please try again.");
+            return null;
+        }
+
+        var data = await response.json();
+
+        if (data.status && data.status.code !== 200) {
+            showError("Geocoding error. Please try again.");
+            return null;
+        }
+
+        var results = data.results || [];
+
+        if (results.length > 0) {
+            var result = pickBestOpenCageResult(results, queries[i], aiConfidence);
+
+            if (result) {
+                return {
+                    lat: result.geometry.lat,
+                    lng: result.geometry.lng,
+                    bounds: result.bounds
+                        ? [
+                            result.bounds.southwest.lat,
+                            result.bounds.northeast.lat,
+                            result.bounds.southwest.lng,
+                            result.bounds.northeast.lng
+                        ]
+                        : null,
+                    polygon: null,
+                    displayName: result.formatted || "",
+                    shortName: buildShortNameFromOpenCage(result),
+                    showPolygon: false
+                };
+
+            }
+        }
+    }
+
+    // Loose OpenCage pass without type filter
+    for (var i = 0; i < queries.length; i++) {
+        var url = "https://api.opencagedata.com/geocode/v1/json?q=" +
+            encodeURIComponent(queries[i]) +
+            "&key=" + OPENCAGE_API_KEY +
+            "&limit=5" +
+            "&no_annotations=1" +
+            "&language=en";
+
+        if (aiCountryCode) {
+            url += "&countrycode=" + aiCountryCode.toLowerCase();
+        }
+
+        var response = await fetch(url);
+
+        if (!response.ok) {
+            showError("Network error. Please try again.");
+            return null;
+        }
+
+        var data = await response.json();
+
+        if (data.status && data.status.code !== 200) {
+            showError("Geocoding error. Please try again.");
+            return null;
+        }
+
+        var results = data.results || [];
+
+        if (results.length > 0) {
+            var result = pickBestOpenCageResult(results, queries[i], null);
+
+            if (result) {
+                return {
+                    lat: result.geometry.lat,
+                    lng: result.geometry.lng,
+                    bounds: result.bounds
+                        ? [
+                            result.bounds.southwest.lat,
+                            result.bounds.northeast.lat,
+                            result.bounds.southwest.lng,
+                            result.bounds.northeast.lng
+                        ]
+                        : null,
+                    polygon: null,
+                    displayName: result.formatted || "",
+                    shortName: buildShortNameFromOpenCage(result),
+                    showPolygon: false
+                };
+
+            }
+        }
+    }
+
+    return null;
+}
+
+function generateFallbackQueries(aiPlace) {
+    var cleaned = aiPlace.replace(/(\w+)\/(\w+)/g, "$1");
+    if (!cleaned.includes(",")) {
+        cleaned = cleaned.replace(/\b(\w+)\s+\1\b/gi, "$1, $1");
+    }
+
+    var parts = cleaned.split(",").map(p => p.trim());
+    var queries = [cleaned];
+
+    for (var skip = 1; skip < parts.length - 1; skip++) {
+        var trimmed = [parts[0]].concat(parts.slice(skip + 1));
+        if (trimmed.length > 1 && trimmed.length < parts.length) {
+            queries.push(trimmed.join(", "));
+        }
+    }
+
+
+    for (var i = 1; i < parts.length; i++) {
+        queries.push(parts.slice(i).join(", "));
+    }
+
+    return queries;
+}
+
+function showPolygon(confidence, polygon) {
+    if (!polygon || polygon.type === "Point") return false;
+    if (confidence === "landmark") {
+        return isPolygonLarge(polygon);
+    }
+    if (confidence === "city") return true;
+    if (confidence === "region") return true;
+    if (confidence === "country") return true;
+    return false;
+}
+
+function isPolygonLarge(geojson) {
+    if (!geojson.coordinates) return false;
+
+    var coords = geojson.type === "Polygon" ? geojson.coordinates[0] : geojson.coordinates[0][0];
+    if (!coords || coords.length < 3) return false;
+
+    var lats = coords.map(c => c[1]);
+    var lngs = coords.map(c => c[0]);
+    var latSpan = Math.max(...lats) - Math.min(...lats);
+    var lngSpan = Math.max(...lngs) - Math.min(...lngs);
+    var area = latSpan * lngSpan;
+
+    return area > 0.00005;
+}
+
+function buildShortName(result) {
+    var a = result.address || {};
+    var n = result.namedetails || {};
+
+    var localName =
+        n["name:" + currentLang] ||
+        n.name ||
+        (result.display_name ? result.display_name.split(",")[0].trim() : null);
+
+    var country = a.country;
+
+    if (localName && country) {
+        return localName + ", " + country;
+    } else if (localName) {
+        return localName;
+    } else if (country) {
+        return country;
+    }
+
+    return result.display_name || "Unknown location";
+}
+
+function buildShortNameFromOpenCage(result) {
+    var a = result.components || {};
+
+    var localName =
+        a._normalized_city ||
+        a.city ||
+        a.town ||
+        a.village ||
+        a.municipality ||
+        a.county ||
+        a.state ||
+        a.island ||
+        a.archipelago ||
+        a.natural ||
+        a.attraction;
+
+    var country = a.country;
+
+    if (localName && country) {
+        return localName + ", " + country;
+    } else if (localName) {
+        return localName;
+    } else if (country) {
+        return country;
+    }
+
+    return result.formatted || "Unknown location";
+}
+
+function pickBestNominatimResult(results, aiPlace, aiConfidence) {
+    var aiPlaceLower = aiPlace.toLowerCase();
+    var primaryPart = aiPlace.split(",")[0].trim().toLowerCase();
+    var preferredTypes = getPreferredTypes(aiConfidence);
+
+    var typeFilteredResults = results;
+
+    if (aiConfidence && aiConfidence !== "landmark") {
+        typeFilteredResults = results.filter(function (r) {
+            return preferredTypes.includes(r.type) ||
+                preferredTypes.includes(r.addresstype);
+        });
+    } else if (aiConfidence === "landmark") {
+        typeFilteredResults = results.filter(function (r) {
+            return !preferredTypes.includes(r.type) &&
+                !preferredTypes.includes(r.addresstype);
+        });
+    }
+
+    if (typeFilteredResults.length === 0) return null;
+
+    var nameEnMatches = typeFilteredResults.filter(function (r) {
+        var nameEn = r.namedetails && r.namedetails["name:en"];
+        return usefulName(nameEn) &&
+            aiPlaceLower.includes(nameEn.toLowerCase());
+    });
+
+    if (nameEnMatches.length > 0) {
+        return sortByImportance(nameEnMatches)[0];
+    }
+
+    var localNameMatches = typeFilteredResults.filter(function (r) {
+        var localName = r.namedetails && r.namedetails.name;
+        return usefulName(localName) &&
+            aiPlaceLower.includes(localName.toLowerCase());
+    });
+
+    if (localNameMatches.length > 0) {
+        return sortByImportance(localNameMatches)[0];
+    }
+
+    var fullDisplayMatches = typeFilteredResults.filter(function (r) {
+        return r.display_name &&
+            r.display_name.toLowerCase().includes(aiPlaceLower);
+    });
+
+    if (fullDisplayMatches.length > 0) {
+        return sortByImportance(fullDisplayMatches)[0];
+    }
+
+    var primaryPartMatches = typeFilteredResults.filter(function (r) {
+        return r.display_name &&
+            r.display_name.toLowerCase().includes(primaryPart);
+    });
+
+    if (primaryPartMatches.length > 0) {
+        return sortByImportance(primaryPartMatches)[0];
+    }
+
+    return null;
+}
+
+function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
+    var aiPlaceLower = aiPlace.toLowerCase();
+    var primaryPart = aiPlace.split(",")[0].trim().toLowerCase();
+    var preferredTypes = getPreferredTypes(aiConfidence);
+
+    var typeFilteredResults = results;
+
+    if (aiConfidence && aiConfidence !== "landmark") {
+        typeFilteredResults = results.filter(function (r) {
+            var type = r.components && r.components._type;
+            return preferredTypes.includes(type);
+        });
+    } else if (aiConfidence === "landmark") {
+        typeFilteredResults = results.filter(function (r) {
+            var type = r.components && r.components._type;
+            return !preferredTypes.includes(type);
+        });
+    }
+
+    if (typeFilteredResults.length === 0) return null;
+
+    var fullFormattedMatches = typeFilteredResults.filter(function (r) {
+        return r.formatted &&
+            r.formatted.toLowerCase().includes(aiPlaceLower);
+    });
+
+    if (fullFormattedMatches.length > 0) {
+        return sortByImportance(fullFormattedMatches)[0];
+    }
+
+    var primaryPartMatches = typeFilteredResults.filter(function (r) {
+        return r.formatted &&
+            r.formatted.toLowerCase().includes(primaryPart);
+    });
+
+    if (primaryPartMatches.length > 0) {
+        return sortByImportance(primaryPartMatches)[0];
+    }
+
+    var componentNameMatches = typeFilteredResults.filter(function (r) {
+        var a = r.components || {};
+        var names = [
+            a._normalized_city,
+            a.city,
+            a.town,
+            a.village,
+            a.municipality,
+            a.county,
+            a.state,
+            a.state_district,
+            a.island,
+            a.archipelago,
+            a.natural,
+            a.attraction
+        ];
+
+        return names.some(function (name) {
+            return usefulName(name) &&
+                aiPlaceLower.includes(name.toLowerCase());
+        });
+    });
+
+    if (componentNameMatches.length > 0) {
+        return sortByImportance(componentNameMatches)[0];
+    }
+
+    return null;
+}
+
+function usefulName(name) {
+    return name && name.trim().length >= 4;
+}
+
+function sortByImportance(results) {
+    return results.sort(function (a, b) {
+        return (b.importance || 0) - (a.importance || 0);
+    });
+}
+
+function getPreferredTypes(confidence) {
+    if (confidence === "country") return ["country"];
+    if (confidence === "region") return [
+        // administrative
+        "region",
+        "state",
+        "province",
+        "county",
+        "district",
+        "administrative",
+        "state_district",
+
+        // large geographic regions
+        "archipelago",
+        "island",
+        "islet",
+
+        // natural / protected regions
+        "national_park",
+        "protected_area",
+        "nature_reserve",
+        "mountain_range",
+        "peninsula",
+        "cape",
+        "bay",
+        "lake",
+        "valley",
+        "forest",
+        "wood"
+    ];
+    if (confidence === "city") return [
+        "city",
+        "town",
+        "village",
+        "municipality",
+        "suburb",
+        "borough",
+        "quarter",
+        "city_district",
+        "neighbourhood",
+        "hamlet",
+        "locality",
+        "district"
+    ];
+    if (confidence === "landmark") return [
+        //blacklist for landmarks, not whitelist
+        "house",
+        "residential",
+        "commercial",
+        "retail",
+        "service",
+
+        "bus_stop",
+        "platform",
+
+        "road",
+        "footway",
+        "cycleway",
+        "path",
+
+        "traffic_signals",
+
+        "parking",
+
+        "address",
+        "yes"
+    ];
+    return [];
+}
+
+async function placeMarkerFromAI(image, photoHtml) {
+
+    document.getElementById("welcome").style.display = "none";
+
+    var aiResult = await aiLocator(image);
+
+    if (!aiResult) return;
+
+    var aiLocation = aiResult.place;
+
+    if (aiLocation == "unknown") {
+
+        hideSearching();
+
+        document.getElementById("panelPlaceName").classList.remove("loading");
+        document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+        document.getElementById("panelSearchingGlobe").style.display = "none";
+
+        if (photoMarker) {
+            map.removeLayer(photoMarker);
+            photoMarker = null;
+        }
+
+        if (locationPolygon) {
+            map.removeLayer(locationPolygon);
+            locationPolygon = null;
+        }
+
+        currentSentence = "<strong>" + translate("unknownLocation") + "</strong>";
+
+        openPanel(
+            translate("unknownLocationShort"),
+            photoHtml,
+            aiResult.method,
+            translate("unknownLocationShort"),
+            true
+        );
+
+    }
+
+    else {
+
+        var queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
+
+        var location = await getLocationData(queryLocation, aiResult.confidence, aiResult.countryCode);
+
+        hideSearching();
+
+        document.getElementById("panelPlaceName").classList.remove("loading");
+        document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+        document.getElementById("panelSearchingGlobe").style.display = "none";
+
+        if (photoMarker) {
+            map.removeLayer(photoMarker);
+            photoMarker = null;
+        }
+
+        if (locationPolygon) {
+            map.removeLayer(locationPolygon);
+            locationPolygon = null;
+        }
+
+        if (!location) {
+            openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location", true);
+            document.getElementById("panelPlaceName").innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
+            return;
+        }
+
+        if (location.showPolygon && location.polygon) {
+            locationPolygon = L.geoJSON(location.polygon, {
+                style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
+            }).addTo(map);
+        }
+
+        currentSentence = aiResult.displaySentence;
+
+        openPanel(location.shortName, photoHtml, aiResult.method, location.shortName, true);
+
+        photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+
+        if (location.bounds) {
+            map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]]);
+        } else {
+            map.flyTo([location.lat, location.lng], 10);
+        }
+
+        document.getElementById("welcome").style.display = "none";
+
+    }
+}
+
+function showPanelLoading(photoHtml) {
+    if (photoMarker) {
+        map.removeLayer(photoMarker);
+        photoMarker = null;
+    }
+
+    if (locationPolygon) {
+        map.removeLayer(locationPolygon);
+        locationPolygon = null;
+    }
+
+    document.getElementById("panelPhoto").innerHTML = photoHtml;
+    document.getElementById("panelPlaceName").innerHTML = "<strong> " + translate("searching") + "</strong>";
+    document.getElementById("panelPlaceName").classList.add("loading");
+    document.getElementById("panelSearchingGlobe").style.display = "block";
+    document.getElementById("panelSearchingGlobe").classList.add("globe-active");
+    document.getElementById("panelMethod").textContent = "";
+
+    var strip = document.getElementById("resultStrip");
+    if (strip.style.display === "flex") {
+        strip.style.display = "none";
+        document.getElementById("resultPanel").classList.add('open');
+        document.getElementById("map").classList.add('panel-open');
+        document.getElementById("wrapper").classList.add('panel-open');
+    }
+
+    document.getElementById("welcome").style.display = "none";
+
+    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+
+        document.getElementById("imageInputLabel").style.display = "none";
+        document.getElementById("imageInputLabelPanel").style.display = "flex";
+
+    } else {
+
+        document.getElementById("imageInputLabel").style.display = "flex";
+        document.getElementById("imageInputLabelPanel").style.display = "none";
+
+    }
+
+    setTimeout(function () { map.invalidateSize(); }, 300);
+}
+
+async function rerunSearch() {
+    if (!currentImageFile) return;
+
+    showPanelLoading(currentPhotoHtml);
+    isSearching = true;
+
+    var photoLatLng = await exifr.gps(currentImageFile);
+
+    if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
+        await placeMarkerFromEXIF(photoLatLng, currentPhotoHtml);
+    } else {
+        await placeMarkerFromAI(currentImageFile, currentPhotoHtml);
+    }
+
+    hideSearching();
+}
+
+async function locateImage(input) {
+
+    var image = input.files[0];
+
+    if (!image || !image.type.startsWith('image/')) {
+        showError("Please upload an image file.");
+        return;
+    }
+
+    currentImageFile = image;
+
+    var photoImgSrc = URL.createObjectURL(image);
+    var photoImgHtml = '<img src="' + photoImgSrc + '" style="width:100%;border-radius:4px;margin-top:6px;">';
+    currentPhotoHtml = photoImgHtml;
+
+    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
+    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    if (panelOpen || stripOpen) {
+        isSearching = true;
+        showPanelLoading(photoImgHtml);
+    } else showSearching();
+
+    var photoLatLng = await exifr.gps(image);
+
+    if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
+
+        await placeMarkerFromEXIF(photoLatLng, photoImgHtml);
+
+    }
+
+    else {
+
+        await placeMarkerFromAI(image, photoImgHtml);
+
+    }
+}
+
+if (isDark) {
+    toDarkTheme();
+    document.getElementById("toggleTheme").textContent = translate("light");
+    if (!isSatellite) {
+        map.removeLayer(streetLayerLight);
+        streetLayerDark.addTo(map);
+    }
+}
+
+if (isSatellite) {
+    map.removeLayer(streetLayerLight);
+    satelliteLayer.addTo(map);
+    document.getElementById("toggleView").textContent = translate("street");
+}
+
+
+
+// ── FINAL EVENT LISTENER ───────────────────────────────────────────
+// Triggers the search
+document.getElementById("imageInput").addEventListener("change", function (e) { locateImage(e.target) });
