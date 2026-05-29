@@ -810,6 +810,9 @@ function minimizePanel() {
 
     setTimeout(function () {
         map.invalidateSize();
+        if (isTouchDevice && photoMarker && currentLat != null && currentLng != null) {
+            map.panTo([currentLat, currentLng], { animate: true });
+        }
         if (photoMarker) {
             var popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
             var miniPopup = L.popup({
