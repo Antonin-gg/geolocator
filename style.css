@@ -1124,24 +1124,56 @@ body.touch #panelHandle {
 }
 
 /* strip → show chevron-up only (above line) */
-body.touch.strip-open #panelHandle .handle-chevron-up { display: flex; }
-body.touch.strip-open #panelHandle .handle-line        { display: block; }
-body.touch.strip-open #panelHandle .handle-chevron-down { display: none; }
+body.touch.strip-open #panelHandle .handle-chevron-up {
+    display: flex;
+}
+
+body.touch.strip-open #panelHandle .handle-line {
+    display: block;
+}
+
+body.touch.strip-open #panelHandle .handle-chevron-down {
+    display: none;
+}
 
 /* panel → show all three */
-body.touch.panel-open #panelHandle .handle-chevron-up  { display: flex; }
-body.touch.panel-open #panelHandle .handle-line        { display: block; }
-body.touch.panel-open #panelHandle .handle-chevron-down { display: flex; }
+body.touch.panel-open #panelHandle .handle-chevron-up {
+    display: flex;
+}
+
+body.touch.panel-open #panelHandle .handle-line {
+    display: block;
+}
+
+body.touch.panel-open #panelHandle .handle-chevron-down {
+    display: flex;
+}
 
 /* ultra → chevron-down below line only */
-body.touch.ultra-open #panelHandle .handle-chevron-up  { display: none; }
-body.touch.ultra-open #panelHandle .handle-line        { display: block; }
-body.touch.ultra-open #panelHandle .handle-chevron-down { display: flex; }
+body.touch.ultra-open #panelHandle .handle-chevron-up {
+    display: none;
+}
+
+body.touch.ultra-open #panelHandle .handle-line {
+    display: block;
+}
+
+body.touch.ultra-open #panelHandle .handle-chevron-down {
+    display: flex;
+}
 
 /* Default hidden state (no result open) */
-body.touch #panelHandle .handle-chevron-up   { display: none; }
-body.touch #panelHandle .handle-line         { display: none; }
-body.touch #panelHandle .handle-chevron-down { display: none; }
+body.touch #panelHandle .handle-chevron-up {
+    display: none;
+}
+
+body.touch #panelHandle .handle-line {
+    display: none;
+}
+
+body.touch #panelHandle .handle-chevron-down {
+    display: none;
+}
 
 body.touch.ultra-open #resultPanel {
     height: calc(100dvh - 30px) !important;
@@ -1168,13 +1200,23 @@ body.dark.touch.panel-scrollable #panelHandle {
 }
 
 @keyframes handleScrollablePulse {
-    0%   { background: rgba(0, 0, 0, 0.12); }
-    100% { background: rgba(0, 0, 0, 0.04); }
+    0% {
+        background: rgba(0, 0, 0, 0.12);
+    }
+
+    100% {
+        background: rgba(0, 0, 0, 0.04);
+    }
 }
 
 @keyframes handleScrollablePulseDark {
-    0%   { background: rgba(255, 255, 255, 0.14); }
-    100% { background: rgba(255, 255, 255, 0.05); }
+    0% {
+        background: rgba(255, 255, 255, 0.14);
+    }
+
+    100% {
+        background: rgba(255, 255, 255, 0.05);
+    }
 }
 
 body.touch #resultStrip {
@@ -1188,6 +1230,14 @@ body.touch #resultStrip {
 
 body.touch #resultPanel {
     will-change: transform;
+}
+
+body.touch.dragging-panel-down #map.panel-open {
+    height: 100dvh;
+}
+
+body.touch.dragging-panel-up #resultPanel {
+    height: calc(100dvh - 30px);
 }
 
 @media (max-width: 768px) and (orientation: portrait) {
