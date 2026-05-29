@@ -16,6 +16,7 @@ function maximizePanel() {
 }
 
 function unmaximizePanel() {
+    document.body.classList.add("ultra-collapsing");
     document.body.classList.remove("ultra-open");
     if (!handlingPopstate) {
         handlingPopstate = true;
@@ -25,6 +26,7 @@ function unmaximizePanel() {
     setTimeout(function () {
         lockPanelPhotoSize(true);
         balanceGeoInfoLayout();
+        document.body.classList.remove("ultra-collapsing");
     }, 300);
 }
 
@@ -236,9 +238,10 @@ function attachPanelGestures() {
                 requestAnimationFrame(function () {
                     var center = getNewLogicalCenterCoordinates();
                     map.invalidateSize({ pan: false, debounceMoveend: true });
-                    map.setView(center, map.getZoom(), {
-                        animate: false
-                    })
+                    if (!map.isMoving() && !map._flyToFrame) {
+                        map.setView(center, map.getZoom(), { animate: false });
+                    }
+
                 });
             }
         } else {
@@ -345,18 +348,17 @@ function clearPanelDragPreviewAfterTransition() {
 
         document.body.classList.remove("dragging-panel");
         document.body.classList.remove("dragging-panel-up");
+        if (!comittedDrag) {
+            map.invalidateSize({ pan: false, debounceMoveend: true });
+            map.setView(getNewLogicalCenterCoordinates(), map.getZoom(), {
+                animate: false
+            });
+        }
 
         panel.removeEventListener("transitionend", cleanup);
     }
 
     panel.addEventListener("transitionend", cleanup)
-
-    if (!comittedDrag) {
-        map.invalidateSize({ pan: false, debounceMoveend: true });
-        map.setView(getNewLogicalCenterCoordinates(), map.getZoom(), {
-            animate: false
-        });
-    }
 }
 
 function getNewLogicalCenterCoordinates() {

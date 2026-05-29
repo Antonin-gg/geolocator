@@ -1255,6 +1255,7 @@ body.dark.touch.dragging-panel #map.panel-open {
 
 body.touch.dragging-panel-up #resultPanel {
     overflow: visible;
+    z-index: 3001;
 }
 
 body.touch.dragging-panel-up #resultPanel::after {
@@ -1266,6 +1267,10 @@ body.touch.dragging-panel-up #resultPanel::after {
     height: 60dvh;
     background: inherit;
     pointer-events: none;
+}
+
+body.touch.ultra-collapsing #resultPanel {
+    z-index: 3001;
 }
 
 @media (max-width: 768px) and (orientation: portrait) {
