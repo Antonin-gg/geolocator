@@ -353,7 +353,7 @@ function clearPanelDragPreviewAfterTransition() {
 
     if (!comittedDrag) {
         map.invalidateSize({ pan: false, debounceMoveend: true });
-        map.setView(newCenter, map.getZoom(), {
+        map.setView(getNewLogicalCenterCoordinates(), map.getZoom(), {
             animate: false
         });
     }
