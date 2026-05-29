@@ -307,7 +307,12 @@ function attachPanelGestures() {
             } else if (flickDown || dy > downThreshold) {
                 clearPanelDragPreviewAfterTransition();
                 minimizePanel();
-            } else clearPanelDragPreviewAfterTransition();
+            } else {
+                clearPanelDragPreviewAfterTransition();
+                requestAnimationFrame(function () {
+                    map.invalidateSize({ pan: false, debounceMoveend: true });
+                });
+            }
         }
         axis = null;
     }
