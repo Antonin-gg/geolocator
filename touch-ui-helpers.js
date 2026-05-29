@@ -232,7 +232,10 @@ function attachPanelGestures() {
             if (!isUltra) {
                 document.body.classList.add("dragging-panel");
                 requestAnimationFrame(function () {
-                    map.invalidateSize({ pan: true, animate: false });
+                    map.invalidateSize({ pan: false, debounceMoveend: true });
+                    map.setView(getNewLogicalCenterCoordinates(),map.getZoom(),{
+                        animate: false
+                    })
                 });
             }
         } else {
@@ -310,7 +313,10 @@ function attachPanelGestures() {
             } else {
                 clearPanelDragPreviewAfterTransition();
                 requestAnimationFrame(function () {
-                    map.invalidateSize({ pan: true, animate: false });
+                    map.invalidateSize({ pan: false, debounceMoveend: true });
+                    map.setView(getNewLogicalCenterCoordinates(),map.getZoom(),{
+                        animate: false
+                    })
                 });
             }
         }
@@ -345,4 +351,9 @@ function clearPanelDragPreviewAfterTransition() {
     }
 
     panel.addEventListener("transitionend", cleanup)
+}
+
+function getNewLogicalCenterCoordinates() {
+    var rect = document.getElementById("map").getBoundingClientRect();
+    return map.containerPointToLatLng(L.point(rect.width/2, rect.height/2));
 }
