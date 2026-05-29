@@ -223,6 +223,7 @@ function attachPanelGestures() {
         if (!axis) {
             if (Math.abs(dy) < AXIS_LOCK) return;
             axis = "v";
+            if (!isUltra) document.body.classList.add("dragging-panel");
         } else {
             // Rubber-banding: past a natural limit, movement is damped so the
             // panel resists rather than flying off. Gives a physical "edge" feel.
@@ -237,7 +238,6 @@ function attachPanelGestures() {
                     offset = ultraLimit + (dy - ultraLimit) * SNAP_RESISTANCE;
                 }
                 document.body.classList.add("dragging-panel-up");
-                document.body.classList.remove("dragging-panel-down");
             } else if (dy > 0) {
                 // Dragging down toward the strip: free until the panel's own
                 // height, then resist (there's nothing more to reveal below).
@@ -246,7 +246,6 @@ function attachPanelGestures() {
                     offset = downLimit + (dy - downLimit) * SNAP_RESISTANCE;
                 }
                 if (!isUltra) {
-                    document.body.classList.add("dragging-panel-down");
                     document.body.classList.remove("dragging-panel-up");
                 }
             }
@@ -319,7 +318,7 @@ function clearPanelDragPreviewAfterTransition() {
     panel.addEventListener("transitionend", function cleanup(e) {
         if (e.propertyName !== "transform") return;
 
-        document.body.classList.remove("dragging-panel-down");
+        document.body.classList.remove("dragging-panel");
         document.body.classList.remove("dragging-panel-up");
 
         panel.removeEventListener("transitionend", cleanup);
