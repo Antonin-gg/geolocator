@@ -321,12 +321,16 @@ function attachPanelGestures() {
 function clearPanelDragPreviewAfterTransition() {
     var panel = document.getElementById("resultPanel");
 
-    panel.addEventListener("transitionend", function cleanup(e) {
+    function cleanup(e) {
         if (e.propertyName !== "transform") return;
 
         document.body.classList.remove("dragging-panel");
         document.body.classList.remove("dragging-panel-up");
 
         panel.removeEventListener("transitionend", cleanup);
-    });
+    }
+
+    panel.addEventListener("transitionend", cleanup);
+
+    setTimeout(cleanup, 350);
 }
