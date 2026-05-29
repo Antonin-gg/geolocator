@@ -209,6 +209,7 @@ function attachPanelGestures() {
         if (!canDrag(e)) return;
         startY = e.touches[0].clientY;
         startTime = Date.now();
+        axis = null;
         isDragging = true;
     }
 
@@ -264,6 +265,8 @@ function attachPanelGestures() {
         // animate to whatever its class-driven resting position is.
         panel.style.transition = "";
         panel.style.transform = "";
+
+        if (!axis) return;
 
         var dy = e.changedTouches[0].clientY - startY;
         var dt = Date.now() - startTime;
