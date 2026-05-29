@@ -218,6 +218,7 @@ function attachPanelGestures() {
 
     var startY, startTime;
     var isDragging = false;
+    var deferring = false;   // body touch on scrollable content: wait for direction
     var axis = null;
 
     // How much taller ultra is than the current panel. The drag has to
@@ -229,92 +230,99 @@ function attachPanelGestures() {
         return ultraH - panelH;
     }
 
-    // Decide whether this touch is allowed to start a panel drag.
-    // The handle always qualifies. The body only qualifies when the
-    // content isn't scrollable (otherwise we'd hijack the user's scroll).
-    function canDrag(e) {
+    function onDragStart(e) {
         var isHandle = e.target.closest("#panelHandle");
         var isScrollable = content.classList.contains("scrollable");
-        return isHandle || !isScrollable;
-    }
 
-    function onDragStart(e) {
-        if (!canDrag(e)) return;
         startY = e.touches[0].clientY;
         startTime = Date.now();
         axis = null;
-        isDragging = true;
         comittedDrag = false;
+
+        if (isHandle || !isScrollable) {
+            isDragging = true;
+            deferring = false;
+        } else {
+            isDragging = false;
+            deferring = true;   // decide once we know which way the finger goes
+        }
+    }
+
+    function lockAxis(isUltra) {
+        axis = "v";
+        if (!isUltra) {
+            document.body.classList.add("dragging-panel");
+            requestAnimationFrame(function () {
+                var center = getNewLogicalCenterCoordinates();
+                map.invalidateSize({ pan: false, debounceMoveend: true });
+                if (!map.isMoving() && !map._flyToFrame) {
+                    map.setView(center, map.getZoom(), { animate: false });
+                }
+            });
+        }
     }
 
     function onDragMove(e) {
-        if (!isDragging) return;
-        if (!e.cancelable) {
-            isDragging = false;
-            return;
+        if (!isDragging && !deferring) return;
+
+        var dy = e.touches[0].clientY - startY;
+        var isUltra = document.body.classList.contains("ultra-open");
+
+        if (deferring) {
+            if (Math.abs(dy) < AXIS_LOCK) return;   // no preventDefault yet — let browser decide
+            if (!e.cancelable) { deferring = false; return; }   // browser already owns scroll
+
+            var goingDown = dy > 0;
+            var atTop = content.scrollTop < 1;
+            var atBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 1;
+
+            if ((goingDown && atTop) || (!goingDown && atBottom)) {
+                isDragging = true;
+                deferring = false;
+                lockAxis(isUltra);
+                // axis is now "v" — fall through directly to the rubber-band block below
+            } else {
+                deferring = false;
+                return;   // hand control back to native scroll
+            }
         }
+
+        if (!isDragging) return;
+        if (!e.cancelable) { isDragging = false; return; }
         e.preventDefault();
 
-        var dy = e.touches[0].clientY - startY;   // +down, −up
-        var isUltra = document.body.classList.contains("ultra-open");
         var offset = dy;
 
         if (!axis) {
             if (Math.abs(dy) < AXIS_LOCK) return;
-            axis = "v";
-            if (!isUltra) {
-                document.body.classList.add("dragging-panel");
-                requestAnimationFrame(function () {
-                    var center = getNewLogicalCenterCoordinates();
-                    map.invalidateSize({ pan: false, debounceMoveend: true });
-                    if (!map.isMoving() && !map._flyToFrame) {
-                        map.setView(center, map.getZoom(), { animate: false });
-                    }
-
-                });
-            }
+            lockAxis(isUltra);
         } else {
-            // Rubber-banding: past a natural limit, movement is damped so the
-            // panel resists rather than flying off. Gives a physical "edge" feel.
             if (isUltra && dy < 0) {
-                // Already at the top in ultra — resist any further upward drag.
                 offset = dy * SNAP_RESISTANCE;
             } else if (!isUltra && dy < 0) {
-                // Dragging up from panel toward ultra: free until we reach the
-                // ultra height, then resist going beyond it.
                 var ultraLimit = -getUltraExtraHeight();
-                if (dy < ultraLimit) {
-                    offset = ultraLimit + (dy - ultraLimit) * SNAP_RESISTANCE;
-                }
+                if (dy < ultraLimit) offset = ultraLimit + (dy - ultraLimit) * SNAP_RESISTANCE;
                 document.body.classList.add("dragging-panel-up");
             } else if (dy > 0) {
-                // Dragging down toward the strip: free until the panel's own
-                // height, then resist (there's nothing more to reveal below).
                 var downLimit = panel.getBoundingClientRect().height;
-                if (dy > downLimit) {
-                    offset = downLimit + (dy - downLimit) * SNAP_RESISTANCE;
-                }
-                if (!isUltra) {
-                    document.body.classList.remove("dragging-panel-up");
-                }
+                if (dy > downLimit) offset = downLimit + (dy - downLimit) * SNAP_RESISTANCE;
+                if (!isUltra) document.body.classList.remove("dragging-panel-up");
             }
-
-            // Follow the finger. Transition off = instant, physical tracking.
             panel.style.transition = "none";
             panel.style.transform = "translateY(" + offset + "px)";
         }
     }
 
     function onDragEnd(e) {
-        if (!isDragging) return;
+        if (!isDragging && !deferring) return;
+        var wasActive = isDragging;
         isDragging = false;
+        deferring = false;
 
-        // Hand control back to CSS: clearing the transform lets the panel
-        // animate to whatever its class-driven resting position is.
         panel.style.transition = "";
         panel.style.transform = "";
 
-        if (!axis) return;
+        if (!wasActive || !axis) return;
 
         var dy = e.changedTouches[0].clientY - startY;
         var dt = Date.now() - startTime;
@@ -356,6 +364,7 @@ function attachPanelGestures() {
 
     function cancelPanelDrag() {
         isDragging = false;
+        deferring = false;
         axis = null;
         panel.style.transition = "";
         panel.style.transform = "";
