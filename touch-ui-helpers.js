@@ -216,6 +216,10 @@ function attachPanelGestures() {
 
     function onDragMove(e) {
         if (!isDragging) return;
+        if (!e.cancelable) {
+            isDragging = false;
+            return;
+        }
         e.preventDefault();
 
         var dy = e.touches[0].clientY - startY;   // +down, −up
@@ -225,7 +229,12 @@ function attachPanelGestures() {
         if (!axis) {
             if (Math.abs(dy) < AXIS_LOCK) return;
             axis = "v";
-            if (!isUltra) document.body.classList.add("dragging-panel");
+            if (!isUltra) {
+                document.body.classList.add("dragging-panel");
+                requestAnimationFrame(function () {
+                    map.invalidateSize({ pan: false, debounceMoveend: true });
+                });
+            }
         } else {
             // Rubber-banding: past a natural limit, movement is damped so the
             // panel resists rather than flying off. Gives a physical "edge" feel.
@@ -330,7 +339,5 @@ function clearPanelDragPreviewAfterTransition() {
         panel.removeEventListener("transitionend", cleanup);
     }
 
-    panel.addEventListener("transitionend", cleanup);
-
-    setTimeout(cleanup, 350);
+    panel.addEventListener("transitionend", cleanup)
 }
