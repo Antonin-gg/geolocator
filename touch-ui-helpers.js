@@ -69,11 +69,13 @@ var SNAP_RESISTANCE = 0.4;    // multiplier for rubber-banding past bounds
 
 function attachStripGestures() {
     var strip = document.getElementById("resultStrip");
+    var panel = document.getElementById("resultPanel");
 
     // Per-gesture scratch state. Reset on every touchstart.
     var startX, startY, startTime;
     var axis = null;        // "h" once we lock horizontal, "v" once vertical
     var isDragging = false;
+    var panelH = 0;
 
     strip.addEventListener("touchstart", function (e) {
         // Record where and when the finger landed.
@@ -82,10 +84,9 @@ function attachStripGestures() {
         startTime = Date.now();
         axis = null;
         isDragging = true;
-
-        // Kill the CSS transition so the strip follows the finger
-        // instantly instead of easing toward each position.
+        panelH = panel.getBoundingClientRect().height;
         strip.style.transition = "none";
+        panel.style.transition = "none";
     }, { passive: true });
 
     strip.addEventListener("touchmove", function (e) {
@@ -111,14 +112,22 @@ function attachStripGestures() {
             // Only upward drag is meaningful (opening the panel).
             // Downward gets heavy resistance (×0.2) so it barely moves —
             // there's nothing below the strip to reveal.
-            var clampedDy = dy < 0 ? dy : dy * 0.2;
-            strip.style.transform = "translateY(" + clampedDy + "px)";
+            if (dy < 0) {
+                // Upward: strip fades out, panel slides in from bottom
+                var progress = Math.min(Math.abs(dy) / panelH, 1);
+                strip.style.opacity = 1 - progress;
+                strip.style.transform = "";
+                panel.style.transform = "translateY(" + Math.max(0, panelH + dy) + "px)";
+            } else {
+                // Downward: light resistance on strip only, no panel movement
+                strip.style.transform = "translateY(" + dy * 0.2 + "px)";
+                strip.style.opacity = "";
+            }
         } else {
             // Horizontal: the strip slides with the finger and fades out,
             // previewing the "close" action visually before release.
             strip.style.transform = "translateX(" + dx + "px)";
-            var progress = Math.min(Math.abs(dx) / 120, 1);
-            strip.style.opacity = 1 - progress * 0.6;
+            strip.style.opacity = 1 - Math.min(Math.abs(dx) / 120, 1) * 0.6;
         }
     }, { passive: false });
 
@@ -129,13 +138,16 @@ function attachStripGestures() {
         // Restore the CSS transition and clear the inline drag styles.
         // Whatever happens next (commit or snap-back) now animates smoothly.
         strip.style.transition = "";
-        strip.style.transform = "";
-        strip.style.opacity = "";
+        panel.style.transition = "";
 
         // No axis means the finger never moved past AXIS_LOCK — treat as a
         // tap, not a swipe, and do nothing.
-        if (!axis) return;
-
+        if (!axis) {
+            strip.style.transform = "";
+            strip.style.opacity = "";
+            panel.style.transform = "";
+            return;
+        }
         var dx = e.changedTouches[0].clientX - startX;
         var dy = e.changedTouches[0].clientY - startY;
         var dt = Date.now() - startTime;
@@ -143,6 +155,8 @@ function attachStripGestures() {
         var vy = Math.abs(dy) / dt;   // vertical speed
 
         if (axis === "v") {
+            strip.style.transform = "";
+            strip.style.opacity = "";
             // Commit to opening the panel if the drag was far enough OR
             // fast enough (a quick flick shouldn't need full distance).
             if (dy < -SWIPE_DISTANCE || vy > SWIPE_VELOCITY) {
@@ -150,10 +164,14 @@ function attachStripGestures() {
                     currentPlaceName, currentPhotoHtml,
                     currentMethod, currentShortName, currentIsAI
                 );
+                panel.style.transform = "";
             }
             // Otherwise the cleared transform + restored transition let the
             // strip ease back to its resting position — a natural snap-back.
         } else {
+            strip.style.transform = "";
+            strip.style.opacity = "";
+            panel.style.transform = "";
             // Horizontal swipe past distance or velocity closes the result.
             if (Math.abs(dx) > 80 || vx > SWIPE_VELOCITY) {
                 closeStrip();
@@ -161,6 +179,17 @@ function attachStripGestures() {
             // Otherwise: snap back, same as above.
         }
         axis = null;
+    }, { passive: true });
+
+    strip.addEventListener("touchcancel", function () {
+        if (!isDragging) return;
+        isDragging = false;
+        axis = null;
+        strip.style.transition = "";
+        strip.style.transform = "";
+        strip.style.opacity = "";
+        panel.style.transition = "";
+        panel.style.transform = "";
     }, { passive: true });
 }
 
@@ -350,11 +379,11 @@ function clearPanelDragPreviewAfterTransition() {
         document.body.classList.remove("dragging-panel-up");
         if (!comittedDrag) {
             var mapEl = document.getElementById("map");
-            mapEl.style.transition = "none";  
+            mapEl.style.transition = "none";
             map.invalidateSize({ pan: false, debounceMoveend: true });
             map.setView(getNewLogicalCenterCoordinates(), map.getZoom(), { animate: false });
             requestAnimationFrame(function () {
-                mapEl.style.transition = "";  
+                mapEl.style.transition = "";
             });
         }
 
