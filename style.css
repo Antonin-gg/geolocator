@@ -1222,6 +1222,8 @@ body.dark.touch.panel-scrollable #panelHandle {
 body.touch #resultStrip {
     /* slightly taller for touch comfort */
     min-height: 52px;
+    padding-top: 16px;
+    align-items: center;
 }
 
 body.touch #resultStrip {
