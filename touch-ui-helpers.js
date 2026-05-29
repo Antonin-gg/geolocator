@@ -157,6 +157,7 @@ function attachStripGestures() {
             }
             // Otherwise: snap back, same as above.
         }
+        axis = null;
     }, { passive: true });
 }
 
@@ -299,10 +300,12 @@ function attachPanelGestures() {
                 minimizePanel();
             } else clearPanelDragPreviewAfterTransition();
         }
+        axis = null;
     }
 
     function cancelPanelDrag() {
         isDragging = false;
+        axis = null;
         panel.style.transition = "";
         panel.style.transform = "";
     }
