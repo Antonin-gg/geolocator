@@ -232,7 +232,7 @@ function attachPanelGestures() {
             if (!isUltra) {
                 document.body.classList.add("dragging-panel");
                 requestAnimationFrame(function () {
-                    map.invalidateSize({ pan: false, debounceMoveend: true });
+                    map.invalidateSize({ pan: true, animate: false });
                 });
             }
         } else {
@@ -310,7 +310,7 @@ function attachPanelGestures() {
             } else {
                 clearPanelDragPreviewAfterTransition();
                 requestAnimationFrame(function () {
-                    map.invalidateSize({ pan: false, debounceMoveend: true });
+                    map.invalidateSize({ pan: true, animate: false });
                 });
             }
         }
