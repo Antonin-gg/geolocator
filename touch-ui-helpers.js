@@ -236,12 +236,18 @@ function attachPanelGestures() {
                 if (dy < ultraLimit) {
                     offset = ultraLimit + (dy - ultraLimit) * SNAP_RESISTANCE;
                 }
+                document.body.classList.add("dragging-panel-up");
+                document.body.classList.remove("dragging-panel-down");
             } else if (dy > 0) {
                 // Dragging down toward the strip: free until the panel's own
                 // height, then resist (there's nothing more to reveal below).
                 var downLimit = panel.getBoundingClientRect().height;
                 if (dy > downLimit) {
                     offset = downLimit + (dy - downLimit) * SNAP_RESISTANCE;
+                }
+                if (!isUltra) {
+                    document.body.classList.add("dragging-panel-down");
+                    document.body.classList.remove("dragging-panel-up");
                 }
             }
 
@@ -284,11 +290,12 @@ function attachPanelGestures() {
         } else {
             // From panel: up → ultra, down → strip, neither → snap back.
             if (flickUp || dy < upThreshold) {
+                clearPanelDragPreviewAfterTransition();
                 maximizePanel();
             } else if (flickDown || dy > downThreshold) {
+                clearPanelDragPreviewAfterTransition();
                 minimizePanel();
-            }
-            // else: snap back to panel.
+            } else clearPanelDragPreviewAfterTransition();
         }
     }
 
@@ -304,4 +311,17 @@ function attachPanelGestures() {
     panel.addEventListener("touchmove", onDragMove, { passive: false });
     panel.addEventListener("touchend", onDragEnd, { passive: true });
     panel.addEventListener("touchcancel", cancelPanelDrag, { passive: true });
+}
+
+function clearPanelDragPreviewAfterTransition() {
+    var panel = document.getElementById("resultPanel");
+
+    panel.addEventListener("transitionend", function cleanup(e) {
+        if (e.propertyName !== "transform") return;
+
+        document.body.classList.remove("dragging-panel-down");
+        document.body.classList.remove("dragging-panel-up");
+
+        panel.removeEventListener("transitionend", cleanup);
+    });
 }
