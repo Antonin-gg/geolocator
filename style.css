@@ -1246,6 +1246,7 @@ body.touch.dragging-panel #map.panel-open {
     margin-left: 0;
     z-index: 0;
     background: #dbeafe;
+    transition: none !important;
 }
 
 body.dark.touch.dragging-panel #map.panel-open {
