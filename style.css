@@ -1144,9 +1144,9 @@ body.touch #panelHandle .handle-line         { display: none; }
 body.touch #panelHandle .handle-chevron-down { display: none; }
 
 body.touch.ultra-open #resultPanel {
-    /* override whatever portrait/landscape height is set */
     height: calc(100dvh - 30px) !important;
-    transform: translateY(0) !important;
+    transform: translateY(0);
+    z-index: 3001;
 }
 
 body.touch #resultPanel {
