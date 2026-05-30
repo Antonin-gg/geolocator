@@ -1397,7 +1397,7 @@ body.touch #stripHandle .handle-line {
         width: 18px;
         height: auto;
         writing-mode: horizontal-tb;
-        flex-direction: column;
+        flex-direction: row-reverse;
 
     }
 
