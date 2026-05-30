@@ -254,7 +254,8 @@ function attachPanelGestures() {
     var panel = document.getElementById("resultPanel");
     var content = document.getElementById("panelContent");
 
-    var startY, startTime;
+    var startX, startY, startTime;
+    var panelStartWidth = null;
     var isDragging = false;
     var deferring = false;   // body touch on scrollable content: wait for direction
     var axis = null;
@@ -274,12 +275,14 @@ function attachPanelGestures() {
     function onDragStart(e) {
         var isHandle = e.target.closest("#panelHandle");
         var isScrollable = content.classList.contains("scrollable");
+        panelStartWidth = panel.getBoundingClientRect().width;
+
         startY = e.touches[0].clientY;
         startX = e.touches[0].clientX;
         startTime = Date.now();
         axis = null;
         comittedDrag = false;
-        if (isHandle || !isScrollable || isLandscape()) {
+        if (isHandle || !isScrollable) {
             isDragging = true;
             deferring = false;
         } else {
@@ -313,7 +316,19 @@ function attachPanelGestures() {
         if (deferring) {
             if (Math.abs(delta) < AXIS_LOCK) return;
             if (!e.cancelable) { deferring = false; return; }
-            var goingDown = delta > 0;
+
+            if (isLandscape()) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    // Horizontal dominant → panel drag
+                    isDragging = true;
+                    deferring = false;
+                    lockAxis(isUltra);
+                } else {
+                    // Vertical dominant → let content scroll
+                    deferring = false; return;
+                }
+            }
+            var goingDown = dy > 0;
             var atTop = content.scrollTop < 1;
             var atBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 1;
             if ((!goingDown && atTop) || (goingDown && atBottom)) {

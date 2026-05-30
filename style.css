@@ -1344,6 +1344,8 @@ body.touch #stripHandle .handle-line {
 
     /* Panel handle: right edge */
     body.touch #panelHandle {
+        flex-direction: row;
+        gap: 4px;
         top: 0;
         right: 0;
         bottom: 0;
@@ -1403,6 +1405,14 @@ body.touch #stripHandle .handle-line {
         height: auto;
     }
 
+    body.touch #panelHandle .handle-chevron {
+        width: 7px;
+        /* visual width of a 20×7 SVG after 90° rotation */
+        height: 20px;
+        /* visual height */
+        overflow: visible;
+    }
+
     /* Rotate chevrons to point left/right for horizontal gestures */
     body.touch #panelHandle .handle-chevron-up svg {
         transform: rotate(90deg);
@@ -1432,6 +1442,10 @@ body.touch #stripHandle .handle-line {
 
     /* Strip padding override (handle is on right, not top) */
     body.touch #resultStrip {
+        top: 0;
+        bottom: 0;
+        height: 100dvh;
+        transform: none;
         padding-top: 12px;
         padding-right: 24px;
         /* room for strip handle */
