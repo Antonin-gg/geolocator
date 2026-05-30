@@ -802,7 +802,10 @@ function minimizePanel() {
     document.getElementById("wrapper").classList.remove('panel-open');
     document.body.classList.remove("panel-open");
 
-    document.getElementById("resultStrip").style.display = "flex";
+    var strip = document.getElementById("resultStrip");
+    strip.style.display = "flex";
+    strip.style.opacity = "";
+    strip.style.transform = "";
 
     document.body.classList.add("strip-open");
 
