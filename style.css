@@ -1195,9 +1195,11 @@ body.touch #resultPanel:has(#panelContent.scrollable) #panelHandle {
     background: rgba(0, 0, 0, 0.04);
 }
 
-body.dark.touch.panel-scrollable #panelHandle {
+body.dark.touch #resultPanel:has(#panelContent.scrollable) #panelHandle {
     animation: handleScrollablePulseDark 0.6s ease-out forwards;
+    background: rgba(255, 255, 255, 0.12);
 }
+
 
 @keyframes handleScrollablePulse {
     0% {
@@ -1211,11 +1213,11 @@ body.dark.touch.panel-scrollable #panelHandle {
 
 @keyframes handleScrollablePulseDark {
     0% {
-        background: rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.22);
     }
 
     100% {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.12);
     }
 }
 
@@ -1317,7 +1319,8 @@ body.touch #stripHandle .handle-line {
         height: 100dvh;
         transform: translateX(-100%);
         border-radius: 0;
-        padding: 60px 54px 60px 16px;   /* 54px right clears the handle */
+        padding: 60px 54px 60px 16px;
+        /* 54px right clears the handle */
         transition: transform 0.3s ease, width 0.3s ease;
     }
 
@@ -1386,7 +1389,8 @@ body.touch #stripHandle .handle-line {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        display: block;   /* override the max-height:500px rule that hides it */
+        display: block;
+        /* override the max-height:500px rule that hides it */
     }
 
     /* Strip handle: right edge of the strip */
@@ -1401,13 +1405,18 @@ body.touch #stripHandle .handle-line {
 
     /* Rotate chevrons to point left/right for horizontal gestures */
     body.touch #panelHandle .handle-chevron-up svg {
-        transform: rotate(90deg);    /* → points right = expand */
+        transform: rotate(90deg);
+        /* → points right = expand */
     }
+
     body.touch #panelHandle .handle-chevron-down svg {
-        transform: rotate(-90deg);   /* → points left = minimize */
+        transform: rotate(-90deg);
+        /* → points left = minimize */
     }
+
     body.touch #stripHandle .handle-chevron-up svg {
-        transform: rotate(90deg);    /* → points right = open panel */
+        transform: rotate(90deg);
+        /* → points right = open panel */
     }
 
     /* Handle line becomes vertical */
@@ -1415,6 +1424,7 @@ body.touch #stripHandle .handle-line {
         width: 4px;
         height: 36px;
     }
+
     body.touch #stripHandle .handle-line {
         width: 3px;
         height: 28px;
@@ -1423,7 +1433,8 @@ body.touch #stripHandle .handle-line {
     /* Strip padding override (handle is on right, not top) */
     body.touch #resultStrip {
         padding-top: 12px;
-        padding-right: 24px;    /* room for strip handle */
+        padding-right: 24px;
+        /* room for strip handle */
     }
 }
 
