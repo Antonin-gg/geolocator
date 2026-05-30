@@ -757,6 +757,7 @@ function closeStrip() {
     stopUserLocationPreview();
 
     elements.strip.style.display = "none";
+    document.body.classList.remove("strip-open");
 
     if (photoMarker) {
         map.removeLayer(photoMarker);
@@ -770,8 +771,6 @@ function closeStrip() {
     elements.locateHint.classList.remove("visible");
 
     updateUploadButtons();
-
-    document.body.classList.remove("strip-open");
 
     elements.welcome.style.display = "block";
 
