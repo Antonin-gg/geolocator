@@ -316,15 +316,16 @@ function attachPanelGestures() {
                     lockAxis();
                 } else {
                     // Vertical dominant → let content scroll
-                    deferring = false; return;
+                    deferring = false;
                 }
+            } else {
+                var goingDown = dy > 0;
+                var atTop = content.scrollTop < 1;
+                var atBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 1;
+                if ((goingDown && atTop) || (!goingDown && atBottom)) {
+                    isDragging = true; deferring = false; lockAxis();
+                } else { deferring = false; return; }
             }
-            var goingDown = dy > 0;
-            var atTop = content.scrollTop < 1;
-            var atBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 1;
-            if ((!goingDown && atTop) || (goingDown && atBottom)) {
-                isDragging = true; deferring = false; lockAxis();
-            } else { deferring = false; return; }
         }
 
         if (!isDragging) return;

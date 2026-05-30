@@ -1396,6 +1396,9 @@ body.touch #stripHandle .handle-line {
         left: auto;
         width: 18px;
         height: auto;
+        writing-mode: horizontal-tb;
+        flex-direction: column;
+
     }
 
     body.touch #panelHandle .handle-chevron {
