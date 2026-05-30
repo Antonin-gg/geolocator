@@ -3,6 +3,7 @@
 // License: MIT — copyright (c) 2026 Phoenix Fox
 
 var userCoordinatesPromise = null;
+var _previewToken = 0;
 
 var userLocationIcon = L.divIcon({
     className: "user-location-marker",
@@ -89,6 +90,8 @@ function showUserLocationPreview() {
     if (locationPreviewInProgress) return;
     if (!userCoordinates || currentLat == null || currentLng == null) return;
 
+    var token = ++_previewToken;
+
     locationPreviewInProgress = true;
 
     if (locationPreviewTimeout1) {
@@ -125,8 +128,10 @@ function showUserLocationPreview() {
             padding: [15, 15],
         });
         map.once("moveend", function () {
+            if (_previewToken !== token) return;
             showUserDistanceLine(userLat, userLng);
             locationPreviewTimeout2 = setTimeout(function () {
+                if (_previewToken !== token) return;
                 if (userDistanceLine) {
                     var lineEl = userDistanceLine.getElement();
                     if (lineEl) lineEl.classList.add("fading-out");
@@ -136,6 +141,7 @@ function showUserLocationPreview() {
                     if (labelEl) labelEl.classList.add("fading-out");
                 }
                 setTimeout(function () {
+                    if (_previewToken !== token) return;
                     if (userDistanceLine) {
                         map.removeLayer(userDistanceLine);
                         userDistanceLine = null;
@@ -153,6 +159,7 @@ function showUserLocationPreview() {
                     }
                 }, 700);
                 map.once("moveend", function () {
+                    if (_previewToken !== token) return;
                     if (userMarker) {
                         map.removeLayer(userMarker);
                     }
@@ -172,14 +179,14 @@ function showUserLocationPreview() {
 }
 
 function stopUserLocationPreview() {
+    ++_previewToken;
     locationPreviewInProgress = false;
 
     clearTimeout(locationPreviewTimeout1);
     clearTimeout(locationPreviewTimeout2);
     locationPreviewTimeout1 = null;
     locationPreviewTimeout2 = null;
-
-    map.off("moveend");
+    map.stop();
 
     if (userMarker) {
         map.removeLayer(userMarker);
