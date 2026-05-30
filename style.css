@@ -1354,14 +1354,22 @@ body.touch #stripHandle .handle-line {
         height: auto;
     }
 
-    /* dragging-panel-up extension goes RIGHT instead of down */
     body.touch.dragging-panel-up #resultPanel::after {
+        display: none;
+        /* disable the wrong rightward extension */
+    }
+
+    body.touch.dragging-panel-up #resultPanel::before {
+        content: "";
+        position: absolute;
         top: 0;
         bottom: 0;
-        left: auto;
-        right: -60vw;
+        right: 100%;
+        /* extends to the left of the panel */
         width: 60vw;
         height: auto;
+        background: inherit;
+        pointer-events: none;
     }
 
     /* Strip: vertical left sidebar (like desktop, but touch-enabled) */
@@ -1420,7 +1428,7 @@ body.touch #stripHandle .handle-line {
     }
 
     body.touch #panelHandle .handle-chevron-down svg {
-        transform: rotate(-90deg);
+        transform: rotate(90deg);
         /* → points left = minimize */
     }
 
