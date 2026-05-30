@@ -115,7 +115,7 @@ function attachStripGestures() {
                 if (dx > 0) {
                     // rightward = open panel preview
                     strip.style.opacity = 1 - Math.min(dx / panelH, 1);
-                    panel.style.transform = "translateX(" + Math.max(-panelH, -panelH + dx) + "px)";
+                    panel.style.transform = "translateX(" + Math.min(0, -panelH + dx) + "px)";
                 } else {
                     strip.style.transform = "translateX(" + dx * 0.2 + "px)";
                 }
