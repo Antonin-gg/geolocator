@@ -630,10 +630,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     document.body.classList.remove("strip-open");
 
-    const strip = elements.strip;
-    if (isStripOpen()) {
-        strip.style.display = "none";
-    }
+    elements.strip.style.display = "none";
 
     elements.welcome.style.display = "none";
 
