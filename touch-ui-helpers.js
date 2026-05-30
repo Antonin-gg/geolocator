@@ -3,7 +3,6 @@ if (isTouchDevice) document.body.classList.add("touch");
 
 var historyDepth = 0;
 var handlingPopstate = false;
-var comittedDrag = false;
 
 function maximizePanel() {
     document.body.classList.add("ultra-open");
@@ -43,6 +42,7 @@ window.addEventListener("popstate", function () {
         unmaximizePanel();
     } else if (document.body.classList.contains("panel-open")) {
         minimizePanel();
+        recenterForPanelState();
     } else if (document.body.classList.contains("strip-open")) {
         closeStrip();
     }
@@ -182,6 +182,7 @@ function attachStripGestures() {
                         currentMethod, currentShortName, currentIsAI
                     );
                     panel.style.transform = "";
+                    recenterForPanelState();
                 } else {
                     strip.style.opacity = ""; panel.style.transform = "";
                 }
@@ -203,6 +204,7 @@ function attachStripGestures() {
                     currentMethod, currentShortName, currentIsAI
                 );
                 panel.style.transform = "";
+                recenterForPanelState();
             }
             // Otherwise the cleared transform + restored transition let the
             // strip ease back to its resting position — a natural snap-back.
@@ -281,7 +283,6 @@ function attachPanelGestures() {
         startX = e.touches[0].clientX;
         startTime = Date.now();
         axis = null;
-        comittedDrag = false;
         if (isHandle || !isScrollable) {
             isDragging = true;
             deferring = false;
@@ -291,18 +292,8 @@ function attachPanelGestures() {
         }
     }
 
-    function lockAxis(isUltra) {
-        axis = "v";
-        if (!isUltra) {
-            document.body.classList.add("dragging-panel");
-            requestAnimationFrame(function () {
-                var center = getNewLogicalCenterCoordinates();
-                map.invalidateSize({ pan: false, debounceMoveend: true });
-                if (!map.isMoving() && !map._flyToFrame) {
-                    map.setView(center, map.getZoom(), { animate: false });
-                }
-            });
-        }
+    function lockAxis() {
+        axis = isLandscape() ? "h" : "v";
     }
 
     function onDragMove(e) {
@@ -322,7 +313,7 @@ function attachPanelGestures() {
                     // Horizontal dominant → panel drag
                     isDragging = true;
                     deferring = false;
-                    lockAxis(isUltra);
+                    lockAxis();
                 } else {
                     // Vertical dominant → let content scroll
                     deferring = false; return;
@@ -332,7 +323,7 @@ function attachPanelGestures() {
             var atTop = content.scrollTop < 1;
             var atBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 1;
             if ((!goingDown && atTop) || (goingDown && atBottom)) {
-                isDragging = true; deferring = false; lockAxis(isUltra);
+                isDragging = true; deferring = false; lockAxis();
             } else { deferring = false; return; }
         }
 
@@ -344,7 +335,7 @@ function attachPanelGestures() {
 
         if (!axis) {
             if (Math.abs(delta) < AXIS_LOCK) return;
-            lockAxis(isUltra);
+            lockAxis();
         } else {
             var extraSize = getUltraExtraHeight();
             var panelSize = landscape
@@ -412,9 +403,12 @@ function attachPanelGestures() {
                 if (flickMinimize || delta < minimizeThresh) unmaximizePanel();
             } else {
                 if (flickExpand || delta > expandThresh) {
-                    comittedDrag = true; clearPanelDragPreviewAfterTransition(); maximizePanel();
+                    clearPanelDragPreviewAfterTransition();
+                    maximizePanel();
                 } else if (flickMinimize || delta < minimizeThresh) {
-                    comittedDrag = true; clearPanelDragPreviewAfterTransition(); minimizePanel();
+                    clearPanelDragPreviewAfterTransition();
+                    minimizePanel();
+                    recenterForPanelState();
                 } else {
                     clearPanelDragPreviewAfterTransition();
                 }
@@ -430,9 +424,12 @@ function attachPanelGestures() {
                 if (flickDown || delta > downThresh) unmaximizePanel();
             } else {
                 if (flickUp || delta < upThresh) {
-                    comittedDrag = true; clearPanelDragPreviewAfterTransition(); maximizePanel();
+                    clearPanelDragPreviewAfterTransition();
+                    maximizePanel();
                 } else if (flickDown || delta > downThresh) {
-                    comittedDrag = true; clearPanelDragPreviewAfterTransition(); minimizePanel();
+                    clearPanelDragPreviewAfterTransition();
+                    minimizePanel();
+                    recenterForPanelState();
                 } else {
                     clearPanelDragPreviewAfterTransition();
                 }
@@ -458,35 +455,62 @@ function attachPanelGestures() {
 }
 
 function clearPanelDragPreviewAfterTransition() {
-    var panel = document.getElementById("resultPanel");
-
-    function cleanup(e) {
-        if (e.propertyName !== "transform") return;
-
-        document.body.classList.remove("dragging-panel");
+    setTimeout(function () {
         document.body.classList.remove("dragging-panel-up");
-        if (!comittedDrag) {
-            var mapEl = document.getElementById("map");
-            mapEl.style.transition = "none";
-            map.invalidateSize({ pan: false, debounceMoveend: true });
-            map.setView(getNewLogicalCenterCoordinates(), map.getZoom(), { animate: false });
-            requestAnimationFrame(function () {
-                mapEl.style.transition = "";
-            });
-        }
-
-        panel.removeEventListener("transitionend", cleanup);
-    }
-
-    panel.addEventListener("transitionend", cleanup)
-}
-
-function getNewLogicalCenterCoordinates() {
-    var rect = document.getElementById("map").getBoundingClientRect();
-    var newCenter = map.containerPointToLatLng(L.point(rect.width / 2, rect.height / 2));
-    return newCenter;
+    }, 300);
 }
 
 function isLandscape() {
     return window.innerWidth > window.innerHeight;
+}
+
+// Given a target, returns the center to pass to setView/flyTo so the target
+// lands in the VISIBLE region of the full-screen touch map (panel occludes
+// the bottom half in portrait, the left half in landscape). `zoom` must be the
+// DESTINATION zoom, since projection is zoom-dependent.
+function offsetCenterForPanel(targetLatLng, zoom) {
+    if (!isTouchDevice || !document.body.classList.contains("panel-open")) {
+        return targetLatLng;
+    }
+    var pt = map.project(targetLatLng, zoom);
+    var panel = document.getElementById("resultPanel").getBoundingClientRect();
+    if (isLandscape()) {
+        pt.x -= panel.width / 2;    // center left of target → target shifts right into the visible right half
+    } else {
+        pt.y += panel.height / 2;   // center below target → target shifts up into the visible top half
+    }
+    return map.unproject(pt, zoom);
+}
+
+function visiblePadding() {
+    if (!isTouchDevice || !document.body.classList.contains("panel-open")) {
+        return { paddingTopLeft: [15, 15], paddingBottomRight: [15, 15] };
+    }
+    var panel = document.getElementById("resultPanel").getBoundingClientRect();
+    if (isLandscape()) {
+        return { paddingTopLeft: [panel.width + 15, 15], paddingBottomRight: [15, 15] };
+    }
+    return { paddingTopLeft: [15, 15], paddingBottomRight: [15, panel.height + 15] };
+}
+
+// Re-frames the current result for the panel state we just transitioned INTO.
+// Call AFTER openPanel()/minimizePanel() so body.panel-open reflects the target.
+// Point  → panBy half the panel extent (into visible region when opening,
+//          back to center when minimizing).
+// Bounds → flyToBounds with panel-aware padding (absolute, state-driven).
+function recenterForPanelState() {
+    if (!isTouchDevice || currentLat == null || currentLng == null) return;
+
+    if (locationPolygon) {
+        map.flyToBounds(locationPolygon.getBounds(), visiblePadding());
+        return;
+    }
+
+    var panel = document.getElementById("resultPanel").getBoundingClientRect();
+    var sign = document.body.classList.contains("panel-open") ? 1 : -1;  // opening vs minimizing
+    if (isLandscape()) {
+        map.panBy([-sign * panel.width / 2, 0], { animate: true });
+    } else {
+        map.panBy([0, sign * panel.height / 2], { animate: true });
+    }
 }

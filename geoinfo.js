@@ -120,13 +120,11 @@ function showUserLocationPreview() {
         [userLat, userLng]
     ]);
 
-    map.setView([userLat, userLng], 13);
+    map.setView(offsetCenterForPanel(L.latLng(userLat, userLng), 13), 13);
     lockMapInteraction();
 
     locationPreviewTimeout1 = setTimeout(function () {
-        map.flyToBounds(bounds, {
-            padding: [15, 15],
-        });
+        map.flyToBounds(bounds, visiblePadding());
         map.once("moveend", function () {
             if (_previewToken !== token) return;
             showUserDistanceLine(userLat, userLng);
@@ -151,11 +149,9 @@ function showUserLocationPreview() {
                         userDistanceLabel = null;
                     }
                     if (locationPolygon) {
-                        map.flyToBounds(locationPolygon.getBounds(), {
-                            padding: [15, 15]
-                        });
+                        map.flyToBounds(locationPolygon.getBounds(), visiblePadding());
                     } else {
-                        map.flyTo([currentLat, currentLng], 13);
+                        map.flyTo(offsetCenterForPanel(L.latLng(currentLat, currentLng), 13), 13)
                     }
                 }, 700);
                 map.once("moveend", function () {

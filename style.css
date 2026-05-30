@@ -1237,25 +1237,17 @@ body.touch #resultPanel {
     will-change: transform;
 }
 
-body.touch.dragging-panel #map.panel-open {
+body.touch #map,
+body.touch #map.panel-open {
     position: fixed;
     top: 0;
-    right: 0;
-    bottom: 0;
     left: 0;
-
     width: 100vw;
-    height: 100vh;
     height: 100dvh;
-
-    margin-left: 0;
+    margin: 0;
     z-index: 0;
-    background: #dbeafe;
-    transition: none !important;
-}
-
-body.dark.touch.dragging-panel #map.panel-open {
-    background: #0f172a;
+    transition: none;
+    /* size only changes on rotate; no animated resize */
 }
 
 body.touch.dragging-panel-up #resultPanel {
@@ -1423,17 +1415,17 @@ body.touch #stripHandle .handle-line {
 
     /* Rotate chevrons to point left/right for horizontal gestures */
     body.touch #panelHandle .handle-chevron-up svg {
-        transform: rotate(90deg);
+        transform: rotate(-90deg);
         /* → points right = expand */
     }
 
     body.touch #panelHandle .handle-chevron-down svg {
-        transform: rotate(90deg);
+        transform: rotate(-90deg);
         /* → points left = minimize */
     }
 
     body.touch #stripHandle .handle-chevron-up svg {
-        transform: rotate(90deg);
+        transform: rotate(-90deg);
         /* → points right = open panel */
     }
 

@@ -737,9 +737,11 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
         setTimeout(lockPanelPhotoSize, 50);
     }
 
-    setTimeout(function () {
-        map.invalidateSize();
-    }, 300);
+    if (!isTouchDevice) {
+        setTimeout(function () {
+            map.invalidateSize();
+        }, 300);
+    }
 
     showScrollHint();
 }
@@ -768,10 +770,12 @@ function closePanel() {
 
     updateLocateUserButton();
 
-    setTimeout(function () {
-        map.invalidateSize();
-        document.getElementById("welcome").style.display = "block";
-    }, 300);
+    if (!isTouchDevice) {
+        setTimeout(function () {
+            map.invalidateSize();
+            document.getElementById("welcome").style.display = "block";
+        }, 300);
+    }
 
     closeMoreContent();
 
@@ -809,10 +813,7 @@ function minimizePanel() {
     }
 
     setTimeout(function () {
-        map.invalidateSize();
-        if (isTouchDevice && photoMarker && currentLat != null && currentLng != null) {
-            map.panTo([currentLat, currentLng], { animate: true });
-        }
+        if (!isTouchDevice) map.invalidateSize();
         if (photoMarker) {
             var popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
             var miniPopup = L.popup({
@@ -1534,7 +1535,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
-    map.flyTo([photoCoordinates.latitude, photoCoordinates.longitude], 13);
+    map.flyTo(offsetCenterForPanel(L.latLng(lat, lng), 13), 13)
 
     document.getElementById("welcome").style.display = "none";
 
@@ -2286,11 +2287,12 @@ async function placeMarkerFromAI(image, photoHtml) {
     photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
     if (location.bounds) {
-        map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]], {
-            padding: [15, 15]
-        });
+        map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]],
+            visiblePadding()
+        );
     } else {
-        map.flyTo([location.lat, location.lng], getZoomLevel(aiConfidence));
+        var z = getZoomLevel(aiConfidence);
+        map.flyTo(offsetCenterForPanel(L.latLng(location.lat, location.lng), z), z);
     }
 
     document.getElementById("welcome").style.display = "none";
@@ -2336,7 +2338,9 @@ function showPanelLoading(photoHtml) {
     updateUploadButtons();
     updateLocateUserButton();
 
-    setTimeout(function () { map.invalidateSize(); }, 300);
+    if (!isTouchDevice) {
+        setTimeout(function () { map.invalidateSize(); }, 300);
+    }
 }
 
 async function rerunSearch() {
