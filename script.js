@@ -38,6 +38,7 @@ let currentImageFile = null;
 let currentMethod = null;
 let currentShortName = null;
 let currentIsAI = false;
+let currentConfidence = null;
 let locationPolygon = null;
 let currentLang = "en";
 let isSearching = false;
@@ -1429,6 +1430,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     currentLat = photoCoordinates.latitude;
     currentLng = photoCoordinates.longitude;
+    currentConfidence = "city";
 
     await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
 
@@ -2140,6 +2142,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     currentLat = location.lat;
     currentLng = location.lng;
+    currentConfidence = aiConfidence;
 
     await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode);
 

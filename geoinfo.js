@@ -133,6 +133,11 @@ function showUserLocationPreview() {
     map.setView(offsetCenterForPanel(L.latLng(userLat, userLng), DEFAULT_ZOOM), DEFAULT_ZOOM);
     lockMapInteraction();
 
+    // Hide the polygon during the preview's flights — re-projecting it every animation
+    // frame causes the lag/colour-splotch. A country polygon is kept as useful context;
+    // smaller (region/city/landmark) polygons are restored once the final fly settles.
+    if (locationPolygon && currentConfidence !== "country") map.removeLayer(locationPolygon);
+
     locationPreviewTimeout1 = setTimeout(function () {
         map.flyToBounds(bounds, visiblePadding());
         map.once("moveend", function () {
@@ -169,6 +174,7 @@ function showUserLocationPreview() {
                     if (userMarker) {
                         map.removeLayer(userMarker);
                     }
+                    if (locationPolygon) locationPolygon.addTo(map);   // restore (no-op if it was never hidden)
                     locationPreviewInProgress = false;
                     unlockMapInteraction();
                 });
@@ -179,6 +185,8 @@ function showUserLocationPreview() {
     setTimeout(function () {
         if (locationPreviewInProgress) {
             locationPreviewInProgress = false;
+            if (userMarker) map.removeLayer(userMarker);
+            if (locationPolygon) locationPolygon.addTo(map);
             unlockMapInteraction();
         }
     }, PREVIEW_SAFETY_MS);
