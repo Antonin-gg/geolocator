@@ -13,6 +13,8 @@
 </head>
 
 <body>
+<script>try{if(localStorage.getItem("isDark")!=="false")document.body.classList.add("dark");}catch(e){}</script>
+    
     <div id="map"></div>
 
     <svg aria-hidden="true" class="svg-sprite" xmlns="http://www.w3.org/2000/svg">
@@ -204,31 +206,31 @@
             <div id="moreContent" class="collapsed">
                 <div id="panelGeoInfo">
                     <div id="country">
-                        <div class="emoji"></div>
+                        <div class="icon"></div>
                         <div class="value"></div>
                         <div class="continent"></div>
                     </div>
                     <div id="coordinates">
-                        <div class="emoji"></div>
+                        <div class="icon"></div>
                         <div class="value"></div>
                     </div>
 
                     <div id="altitude">
-                        <div class="emoji"></div>
+                        <div class="icon"></div>
                         <div class="value"></div>
                     </div>
 
                     <div id="distance">
-                        <div class="emoji"></div>
+                        <div class="icon"></div>
                         <div class="value"></div>
                     </div>
 
                     <div id="weather">
-                        <div class="emoji"></div>
+                        <div class="icon"></div>
                         <div class="value"></div>
                     </div>
                     <div id="time">
-                        <div class="emoji"></div>
+                        <div class="icon"></div>
                         <div class="value"></div>
                     </div>
                 </div>

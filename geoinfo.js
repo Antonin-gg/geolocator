@@ -2,10 +2,10 @@
 // Source: https://codepen.io/bluebie/pen/JjdoaLG
 // License: MIT — copyright (c) 2026 Phoenix Fox
 
-var userCoordinatesPromise = null;
-var _previewToken = 0;
+let userCoordinatesPromise = null;
+let _previewToken = 0;
 
-var userLocationIcon = L.divIcon({
+const userLocationIcon = L.divIcon({
     className: "user-location-marker",
     html: '<div class="user-location-dot"></div>',
     iconSize: [18, 18],
@@ -55,17 +55,17 @@ function getUserCoordinates() {
     return userCoordinatesPromise;
 }
 
-var locateButtonTimeout = null;
+let locateButtonTimeout = null;
 
 function updateLocateUserButton() {
-    var desktopButton = document.getElementById("locateUserButton");
-    var mobileButton = document.getElementById("locateUserButtonMobile");
+    const desktopButton = document.getElementById("locateUserButton");
+    const mobileButton = document.getElementById("locateUserButtonMobile");
     if (!desktopButton || !mobileButton) return;
 
-    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
-    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    const panelOpen = isPanelOpen();
+    const stripOpen = isStripOpen();
 
-    var shouldShow = (panelOpen || stripOpen) && !isSearching;
+    const shouldShow = (panelOpen || stripOpen) && !isSearching;
 
     clearTimeout(locateButtonTimeout);
 
@@ -90,7 +90,7 @@ function showUserLocationPreview() {
     if (locationPreviewInProgress) return;
     if (!userCoordinates || currentLat == null || currentLng == null) return;
 
-    var token = ++_previewToken;
+    const token = ++_previewToken;
 
     locationPreviewInProgress = true;
 
@@ -101,8 +101,8 @@ function showUserLocationPreview() {
         clearTimeout(locationPreviewTimeout2);
     }
 
-    var userLat = userCoordinates[0];
-    var userLng = userCoordinates[1];
+    const userLat = userCoordinates[0];
+    const userLng = userCoordinates[1];
 
     if (!userMarker) {
         userMarker = L.marker([userLat, userLng], {
@@ -115,7 +115,7 @@ function showUserLocationPreview() {
         userMarker.addTo(map);
     }
 
-    var bounds = L.latLngBounds([
+    const bounds = L.latLngBounds([
         [currentLat, currentLng],
         [userLat, userLng]
     ]);
@@ -131,11 +131,11 @@ function showUserLocationPreview() {
             locationPreviewTimeout2 = setTimeout(function () {
                 if (_previewToken !== token) return;
                 if (userDistanceLine) {
-                    var lineEl = userDistanceLine.getElement();
+                    const lineEl = userDistanceLine.getElement();
                     if (lineEl) lineEl.classList.add("fading-out");
                 }
                 if (userDistanceLabel) {
-                    var labelEl = userDistanceLabel.getElement();
+                    const labelEl = userDistanceLabel.getElement();
                     if (labelEl) labelEl.classList.add("fading-out");
                 }
                 setTimeout(function () {
@@ -235,10 +235,10 @@ function showUserDistanceLine(userLat, userLng) {
         }
     ).addTo(map);
 
-    var midLat = (currentLat + userLat) / 2;
-    var midLng = (currentLng + userLng) / 2;
+    const midLat = (currentLat + userLat) / 2;
+    const midLng = (currentLng + userLng) / 2;
 
-    var distance = formatDistance(geoInfoCache.distanceKm);
+    const distance = formatDistance(geoInfoCache.distanceKm);
 
     userDistanceLabel = L.marker([midLat, midLng], {
         interactive: false,
@@ -256,10 +256,10 @@ document.getElementById("locateUserButton").addEventListener("click", async func
         userCoordinates = null;
         userCoordinatesPromise = null;
 
-        var panelOpen = document.getElementById("resultPanel").classList.contains("open");
-        var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+        const panelOpen = isPanelOpen();
+        const stripOpen = isStripOpen();
 
-        var coords = await getUserCoordinates();
+        const coords = await getUserCoordinates();
 
         if (!coords) {
             updateLocateUserButton();
@@ -285,10 +285,10 @@ document.getElementById("locateUserButtonMobile").addEventListener("click", asyn
     document.getElementById("locateUserButton").click();
 });
 
-var hintHideTimeout = null;
+let hintHideTimeout = null;
 
 function showLocateUserHint() {
-    var hint = document.getElementById("locateUserHint");
+    const hint = document.getElementById("locateUserHint");
     if (!hint) return;
 
     clearTimeout(hintHideTimeout);
@@ -299,7 +299,7 @@ function showLocateUserHint() {
     }, 7000);
 }
 
-var geoInfoCache = {
+const geoInfoCache = {
     altitudeMeters: null,
     distanceKm: null,
     weatherTempC: null,
@@ -308,12 +308,22 @@ var geoInfoCache = {
     isDay: null
 };
 
+// Reset a geo-info item to its empty/inactive state. The build functions
+// always rewrite the full inner structure, so clearing to "" is enough;
+// the CSS hides inactive items (#panelGeoInfo>div { display:none }).
+function clearGeoItem(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove("active");
+    el.innerHTML = "";
+}
+
 async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
     if (aiConfidence !== "country") {
 
         buildCoordinatesItem(lat, lng);
 
-        var weatherData = await getWeatherData(lat, lng);
+        const weatherData = await getWeatherData(lat, lng);
 
         geoInfoCache.altitudeMeters = weatherData.elevation;
         geoInfoCache.weatherTempC = weatherData.temperature;
@@ -328,50 +338,37 @@ async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
         buildTimeItem(geoInfoCache.timeZone);
 
     } else {
-        document.getElementById("coordinates").classList.remove("active");
-        document.getElementById("coordinates").innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>';
-
-        document.getElementById("altitude").classList.remove("active");
-        document.getElementById("altitude").innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>';
-
-        document.getElementById("weather").classList.remove("active");
-        document.getElementById("weather").innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>';
-
-        document.getElementById("time").classList.remove("active");
-        document.getElementById("time").innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>';
+        clearGeoItem("coordinates");
+        clearGeoItem("altitude");
+        clearGeoItem("weather");
+        clearGeoItem("time");
     }
 
     buildCountryItem(lat, lng, aiCountryCode);
 
     await buildDistanceItem(lat, lng);
 
-    var hasAltitude = document.getElementById("altitude").classList.contains("active");
-    var hasDistance = document.getElementById("distance").classList.contains("active");
-    var hasWeather = document.getElementById("weather").classList.contains("active");
-    var hasConvertible = hasAltitude || hasDistance || hasWeather;
+    const hasAltitude = document.getElementById("altitude").classList.contains("active");
+    const hasDistance = document.getElementById("distance").classList.contains("active");
+    const hasWeather = document.getElementById("weather").classList.contains("active");
+    const hasConvertible = hasAltitude || hasDistance || hasWeather;
     document.getElementById("toggleUnits").classList.toggle("active", hasConvertible);
 
     balanceGeoInfoLayout();
 }
 
 function buildCoordinatesItem(lat, lng) {
-    var coordinates = document.getElementById("coordinates");
+    const coordinates = document.getElementById("coordinates");
 
     if (lat === null || lat === undefined || lng === null || lng === undefined) {
-        coordinates.classList.remove("active");
-        coordinates.innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>';
+        clearGeoItem("coordinates");
         return;
     }
 
-    var formatted = formatCoordinatesDMS(lat, lng);
+    const formatted = formatCoordinatesDMS(lat, lng);
 
     coordinates.innerHTML =
-        '<div class="emoji">' + GEO_ICONS.coordinates + '</div>' +
+        '<div class="icon">' + GEO_ICONS.coordinates + '</div>' +
         '<div class="value">' + formatted + '</div>';
 
     coordinates.classList.add("active");
@@ -379,15 +376,15 @@ function buildCoordinatesItem(lat, lng) {
 
 function formatCoordinatesDMS(lat, lng) {
     function toDMS(deg, posChar, negChar) {
-        var absDeg = Math.abs(deg);
-        var d = Math.floor(absDeg);
-        var minFloat = (absDeg - d) * 60;
-        var m = Math.floor(minFloat);
-        var s = Math.round((minFloat - m) * 60);
+        const absDeg = Math.abs(deg);
+        let d = Math.floor(absDeg);
+        const minFloat = (absDeg - d) * 60;
+        let m = Math.floor(minFloat);
+        let s = Math.round((minFloat - m) * 60);
 
         if (s === 60) { s = 0; m += 1; }
         if (m === 60) { m = 0; d += 1; }
-        var dir = deg >= 0 ? posChar : negChar;
+        const dir = deg >= 0 ? posChar : negChar;
         return d + "° " + m + "' " + s + '" ' + coord(dir);
     }
 
@@ -395,15 +392,14 @@ function formatCoordinatesDMS(lat, lng) {
 }
 
 async function buildDistanceItem(lat, lng) {
-    var distanceEl = document.getElementById("distance");
+    const distanceEl = document.getElementById("distance");
 
     if (!userCoordinates) {
-        distanceEl.innerHTML = '<div class="value"></div>';
-        distanceEl.classList.remove("active");
+        clearGeoItem("distance");
         return;
     }
-    var userLat = userCoordinates[0];
-    var userLong = userCoordinates[1];
+    const userLat = userCoordinates[0];
+    const userLong = userCoordinates[1];
     geoInfoCache.distanceKm = Math.floor(haversineKm(lat, lng, userLat, userLong));
 
     distanceEl.innerHTML =
@@ -413,18 +409,18 @@ async function buildDistanceItem(lat, lng) {
 }
 
 function formatDistanceSentence(km) {
-    var template = DISTANCE_TRANSLATIONS[currentLang] || DISTANCE_TRANSLATIONS.en;
+    const template = DISTANCE_TRANSLATIONS[currentLang] || DISTANCE_TRANSLATIONS.en;
 
-    var parts = template.split("{distance}");
-    var before = parts[0].trim();
-    var after = parts[1] ? parts[1].trim() : "";
+    const parts = template.split("{distance}");
+    const before = parts[0].trim();
+    const after = parts[1] ? parts[1].trim() : "";
 
-    var distanceHtml =
+    const distanceHtml =
         '<span class="convertible distance-value" data-type="distance" data-km="' + km + '">' +
         formatDistance(km) +
         '</span>';
 
-    var html = '';
+    let html = '';
     if (before) {
         html += '<div class="distance-context">' + before + '</div>';
     }
@@ -438,18 +434,16 @@ function formatDistanceSentence(km) {
 
 function buildWeatherItem(temp, weatherCode, isDay) {
 
-    var weather = document.getElementById("weather");
+    const weather = document.getElementById("weather");
 
-    if (!temp) {
-        weather.innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>';
-        weather.classList.remove("active");
+    if (temp == null) {
+        clearGeoItem("weather");
         return;
     }
 
-    var emoji = getWeatherEmoji(weatherCode, isDay);
+    const icon = getWeatherEmoji(weatherCode, isDay);
     weather.innerHTML =
-        '<div class="emoji">' + emoji + '</div>' +
+        '<div class="icon">' + icon + '</div>' +
         '<div class="value">' +
         '<span class="convertible" data-type="temperature" data-celsius="' + temp + '">' +
         formatTemperature(temp) +
@@ -460,12 +454,12 @@ function buildWeatherItem(temp, weatherCode, isDay) {
 }
 
 async function buildAltitudeItem(lat, lng, elevation) {
-    var altitude = document.getElementById("altitude");
-    var altitudeMeters = null;
+    const altitude = document.getElementById("altitude");
+    let altitudeMeters = null;
 
     if (elevation != null) {
         altitude.innerHTML =
-            '<div class="emoji">' + GEO_ICONS.altitude + '</div>' +
+            '<div class="icon">' + GEO_ICONS.altitude + '</div>' +
             '<div class="value">' +
             '<span class="convertible" data-type="altitude" data-meters="' + elevation + '">' +
             formatAltitude(elevation) +
@@ -476,17 +470,15 @@ async function buildAltitudeItem(lat, lng, elevation) {
     } else {
 
         if (lat === null || lat === undefined || lng === null || lng === undefined) {
-            altitude.classList.remove("active");
-            altitude.innerHTML = '<div class="emoji"></div>' +
-                '<div class="value"></div>';
+            clearGeoItem("altitude");
             return;
         }
 
         altitudeMeters = await getAltitude(lat, lng);
 
-        if (altitudeMeters) {
+        if (altitudeMeters != null) {
             altitude.innerHTML =
-                '<div class="emoji">🏔️</div>' +
+                '<div class="icon">' + GEO_ICONS.altitude + '</div>' +
                 '<div class="value">' +
                 '<span class="convertible" data-type="altitude" data-meters="' + altitudeMeters + '">' +
                 formatAltitude(altitudeMeters) +
@@ -498,22 +490,20 @@ async function buildAltitudeItem(lat, lng, elevation) {
         }
     }
 
-    altitude.classList.remove("active");
-    altitude.innerHTML = '<div class="emoji"></div>' +
-        '<div class="value"></div>';
+    clearGeoItem("altitude");
 }
 
 async function getAltitude(lat, lng) {
-    var url = "https://api.open-elevation.com/api/v1/lookup?locations=" + lat + "," + lng;
+    const url = "https://api.open-elevation.com/api/v1/lookup?locations=" + lat + "," + lng;
 
     try {
-        var response = await fetch(url);
+        const response = await fetch(url);
         if (!response.ok) return null;
 
-        var data = await response.json();
+        const data = await response.json();
         if (!data.results || !data.results[0]) return null;
 
-        var elevation = data.results[0].elevation;
+        const elevation = data.results[0].elevation;
         if (elevation === null || elevation === undefined) return null;
 
         return elevation;
@@ -523,51 +513,44 @@ async function getAltitude(lat, lng) {
 }
 
 function buildTimeItem(timezone) {
-    var time = document.getElementById("time");
+    const time = document.getElementById("time");
 
     if (!timezone) {
-        time.innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>';
-        time.classList.remove("active");
+        clearGeoItem("time");
         return;
     }
 
-    var localTime = getLocalTime(timezone);
+    const localTime = getLocalTime(timezone);
     if (!localTime) {
-        time.innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>';
-        time.classList.remove("active");
+        clearGeoItem("time");
         return;
     }
 
     time.innerHTML =
-        '<div class="emoji">' + GEO_ICONS.time + '</div>' +
+        '<div class="icon">' + GEO_ICONS.time + '</div>' +
         '<div class="value">' + localTime + '</div>';
     time.classList.add("active");
 }
 
 function buildCountryItem(lat, lng, aiCountryCode) {
 
-    var country = document.getElementById("country");
+    const country = document.getElementById("country");
 
     if (!aiCountryCode) {
-        country.innerHTML = '<div class="emoji"></div>' +
-            '<div class="value"></div>' +
-            '<div class="continent"></div>';
-        country.classList.remove("active");
+        clearGeoItem("country");
         return;
     }
 
-    var regionNames = new Intl.DisplayNames([currentLang], { type: "region" });
+    const regionNames = new Intl.DisplayNames([currentLang], { type: "region" });
 
-    var flagHtml = getFlagImg(aiCountryCode);
+    const flagHtml = getFlagImg(aiCountryCode);
 
-    var countryName = regionNames.of(aiCountryCode.toUpperCase());
+    const countryName = regionNames.of(aiCountryCode.toUpperCase());
 
-    var continentName = getContinentName(aiCountryCode);
+    const continentName = getContinentName(aiCountryCode);
 
     country.innerHTML =
-        '<div class="emoji">' + flagHtml + '</div>' +
+        '<div class="icon">' + flagHtml + '</div>' +
         '<div class="value">' + countryName + '</div>' +
         (continentName ? '<div class="continent">' + continentName + '</div>' : '');
 
@@ -576,7 +559,7 @@ function buildCountryItem(lat, lng, aiCountryCode) {
 
 function getFlagImg(countryCode) {
     if (!countryCode || countryCode.length !== 2) return "";
-    var code = countryCode.toLowerCase();
+    const code = countryCode.toLowerCase();
     return '<img src="https://flagcdn.com/h20/' + code + '.png" ' +
         'srcset="https://flagcdn.com/h40/' + code + '.png 2x" ' +
         'height="20" alt="" ' +
@@ -588,7 +571,7 @@ function getLocalTime(timezone) {
     if (!timezone) return null;
 
     try {
-        var formatter = new Intl.DateTimeFormat(currentLang, {
+        const formatter = new Intl.DateTimeFormat(currentLang, {
             timeZone: timezone,
             hour: "2-digit",
             minute: "2-digit",
@@ -601,17 +584,17 @@ function getLocalTime(timezone) {
 }
 
 async function getWeatherData(lat, lng) {
-    var url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat
         + "&longitude=" + lng
         + "&current=temperature_2m,weather_code,is_day"
         + "&daily=sunrise,sunset"
         + "&timezone=auto";
 
     try {
-        var response = await fetch(url);
+        const response = await fetch(url);
         if (!response.ok) return null;
 
-        var data = await response.json();
+        const data = await response.json();
 
         return {
             elevation: data.elevation,
@@ -633,25 +616,7 @@ async function getWeatherData(lat, lng) {
 }
 
 function closeGeoInfo() {
-    var items = ["country", "coordinates", "altitude", "distance", "weather", "time"];
-
-    items.forEach(function (id) {
-        var el = document.getElementById(id);
-        if (!el) return;
-
-        el.classList.remove("active");
-
-        if (id === "country") {
-            el.innerHTML =
-                '<div class="emoji"></div>' +
-                '<div class="value"></div>' +
-                '<div class="continent"></div>';
-        } else {
-            el.innerHTML =
-                '<div class="emoji"></div>' +
-                '<div class="value"></div>';
-        }
-    });
+    ["country", "coordinates", "altitude", "distance", "weather", "time"].forEach(clearGeoItem);
 }
 
 document.getElementById("toggleUnits").addEventListener("click", function () {
@@ -662,21 +627,21 @@ document.getElementById("toggleUnits").addEventListener("click", function () {
 });
 
 function balanceGeoInfoLayout() {
-    var container = document.getElementById("panelGeoInfo");
-    var activeItems = container.querySelectorAll(":scope > div.active");
-    var total = activeItems.length;
+    const container = document.getElementById("panelGeoInfo");
+    const activeItems = container.querySelectorAll(":scope > div.active");
+    const total = activeItems.length;
     if (total === 0) return;
 
     container.style.removeProperty("--geo-cols");
 
-    var firstTop = activeItems[0].offsetTop;
-    var perRow = 0;
-    for (var i = 0; i < activeItems.length; i++) {
+    const firstTop = activeItems[0].offsetTop;
+    let perRow = 0;
+    for (let i = 0; i < activeItems.length; i++) {
         if (activeItems[i].offsetTop === firstTop) perRow++;
         else break;
     }
 
-    var forcedCols = null;
+    let forcedCols = null;
     if (perRow === 3 && total === 4) forcedCols = 2;
     if ((perRow === 4 && total >= 5) || (perRow === 5 && total === 6)) forcedCols = 3;
 
@@ -686,18 +651,18 @@ function balanceGeoInfoLayout() {
 }
 
 function convertUnits() {
-    var spans = document.querySelectorAll(".convertible");
+    const spans = document.querySelectorAll(".convertible");
     spans.forEach(function (span) {
-        var type = span.dataset.type;
+        const type = span.dataset.type;
 
         if (type === "altitude") {
-            var meters = parseFloat(span.dataset.meters);
+            const meters = parseFloat(span.dataset.meters);
             span.textContent = formatAltitude(meters);
         } else if (type === "distance") {
-            var km = parseFloat(span.dataset.km);
+            const km = parseFloat(span.dataset.km);
             span.textContent = formatDistance(km);
         } else if (type === "temperature") {
-            var c = parseFloat(span.dataset.celsius);
+            const c = parseFloat(span.dataset.celsius);
             span.textContent = formatTemperature(c);
         }
     });
@@ -705,7 +670,7 @@ function convertUnits() {
 
 function formatAltitude(meters) {
     if (isImperial) {
-        var feet = Math.round(meters * 3.28084);
+        const feet = Math.round(meters * 3.28084);
         return feet + " " + unit("ft");
     }
     return Math.round(meters) + " " + unit("m");
@@ -713,7 +678,7 @@ function formatAltitude(meters) {
 
 function formatDistance(km) {
     if (isImperial) {
-        var miles = Math.round(km * 0.621371);
+        const miles = Math.round(km * 0.621371);
         return miles + " " + unit("mi");
     }
     if (km < 10) {
@@ -724,7 +689,7 @@ function formatDistance(km) {
 
 function formatTemperature(celsius) {
     if (isImperial) {
-        var fahrenheit = Math.round(celsius * 9 / 5 + 32);
+        const fahrenheit = Math.round(celsius * 9 / 5 + 32);
         return fahrenheit + "°F";
     }
     return Math.round(celsius) + "°C";
@@ -733,38 +698,38 @@ function formatTemperature(celsius) {
 function getContinentName(countryCode) {
     if (!countryCode) return null;
 
-    var continentCode = COUNTRY_TO_CONTINENT[countryCode.toUpperCase()];
+    const continentCode = COUNTRY_TO_CONTINENT[countryCode.toUpperCase()];
     if (!continentCode) return null;
 
-    var langTable = CONTINENT_TRANSLATIONS[currentLang] || CONTINENT_TRANSLATIONS.en;
+    const langTable = CONTINENT_TRANSLATIONS[currentLang] || CONTINENT_TRANSLATIONS.en;
     return langTable[continentCode] || CONTINENT_TRANSLATIONS.en[continentCode] || null;
 }
 
 function getWeatherEmoji(code, isDay) {
-    var entry = WEATHER_ICONS[code];
+    const entry = WEATHER_ICONS[code];
     if (!entry) return WEATHER_SVGS.thermometer;
     return isDay ? entry.day : entry.night;
 }
 
 function haversineKm(lat1, lng1, lat2, lng2) {
-    var R = 6371;  // Earth's radius in km
+    const R = 6371;  // Earth's radius in km
 
-    var dLat = (lat2 - lat1) * Math.PI / 180;
-    var dLng = (lng2 - lng1) * Math.PI / 180;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
 
-    var lat1Rad = lat1 * Math.PI / 180;
-    var lat2Rad = lat2 * Math.PI / 180;
+    const lat1Rad = lat1 * Math.PI / 180;
+    const lat2Rad = lat2 * Math.PI / 180;
 
-    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.sin(dLng / 2) * Math.sin(dLng / 2) *
         Math.cos(lat1Rad) * Math.cos(lat2Rad);
 
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
 }
 
-var COUNTRY_TO_CONTINENT = {
+const COUNTRY_TO_CONTINENT = {
     // Africa (002)
     "DZ": "002", "AO": "002", "BJ": "002", "BW": "002", "BF": "002", "BI": "002",
     "CM": "002", "CV": "002", "CF": "002", "TD": "002", "KM": "002", "CG": "002",
@@ -822,7 +787,7 @@ var COUNTRY_TO_CONTINENT = {
     "AQ": "010", "BV": "010", "TF": "010", "HM": "010", "GS": "010"
 };
 
-var WEATHER_SVGS = {
+const WEATHER_SVGS = {
     sun: `<svg class="weather-icon lucide lucide-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
 
     moonStar: `<svg class="weather-icon lucide lucide-moon-star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5h4"/><path d="M20 3v4"/><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>`,
@@ -859,7 +824,7 @@ var WEATHER_SVGS = {
     thermometer: `<svg class="weather-icon lucide lucide-thermometer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>`
 };
 
-var WEATHER_ICONS = {
+const WEATHER_ICONS = {
     0: { day: WEATHER_SVGS.sun, night: WEATHER_SVGS.moonStar },
     1: { day: WEATHER_SVGS.sun, night: WEATHER_SVGS.moonStar },
 
@@ -900,7 +865,7 @@ var WEATHER_ICONS = {
     99: { day: WEATHER_SVGS.thunderstorm, night: WEATHER_SVGS.thunderstorm }
 };
 
-var GEO_ICONS = {
+const GEO_ICONS = {
     altitude: '<svg class="geo-info-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/><path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"/></svg>',
 
     time: '<svg class="geo-info-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4-2"/></svg>',

@@ -1,10 +1,10 @@
 // ── CONSTANTS & CONFIG ─────────────────────────────────────────────
-var OPENCAGE_API_KEY = "49b47c25108242779832267ff8062473";
-var WORKER_URL = "https://geolocator-ai.a-gg.workers.dev";
-var AI_MODEL = "gpt-4o";
-var AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nLANGUAGE — CRITICAL: All user-facing text fields (method, displaySentence) MUST be written in the language specified in the system instructions appended to this prompt. Only the \"place\" field stays in English (it is used for geocoding lookups, not displayed to the user). If you are uncertain which language to use, default to English. Never mix languages within a single response.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify, ALWAYS in English for geocoding\",\n  \"countryCode\": \"ISO 3166-1 alpha-2 country code for the identified location, uppercase, or empty string if unknown\",\n  \"confidence\": \"landmark\" | \"city\" | \"region\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location, written in the user's language\",\n  \"displaySentence\": \"a complete, grammatically natural sentence in the user's language announcing where the photo was taken, with the place name written naturally in that language and woven into the sentence. Empty string if confidence is unknown.\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is clearly not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots of apps or websites, social media posts, food delivery or e-commerce interfaces, video game captures, memes, or any digital interface with visible UI elements — you MUST set confidence to \"unknown\", place to \"unknown\", countryCode to an empty string, method to \"This image is not a real photograph.\" (translated to the user's language), and displaySentence to an empty string. This rule applies ONLY when the image is clearly not a real-world camera photo. ATTENTION : If the image appears to be a real photo but the location cannot be identified, DO NOT SAY it is not a real photograph; instead return \"unknown\" because the location is not identifiable.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, road markings, architecture, culturally specific objects.\n- License plates indicate where a vehicle is registered, not necessarily where the photo was taken. Treat license plates as supporting evidence only when they agree with other independent visible context, such as readable local signage, flags, road markings, architecture, landscape, or country-specific street details. A license plate alone IS NOT ENOUGH to identify a country, city, region, or landmark. If the only meaningful clue is a license plate, return \"unknown\".\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Generic modern architecture (glass facades, clean lines, light wood interiors, minimalist design, contemporary airports, shopping centers, office buildings) is NOT sufficient evidence on its own. These styles are global. Return \"unknown\" for modern buildings unless distinctive non-architectural clues are present (visible signage in a specific language, flags, named branding, identifiable surroundings).\n- Partial views of buildings (close-ups, sections, interiors without clear identifying features) cannot be confidently identified unless they contain a recognisable named element. A glass wall, a staircase, a generic interior — these are not identifiable. Return \"unknown\".\n- Landmark replicas, themed architecture, decorative monuments, mall displays, amusement-park structures, and imitation landmarks are NOT sufficient evidence for the original landmark or any specific city. If a famous-looking structure appears to be a replica or decorative version, return \"unknown\" unless there is independent location evidence such as readable local signage, flags, or uniquely identifiable surrounding features.\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- Spanish-speaking countries can be confused easily: Spain, Mexico, Argentina, Colombia and others share language and some architectural styles. Look for distinguishing details — license plates, flags, peninsular vs Latin American architecture, regional vegetation, or text using country-specific vocabulary.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n- If the image suggests a possible location but the same evidence could reasonably fit another place, return \"unknown\". Only return a location when the visible evidence uniquely supports it or when the combination of clues makes alternatives unlikely.\n\nFormatting rules (for the English \"place\" field):\n- Always separate parts of a location with commas. Never join two place names with just a space. Correct: \"Luxembourg, Luxembourg\", \"Mexico City, Mexico\", \"Panama City, Panama\". Incorrect: \"Luxembourg Luxembourg\", \"Mexico Mexico\".\n- Use commas to separate the place from its region or country in every confidence level.\n\nIdentification rules (for the English \"place\" field):\n- Confidence is fundamentally about how the place appears on a map. A landmark is a pinpoint — something you would mark with a single pin. A city/neighborhood/district is an urban area. A region is an outlined large area — something you would draw as a polygon. Use this mental test whenever you are uncertain.\n- Use \"landmark\" ONLY for a specific, individually named physical object or site with a small footprint on a map: a single building, monument, tower, bridge, statue, station, temple, church, museum, stadium, waterfall, cliff viewpoint, or named attraction. Include city/region and country (e.g. \"Eiffel Tower, Paris, France\", \"Berliner Dom, Berlin, Germany\", \"Cliffs of Moher, County Clare, Ireland\").\n- Do NOT use \"landmark\" for named urban areas. Named districts, business districts, financial districts, neighborhoods, suburbs, quarters, boroughs, city zones, plazas used as districts, and urban redevelopment areas are \"city\", not \"landmark\". Examples: \"La Défense, Île-de-France, France\" is \"city\"; \"Manhattan, New York, USA\" is \"city\"; \"Shibuya, Tokyo, Japan\" is \"city\"; \"Canary Wharf, London, United Kingdom\" is \"city\". Only use \"landmark\" if the image clearly identifies one specific building, monument, station, bridge, tower, statue, or attraction inside that area.\n- If the place name can refer both to an area and to a specific object, choose \"city\" unless the specific object is visually identifiable. For example, \"La Défense\" alone is a district, not a landmark; \"Grande Arche de la Défense, Puteaux, France\" is a landmark.\n- Use \"city\" for any urban area with high certainty: village, town, suburb, neighborhood, district, business district, financial district, quarter, borough, city zone, or city. Include region/state if ambiguous (e.g. \"Portland, Oregon, USA\"). When the city and country share a name, format with a comma between them (e.g. \"Luxembourg, Luxembourg\", \"Singapore, Singapore\", \"Monaco, Monaco\").\n- Use \"region\" for any large named area that covers significant geographic extent rather than a single point: states, provinces, country subdivisions, recognised natural regions (Patagonia, Tuscany, Bavaria, Provence, Cornwall, Sahara), national parks and protected areas (Yellowstone, Serengeti), archipelagos and major islands (Lofoten, Galápagos, Easter Island), mountain ranges, peninsulas, and similar large features. Use this whenever the place is something you would draw on a map as an outlined area rather than a pin.\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n- For locations that span multiple countries (waterfalls, mountains, lakes on borders): pick ONE country to anchor the location — the most photographed side or the side most visible in the image — rather than listing both. E.g. \"Iguazu Falls, Paraná, Brazil\" or \"Iguazu Falls, Misiones, Argentina\" — never \"Iguazu Falls, Argentina/Brazil\". The same applies to any cross-border feature.\n\nGeocodability rules — the \"place\" field will be sent to Nominatim and OpenCage for lookup. Optimize for these geocoders:\n- Use the most common and shortest official name. Not \"The Republic of South Africa\" but \"South Africa\".\n- Preserve official accents and diacritics in Latin-script place names when they are normally used, especially for cities, regions, and countries: \"Liège, Belgium\", not \"Liege, Belgium\"; \"São Luís, Maranhão, Brazil\", not \"Sao Luis, Maranhao, Brazil\"; \"Bogotá\", not \"Bogota\"; \"Málaga\", not \"Malaga\".\n- Drop English-attached descriptors that aren't part of the canonical name: \"Lofoten\" not \"Lofoten Islands\", \"Atacama\" not \"Atacama Desert\", \"Galápagos\" not \"Galápagos Islands\". Use descriptors ONLY when they're part of the official name (e.g., \"Great Barrier Reef\", \"Easter Island\").\n- ALWAYS include the administrative parent (region/state/province) between a natural feature and the country (e.g., \"Lofoten, Nordland, Norway\", not \"Lofoten, Norway\").\n- Never use slashes or \"or\": \"Iguazu Falls, Misiones, Argentina\" not \"Iguazu Falls, Argentina/Brazil\".\n- Use English exonyms only when the English name is genuinely different from the local name, not merely a diacritic-free spelling. Preserve official diacritics in Latin-script names: \"Liège, Belgium\", not \"Liege, Belgium\"; \"São Luís, Maranhão, Brazil\", not \"Sao Luis, Maranhao, Brazil\"; \"Bogotá\", not \"Bogota\"; \"Málaga\", not \"Malaga\". Still use true English exonyms where standard: \"Munich\" not \"München\", \"Florence\" not \"Firenze\", \"Moscow\" not \"Москва\".\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location, in the user's language.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples (shown in English but should be written in the user's language):\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"Road signage in Portuguese combined with the tropical urban landscape points to Brazil.\"\n- If confidence is \"unknown\" and the image appears to be a real photo, set method to a single sentence in the user's language explaining that the location could not be determined from the visible evidence. Do not say the image is not a real photograph unless it clearly is not one.\n\ndisplaySentence rules:\n- The displaySentence must be a complete, grammatically natural sentence in the user's language announcing where the photo was taken. It is shown directly to the user.\n- Write the place name naturally in the user's language inside the sentence: translate country names, region names, and well-known city names; keep proper nouns (specific landmark names, small place names) in their original form when no translation exists.\n- Weave the place name into the sentence according to the grammar of the user's language. Different languages place prepositions, particles, and word order differently — write whatever sounds natural.\n- Examples for the location \"Berliner Dom, Berlin, Germany\":\n  - English: \"This photo was taken at Berliner Dom in Berlin, Germany.\"\n  - French: \"Cette photo a été prise à la Cathédrale de Berlin, à Berlin, en Allemagne.\"\n  - Spanish: \"Esta foto fue tomada en la Catedral de Berlín, en Berlín, Alemania.\"\n  - German: \"Dieses Foto wurde am Berliner Dom in Berlin, Deutschland aufgenommen.\"\n  - Japanese: \"この写真はドイツのベルリンにあるベルリン大聖堂で撮影されました。\"\n  - Arabic: \"تم التقاط هذه الصورة عند كاتدرائية برلين في برلين، ألمانيا.\"\n  - Chinese: \"这张照片拍摄于德国柏林的柏林大教堂。\"\n- If confidence is \"unknown\", set displaySentence to an empty string \"\".\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: is this unmistakably a non-photo image or digital interface? If yes, return \"unknown\", countryCode to an empty string, method to \"This image is not a real photograph.\" translated to the user's language, and displaySentence to \"\".\n- If the image appears to be a camera photo of a real-world scene but the location is not identifiable, return \"unknown\" because the visible evidence is insufficient. Never describe a real-world camera photo as not a real photograph merely because the location cannot be identified.\n- Ask: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the strongest clue is a license plate, return \"unknown\" unless there is other independent visible evidence that supports the same location.\n- If the strongest clue is a famous-looking object that could be a replica, themed decoration, or imitation, do not infer a location from it. Return \"unknown\" unless another independent clue identifies the place.\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n- Verify that method and displaySentence are in the user's specified language. Do not mix languages.\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
-var STOPWORDS = ["the", "and", "of", "de", "mount", "mountain", "volcano", "island", "islands", "lake"];
-var ICONS = {
+const OPENCAGE_API_KEY = "49b47c25108242779832267ff8062473";
+const WORKER_URL = "https://geolocator-ai.a-gg.workers.dev";
+const AI_MODEL = "gpt-4o";
+const AI_PROMPT = "Look at this image and identify where in the world it was taken.\n\nLANGUAGE — CRITICAL: All user-facing text fields (method, displaySentence) MUST be written in the language specified in the system instructions appended to this prompt. Only the \"place\" field stays in English (it is used for geocoding lookups, not displayed to the user). If you are uncertain which language to use, default to English. Never mix languages within a single response.\n\nRespond with ONLY a JSON object in this exact format, nothing else:\n{\n  \"place\": \"the most specific location name you can identify, ALWAYS in English for geocoding\",\n  \"countryCode\": \"ISO 3166-1 alpha-2 country code for the identified location, uppercase, or empty string if unknown\",\n  \"confidence\": \"landmark\" | \"city\" | \"region\" | \"country\" | \"unknown\",\n  \"method\": \"a single short sentence explaining the key visual evidence used to identify this location, written in the user's language\",\n  \"displaySentence\": \"a complete, grammatically natural sentence in the user's language announcing where the photo was taken, with the place name written naturally in that language and woven into the sentence. Empty string if confidence is unknown.\"\n}\n\nABSOLUTE RULE — check this first before anything else: If the image is clearly not a real photograph taken by a camera in the real world — this includes cartoons, illustrations, paintings, drawings, sketches, AI-generated images, screenshots of apps or websites, social media posts, food delivery or e-commerce interfaces, video game captures, memes, or any digital interface with visible UI elements — you MUST set confidence to \"unknown\", place to \"unknown\", countryCode to an empty string, method to \"This image is not a real photograph.\" (translated to the user's language), and displaySentence to an empty string. This rule applies ONLY when the image is clearly not a real-world camera photo. ATTENTION : If the image appears to be a real photo but the location cannot be identified, DO NOT SAY it is not a real photograph; instead return \"unknown\" because the location is not identifiable.\n\nEvidence rules — apply before identifying any location:\n- Prioritize unique, explicit, low-frequency clues: flags, language, script, signage, road markings, architecture, culturally specific objects.\n- License plates indicate where a vehicle is registered, not necessarily where the photo was taken. Treat license plates as supporting evidence only when they agree with other independent visible context, such as readable local signage, flags, road markings, architecture, landscape, or country-specific street details. A license plate alone IS NOT ENOUGH to identify a country, city, region, or landmark. If the only meaningful clue is a license plate, return \"unknown\".\n- Treat terrain and landscape as WEAK evidence unless combined with unique identifiers.\n- Mountain ranges, arid landscapes, forests, coastlines, and generic rural or urban scenes are NOT sufficient evidence on their own — return \"unknown\" unless a distinctive non-landscape clue is present.\n- Generic modern architecture (glass facades, clean lines, light wood interiors, minimalist design, contemporary airports, shopping centers, office buildings) is NOT sufficient evidence on its own. These styles are global. Return \"unknown\" for modern buildings unless distinctive non-architectural clues are present (visible signage in a specific language, flags, named branding, identifiable surroundings).\n- Partial views of buildings (close-ups, sections, interiors without clear identifying features) cannot be confidently identified unless they contain a recognisable named element. A glass wall, a staircase, a generic interior — these are not identifiable. Return \"unknown\".\n- Landmark replicas, themed architecture, decorative monuments, mall displays, amusement-park structures, and imitation landmarks are NOT sufficient evidence for the original landmark or any specific city. If a famous-looking structure appears to be a replica or decorative version, return \"unknown\" unless there is independent location evidence such as readable local signage, flags, or uniquely identifiable surrounding features.\n- Do NOT rely on visual similarity or vibe. Avoid bias toward overrepresented regions (USA, Western Europe) without explicit evidence.\n- Spanish-speaking countries can be confused easily: Spain, Mexico, Argentina, Colombia and others share language and some architectural styles. Look for distinguishing details — license plates, flags, peninsular vs Latin American architecture, regional vegetation, or text using country-specific vocabulary.\n- If a rare or region-specific clue is present, it overrides generic landscape similarity.\n- Before deciding, internally test whether any visible detail contradicts your candidate location. If it does, eliminate it.\n- If multiple locations remain plausible after elimination, return \"unknown\".\n- If the image suggests a possible location but the same evidence could reasonably fit another place, return \"unknown\". Only return a location when the visible evidence uniquely supports it or when the combination of clues makes alternatives unlikely.\n\nFormatting rules (for the English \"place\" field):\n- Always separate parts of a location with commas. Never join two place names with just a space. Correct: \"Luxembourg, Luxembourg\", \"Mexico City, Mexico\", \"Panama City, Panama\". Incorrect: \"Luxembourg Luxembourg\", \"Mexico Mexico\".\n- Use commas to separate the place from its region or country in every confidence level.\n\nIdentification rules (for the English \"place\" field):\n- Confidence is fundamentally about how the place appears on a map. A landmark is a pinpoint — something you would mark with a single pin. A city/neighborhood/district is an urban area. A region is an outlined large area — something you would draw as a polygon. Use this mental test whenever you are uncertain.\n- Use \"landmark\" ONLY for a specific, individually named physical object or site with a small footprint on a map: a single building, monument, tower, bridge, statue, station, temple, church, museum, stadium, waterfall, cliff viewpoint, or named attraction. Include city/region and country (e.g. \"Eiffel Tower, Paris, France\", \"Berliner Dom, Berlin, Germany\", \"Cliffs of Moher, County Clare, Ireland\").\n- Do NOT use \"landmark\" for named urban areas. Named districts, business districts, financial districts, neighborhoods, suburbs, quarters, boroughs, city zones, plazas used as districts, and urban redevelopment areas are \"city\", not \"landmark\". Examples: \"La Défense, Île-de-France, France\" is \"city\"; \"Manhattan, New York, USA\" is \"city\"; \"Shibuya, Tokyo, Japan\" is \"city\"; \"Canary Wharf, London, United Kingdom\" is \"city\". Only use \"landmark\" if the image clearly identifies one specific building, monument, station, bridge, tower, statue, or attraction inside that area.\n- If the place name can refer both to an area and to a specific object, choose \"city\" unless the specific object is visually identifiable. For example, \"La Défense\" alone is a district, not a landmark; \"Grande Arche de la Défense, Puteaux, France\" is a landmark.\n- Use \"city\" for any urban area with high certainty: village, town, suburb, neighborhood, district, business district, financial district, quarter, borough, city zone, or city. Include region/state if ambiguous (e.g. \"Portland, Oregon, USA\"). When the city and country share a name, format with a comma between them (e.g. \"Luxembourg, Luxembourg\", \"Singapore, Singapore\", \"Monaco, Monaco\").\n- Use \"region\" for any large named area that covers significant geographic extent rather than a single point: states, provinces, country subdivisions, recognised natural regions (Patagonia, Tuscany, Bavaria, Provence, Cornwall, Sahara), national parks and protected areas (Yellowstone, Serengeti), archipelagos and major islands (Lofoten, Galápagos, Easter Island), mountain ranges, peninsulas, and similar large features. Use this whenever the place is something you would draw on a map as an outlined area rather than a pin.\n- Use \"country\" only if the country is identifiable with high certainty but nothing more specific.\n- Use \"unknown\" if: evidence is weak or generic, multiple locations remain plausible, or any visible detail is inconsistent with the chosen answer.\n- For locations that span multiple countries (waterfalls, mountains, lakes on borders): pick ONE country to anchor the location — the most photographed side or the side most visible in the image — rather than listing both. E.g. \"Iguazu Falls, Paraná, Brazil\" or \"Iguazu Falls, Misiones, Argentina\" — never \"Iguazu Falls, Argentina/Brazil\". The same applies to any cross-border feature.\n\nGeocodability rules — the \"place\" field will be sent to Nominatim and OpenCage for lookup. Optimize for these geocoders:\n- Use the most common and shortest official name. Not \"The Republic of South Africa\" but \"South Africa\".\n- Preserve official accents and diacritics in Latin-script place names when they are normally used, especially for cities, regions, and countries: \"Liège, Belgium\", not \"Liege, Belgium\"; \"São Luís, Maranhão, Brazil\", not \"Sao Luis, Maranhao, Brazil\"; \"Bogotá\", not \"Bogota\"; \"Málaga\", not \"Malaga\".\n- Drop English-attached descriptors that aren't part of the canonical name: \"Lofoten\" not \"Lofoten Islands\", \"Atacama\" not \"Atacama Desert\", \"Galápagos\" not \"Galápagos Islands\". Use descriptors ONLY when they're part of the official name (e.g., \"Great Barrier Reef\", \"Easter Island\").\n- ALWAYS include the administrative parent (region/state/province) between a natural feature and the country (e.g., \"Lofoten, Nordland, Norway\", not \"Lofoten, Norway\").\n- Never use slashes or \"or\": \"Iguazu Falls, Misiones, Argentina\" not \"Iguazu Falls, Argentina/Brazil\".\n- Use English exonyms only when the English name is genuinely different from the local name, not merely a diacritic-free spelling. Preserve official diacritics in Latin-script names: \"Liège, Belgium\", not \"Liege, Belgium\"; \"São Luís, Maranhão, Brazil\", not \"Sao Luis, Maranhao, Brazil\"; \"Bogotá\", not \"Bogota\"; \"Málaga\", not \"Malaga\". Still use true English exonyms where standard: \"Munich\" not \"München\", \"Florence\" not \"Firenze\", \"Moscow\" not \"Москва\".\n\nMethod rules:\n- The method must be a single concise sentence describing the most decisive visual evidence used to identify the location, in the user's language.\n- Be specific about what was recognised: the landmark name, the language on signage, the type of architecture, a national flag, distinctive vegetation, etc.\n- Examples (shown in English but should be written in the user's language):\n  - \"The building in the image was identified as Berliner Dom.\"\n  - \"Arabic script on the storefronts and the surrounding architecture indicate a certain Gulf country.\"\n  - \"The dramatic basalt sea stacks and turf-roofed houses are characteristic of the Faroe Islands.\"\n  - \"Road signage in Portuguese combined with the tropical urban landscape points to Brazil.\"\n- If confidence is \"unknown\" and the image appears to be a real photo, set method to a single sentence in the user's language explaining that the location could not be determined from the visible evidence. Do not say the image is not a real photograph unless it clearly is not one.\n\ndisplaySentence rules:\n- The displaySentence must be a complete, grammatically natural sentence in the user's language announcing where the photo was taken. It is shown directly to the user.\n- Write the place name naturally in the user's language inside the sentence: translate country names, region names, and well-known city names; keep proper nouns (specific landmark names, small place names) in their original form when no translation exists.\n- Weave the place name into the sentence according to the grammar of the user's language. Different languages place prepositions, particles, and word order differently — write whatever sounds natural.\n- Examples for the location \"Berliner Dom, Berlin, Germany\":\n  - English: \"This photo was taken at Berliner Dom in Berlin, Germany.\"\n  - French: \"Cette photo a été prise à la Cathédrale de Berlin, à Berlin, en Allemagne.\"\n  - Spanish: \"Esta foto fue tomada en la Catedral de Berlín, en Berlín, Alemania.\"\n  - German: \"Dieses Foto wurde am Berliner Dom in Berlin, Deutschland aufgenommen.\"\n  - Japanese: \"この写真はドイツのベルリンにあるベルリン大聖堂で撮影されました。\"\n  - Arabic: \"تم التقاط هذه الصورة عند كاتدرائية برلين في برلين، ألمانيا.\"\n  - Chinese: \"这张照片拍摄于德国柏林的柏林大教堂。\"\n- If confidence is \"unknown\", set displaySentence to an empty string \"\".\n\nFinal check — MANDATORY before returning your answer:\n- Ask internally: is this unmistakably a non-photo image or digital interface? If yes, return \"unknown\", countryCode to an empty string, method to \"This image is not a real photograph.\" translated to the user's language, and displaySentence to \"\".\n- If the image appears to be a camera photo of a real-world scene but the location is not identifiable, return \"unknown\" because the visible evidence is insufficient. Never describe a real-world camera photo as not a real photograph merely because the location cannot be identified.\n- Ask: what is the strongest piece of evidence, and does it uniquely support this location?\n- If the strongest clue is a license plate, return \"unknown\" unless there is other independent visible evidence that supports the same location.\n- If the strongest clue is a famous-looking object that could be a replica, themed decoration, or imitation, do not infer a location from it. Return \"unknown\" unless another independent clue identifies the place.\n- If the answer depends mainly on generic features, or if any alternative location is plausible, return \"unknown\".\n- Verify that method and displaySentence are in the user's specified language. Do not mix languages.\n\nNEVER GUESS. A wrong answer is worse than no answer.\n\nReturn ONLY the JSON object, no explanation, no markdown.";
+const STOPWORDS = ["the", "and", "of", "de", "mount", "mountain", "volcano", "island", "islands", "lake"];
+const ICONS = {
     moon: '<svg class="mobile-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>',
 
     sun: '<svg class="mobile-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v1"/><path d="M12 20v1"/><path d="M3 12h1"/><path d="M20 12h1"/><path d="m18.364 5.636-.707.707"/><path d="m6.343 17.657-.707.707"/><path d="m5.636 5.636.707.707"/><path d="m17.657 17.657.707.707"/></svg>',
@@ -19,55 +19,55 @@ var ICONS = {
 
 
 // ── STATE ──────────────────────────────────────────────────────────
-var isSatellite = false;
-var isDark = true;
-var photoMarker;
-var currentPlaceName = null;
-var currentLat = null;
-var currentLng = null;
-var currentSentence = null;
-var currentPhotoHtml = null;
-var currentImageFile = null;
-var currentMethod = null;
-var currentShortName = null;
-var currentIsAI = false;
-var locationPolygon = null;
-var currentLang = "en";
-var isSearching = false;
-var scrollHintShown = false;
-var moreContentIsOpen = false;
-var geocodingFellback = false;
-var wikiBlacklisted = 0;
-var lockedPhotoHeight = null;
-var isImperial = false;
-var userCoordinates = null;
-var locateHintShown = false;
-var hasUploadedFirstPhoto = false;
-var hasAcceptedLocationOnce = false;
-var userMarker = null;
-var locationPreviewTimeout1 = null;
-var locationPreviewTimeout2 = null;
-var userDistanceLine = null;
-var userDistanceLabel = null;
-var locationPreviewInProgress = false;
+let isSatellite = false;
+let isDark = true;
+let photoMarker;
+let currentPlaceName = null;
+let currentLat = null;
+let currentLng = null;
+let currentSentence = null;
+let currentPhotoObjectUrl = null;
+let currentPhotoHtml = null;
+let currentImageFile = null;
+let currentMethod = null;
+let currentShortName = null;
+let currentIsAI = false;
+let locationPolygon = null;
+let currentLang = "en";
+let isSearching = false;
+let scrollHintShown = false;
+let moreContentIsOpen = false;
+let geocodingFellback = 0;
+let wikiBlacklisted = 0;
+let lockedPhotoHeight = null;
+let isImperial = false;
+let userCoordinates = null;
+let locateHintShown = false;
+let hasAcceptedLocationOnce = false;
+let userMarker = null;
+let locationPreviewTimeout1 = null;
+let locationPreviewTimeout2 = null;
+let userDistanceLine = null;
+let userDistanceLabel = null;
+let locationPreviewInProgress = false;
 
 
 
 // ── MAP & INITIAL SETUP ────────────────────────────────────────────
 // L.map, tile layers, icons, attribution
-var browserLang = navigator.language.split("-")[0];
+const browserLang = navigator.language.split("-")[0];
 if (TRANSLATIONS[browserLang]) {
     currentLang = browserLang;
     changeLanguage();
 }
 
-var savedDark = localStorage.getItem("isDark");
+const savedDark = localStorage.getItem("isDark");
 if (savedDark !== null) isDark = savedDark === "true";
 
-var savedSatellite = localStorage.getItem("isSatellite");
+const savedSatellite = localStorage.getItem("isSatellite");
 if (savedSatellite !== null) isSatellite = savedSatellite === "true";
 
-var savedLang = localStorage.getItem("currentLang");
+const savedLang = localStorage.getItem("currentLang");
 if (savedLang !== null && TRANSLATIONS[savedLang]) {
     currentLang = savedLang;
     changeLanguage();
@@ -77,35 +77,35 @@ setTimeout(alignToggleChevrons, 50);
 
 if (currentLang === "en" && navigator.language === "en-US") isImperial = true;
 
-var savedImperial = localStorage.getItem("isImperial");
+const savedImperial = localStorage.getItem("isImperial");
 if (savedImperial !== null) isImperial = savedImperial === "true";
 
 document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
 
-var map = L.map('map').setView([0, 0], 2);
+const map = L.map('map').setView([0, 0], 2);
 
-var streetLayerLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+const mapLayerLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap © CARTO'
 });
 
-var streetLayerDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+const mapLayerDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap © CARTO'
 });
 
-var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 18,
     attribution: '© Esri'
 });
 
-streetLayerLight.addTo(map);
+mapLayerLight.addTo(map);
 
 map.attributionControl.setPrefix('<a href="https://github.com/antonin-gg" target="_blank">© A.G.</a>');
 
 document.getElementById("welcome").textContent = translate("welcome");
 
-var fileInput = document.getElementById('imageInput');
+const fileInput = document.getElementById('imageInput');
 if (/Android/i.test(navigator.userAgent)) {
     fileInput.accept = 'image/*,model/gltf+json';
 } else {
@@ -115,106 +115,15 @@ if (/Android/i.test(navigator.userAgent)) {
 
 
 // ── THEME, LAYER & LANGUAGE TOGGLERS───────────────────────────────
-// darkPopupStyle, toLightTheme, toDarkTheme, eventListeners
-var darkPopupStyle = document.createElement("style");
-darkPopupStyle.textContent = `
-            .leaflet-popup-content-wrapper {
-                background: rgba(15, 15, 25, 0.6) !important;
-                color: #f0f0f0 !important;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;
-            }
-            .leaflet-popup-tip {
-                background: rgba(15, 15, 25, 0.6) !important;
-            }
-        `;
-
-function toLightTheme() {
-    const elements = document.getElementsByClassName("box");
-
-    for (let el of elements) {
-        el.style.background = "rgba(255,255,255,0.4)";
-        el.style.color = "#000000";
-        el.style.border = "1px solid rgba(0,0,0,0.15)";
-        el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
-    }
-
-    var zoomButtons = document.querySelectorAll(".leaflet-control-zoom a");
-
-    zoomButtons.forEach(function (el) {
-        el.style.background = "rgba(255,255,255,0.4)";
-        el.style.color = "#000000";
-        el.style.border = "1px solid rgba(0,0,0,0.15)";
-        el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.3)";
-    });
-
-    darkPopupStyle.remove();
-
-    document.querySelector(".leaflet-control-attribution").style.background = "rgba(255,255,255,0.4)";
-    document.querySelector(".leaflet-control-attribution").style.color = "#000";
-
-    document.getElementById("resultPanel").style.background = "rgba(248, 247, 244, 0.96)";
-    document.getElementById("resultPanel").style.color = "#000000";
-    document.getElementById("panelMethod").style.color = "#666666";
-    document.getElementById("panelClose").style.background = "rgba(0,0,0,0.08)";
-    document.getElementById("panelToggle").style.background = "rgba(0,0,0,0.08)";
-    document.getElementById("panelClose").style.color = "#000000";
-    document.getElementById("panelToggle").style.color = "#000000";
-    document.getElementById("stripClose").style.background = "rgba(0,0,0,0.08)";
-    document.getElementById("stripClose").style.color = "#000000";
-    document.getElementById("stripToggle").style.background = "rgba(0,0,0,0.08)";
-    document.getElementById("stripToggle").style.color = "#000000";
-
-
-    if (photoMarker && !isSatellite) photoMarker.setIcon(cameraIconLight);
-
-    document.body.classList.remove("dark");
-
+// changeTheme, eventListeners
+function changeTheme() {
+    document.body.classList.toggle("dark", isDark);
+    if (photoMarker && !isSatellite) photoMarker.setIcon(isDark ? cameraIconDark : cameraIconLight);
+    if (locationPolygon) locationPolygon.setStyle({ color: getPolygonColor() });
 }
 
-function toDarkTheme() {
 
-    const elements = document.getElementsByClassName("box");
-
-    for (let el of elements) {
-        el.style.background = "rgba(15, 15, 25, 0.75)";
-        el.style.color = "#f0f0f0";
-        el.style.border = "1px solid rgba(255, 255, 255, 0.12)";
-        el.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.5)";
-    }
-
-    var zoomButtons = document.querySelectorAll(".leaflet-control-zoom a");
-
-    zoomButtons.forEach(function (el) {
-        el.style.background = "rgba(15, 15, 25, 0.75)";
-        el.style.color = "#f0f0f0";
-        el.style.border = "1px solid rgba(255, 255, 255, 0.12)";
-        el.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.5)";
-    });
-
-    document.head.appendChild(darkPopupStyle);
-
-    document.querySelector(".leaflet-control-attribution").style.background = "rgba(15,15,25,0.75)";
-    document.querySelector(".leaflet-control-attribution").style.color = "#f0f0f0";
-
-    document.getElementById("resultPanel").style.background = "rgba(15, 15, 25, 0.95)";
-    document.getElementById("resultPanel").style.color = "#f0f0f0";
-    document.getElementById("panelMethod").style.color = "#aaaaaa";
-    document.getElementById("panelClose").style.background = "rgba(255,255,255,0.12)";
-    document.getElementById("panelToggle").style.background = "rgba(255,255,255,0.12)";
-    document.getElementById("panelClose").style.color = "#f0f0f0";
-    document.getElementById("panelToggle").style.color = "#f0f0f0";
-    document.getElementById("stripClose").style.background = "rgba(255,255,255,0.12)";
-    document.getElementById("stripClose").style.color = "#f0f0f0";
-    document.getElementById("stripToggle").style.background = "rgba(255,255,255,0.12)";
-    document.getElementById("stripToggle").style.color = "#f0f0f0";
-
-    if (photoMarker && !isSatellite) photoMarker.setIcon(cameraIconDark);
-
-    document.body.classList.add("dark");
-
-}
-
-var cameraIconLight = new L.Icon({
+const cameraIconLight = new L.Icon({
     iconUrl: 'https://antonin-gg.github.io/geolocator/cameraIconLight.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [31, 41],
@@ -223,7 +132,7 @@ var cameraIconLight = new L.Icon({
     shadowSize: [41, 41]
 });
 
-var cameraIconDark = new L.Icon({
+const cameraIconDark = new L.Icon({
     iconUrl: 'https://antonin-gg.github.io/geolocator/cameraIconDark.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [31, 41],
@@ -233,23 +142,7 @@ var cameraIconDark = new L.Icon({
 });
 
 document.getElementById("showToggleTheme").addEventListener("click", function () {
-    if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
-        document.getElementById("toggleView").classList.add("hidden-view");
-        document.getElementById("showToggleView").classList.remove("dropdown-open");
-    }
-    if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
-        document.getElementById("languageOptions").classList.add("hidden-language");
-        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
-        if (isTouchDevice && !handlingPopstate) {
-            handlingPopstate = true;
-            history.back();
-            historyDepth--;
-        }
-    }
-
-    document.getElementById("toggleTheme").classList.toggle("hidden-theme");
-    var isOpen = !document.getElementById("toggleTheme").classList.contains("hidden-theme");
-    this.classList.toggle("dropdown-open", isOpen);
+    openDropdown("theme");
 });
 
 document.getElementById("toggleTheme").addEventListener("click", function () {
@@ -258,20 +151,20 @@ document.getElementById("toggleTheme").addEventListener("click", function () {
         document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
     }
     if (isDark) {
-        toLightTheme();
         isDark = false;
         if (!isSatellite) {
-            map.removeLayer(streetLayerDark);
-            streetLayerLight.addTo(map);
+            map.removeLayer(mapLayerDark);
+            mapLayerLight.addTo(map);
         }
     } else {
-        toDarkTheme();
         isDark = true;
         if (!isSatellite) {
-            map.removeLayer(streetLayerLight);
-            streetLayerDark.addTo(map);
+            map.removeLayer(mapLayerLight);
+            mapLayerDark.addTo(map);
         }
     }
+
+    changeTheme();
 
     updateToggles();
 
@@ -286,23 +179,7 @@ document.getElementById("toggleTheme").addEventListener("click", function () {
 });
 
 document.getElementById("showToggleView").addEventListener("click", function () {
-    if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
-        document.getElementById("toggleTheme").classList.add("hidden-theme");
-        document.getElementById("showToggleTheme").classList.remove("dropdown-open");
-    }
-    if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
-        document.getElementById("languageOptions").classList.add("hidden-language");
-        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
-        if (isTouchDevice && !handlingPopstate) {
-            handlingPopstate = true;
-            history.back();
-            historyDepth--;
-        }
-    }
-
-    document.getElementById("toggleView").classList.toggle("hidden-view");
-    var isOpen = !document.getElementById("toggleView").classList.contains("hidden-view");
-    this.classList.toggle("dropdown-open", isOpen);
+    openDropdown("view");
 });
 
 document.getElementById("toggleView").addEventListener("click", function () {
@@ -319,20 +196,20 @@ document.getElementById("toggleView").addEventListener("click", function () {
     if (isSatellite) {
         map.removeLayer(satelliteLayer);
         if (isDark) {
-            streetLayerDark.addTo(map);
+            mapLayerDark.addTo(map);
             if (photoMarker) photoMarker.setIcon(cameraIconDark);
         }
         else {
-            streetLayerLight.addTo(map);
+            mapLayerLight.addTo(map);
         }
         isSatellite = false;
     } else {
         if (isDark) {
-            map.removeLayer(streetLayerDark);
+            map.removeLayer(mapLayerDark);
             if (photoMarker) photoMarker.setIcon(cameraIconLight);
         }
         else {
-            map.removeLayer(streetLayerLight);
+            map.removeLayer(mapLayerLight);
         }
         satelliteLayer.addTo(map);
         isSatellite = true;
@@ -351,31 +228,7 @@ document.getElementById("toggleView").addEventListener("click", function () {
 });
 
 document.getElementById("showToggleLanguage").addEventListener("click", function () {
-    if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
-        document.getElementById("toggleTheme").classList.add("hidden-theme");
-        document.getElementById("showToggleTheme").classList.remove("dropdown-open");
-    }
-    if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
-        document.getElementById("toggleView").classList.add("hidden-view");
-        document.getElementById("showToggleView").classList.remove("dropdown-open");
-    }
-
-    document.getElementById("languageOptions").classList.toggle("hidden-language");
-    var isOpen = !document.getElementById("languageOptions").classList.contains("hidden-language");
-    if (isOpen) {
-        document.getElementById("languageOptions").scrollTop = 0;
-        if (isTouchDevice) {
-            history.pushState({}, "");
-            historyDepth++;
-        }
-    } else {
-        if (isTouchDevice && !handlingPopstate) {
-            handlingPopstate = true;
-            history.back();
-            historyDepth--;
-        }
-    }
-    this.classList.toggle("dropdown-open", isOpen);
+    openDropdown("language");
 });
 
 document.querySelectorAll(".lang-option").forEach(function (button) {
@@ -398,15 +251,14 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
         if (isTouchDevice && !handlingPopstate) {
             handlingPopstate = true;
             history.back();
-            historyDepth--;
         }
 
         document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
 
         localStorage.setItem("currentLang", currentLang);
 
-        var panelOpen = document.getElementById("resultPanel").classList.contains("open");
-        var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+        const panelOpen = isPanelOpen();
+        const stripOpen = isStripOpen();
 
         if ((panelOpen || stripOpen) && currentImageFile) {
             rerunSearch();
@@ -415,8 +267,66 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
 });
 
+function openDropdown(which) {
+    const configs = {
+        theme: {
+            content: document.getElementById("toggleTheme"),
+            trigger: document.getElementById("showToggleTheme"),
+            hiddenClass: "hidden-theme"
+        },
+        view: {
+            content: document.getElementById("toggleView"),
+            trigger: document.getElementById("showToggleView"),
+            hiddenClass: "hidden-view"
+        },
+        language: {
+            content: document.getElementById("languageOptions"),
+            trigger: document.getElementById("showToggleLanguage"),
+            hiddenClass: "hidden-language"
+        }
+    };
+
+    const config = configs[which];
+    if (!config) return;
+
+    Object.keys(configs).forEach(function (key) {
+        if (key === which) return;
+
+        const other = configs[key];
+
+        if (!other.content.classList.contains(other.hiddenClass)) {
+            other.content.classList.add(other.hiddenClass);
+            other.trigger.classList.remove("dropdown-open");
+
+            if (key === "language" && isTouchDevice && !handlingPopstate) {
+                handlingPopstate = true;
+                history.back();
+            }
+        }
+    });
+
+    config.content.classList.toggle(config.hiddenClass);
+
+    const isOpen = !config.content.classList.contains(config.hiddenClass);
+
+    if (which === "language") {
+        if (isOpen) {
+            config.content.scrollTop = 0;
+
+            if (isTouchDevice) {
+                history.pushState({}, "");
+            }
+        } else if (isTouchDevice && !handlingPopstate) {
+            handlingPopstate = true;
+            history.back();
+        }
+    }
+
+    config.trigger.classList.toggle("dropdown-open", isOpen);
+}
+
 document.addEventListener("click", function (e) {
-    var clickedInsideToggles = e.target.closest("#wrapperToggles");
+    const clickedInsideToggles = e.target.closest("#wrapperToggles");
 
     if (!clickedInsideToggles) {
         if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
@@ -469,8 +379,8 @@ function hideSearching() {
 }
 
 function showError(message) {
-    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
-    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    const panelOpen = isPanelOpen();
+    const stripOpen = isStripOpen();
     if (panelOpen || stripOpen) {
         if (isSearching) {
             document.getElementById("panelPlaceName").classList.remove("loading");
@@ -500,9 +410,9 @@ function getPolygonColor() {
 function lockPanelPhotoSize(force) {
     if (moreContentIsOpen && !force) return;
 
-    var panelContent = document.getElementById("panelContent");
-    var panelPhoto = document.getElementById("panelPhoto");
-    var img = panelPhoto.querySelector("img");
+    const panelContent = document.getElementById("panelContent");
+    const panelPhoto = document.getElementById("panelPhoto");
+    const img = panelPhoto.querySelector("img");
 
     if (!img) return;
 
@@ -511,13 +421,13 @@ function lockPanelPhotoSize(force) {
     img.style.removeProperty("max-height");
 
     requestAnimationFrame(function () {
-        var minPhotoHeight = 160;
+        const minPhotoHeight = 160;
 
-        var contentHeight = panelContent.clientHeight;
-        var usedHeight = 0;
+        const contentHeight = panelContent.clientHeight;
+        let usedHeight = 0;
 
-        var gap = 14;
-        var visibleChildren = Array.from(panelContent.children).filter(function (child) {
+        const gap = 14;
+        const visibleChildren = Array.from(panelContent.children).filter(function (child) {
             return child !== panelPhoto &&
                 child.id !== "moreContent" &&
                 getComputedStyle(child).display !== "none";
@@ -529,7 +439,7 @@ function lockPanelPhotoSize(force) {
 
         usedHeight += Math.max(0, visibleChildren.length) * gap;
 
-        var reservedResultHeight = 0;
+        let reservedResultHeight = 0;
 
         if (isSearching) {
             reservedResultHeight += 30; // panelMethod likely one line
@@ -542,9 +452,9 @@ function lockPanelPhotoSize(force) {
             }
         }
 
-        var availablePhotoHeight = contentHeight - usedHeight - reservedResultHeight - 20;
+        let availablePhotoHeight = contentHeight - usedHeight - reservedResultHeight - 20;
 
-        var hitMinPhotoHeight = false;
+        let hitMinPhotoHeight = false;
 
         if (availablePhotoHeight < minPhotoHeight) {
             availablePhotoHeight = minPhotoHeight;
@@ -568,7 +478,7 @@ function alignToggleChevrons() {
 
     if (window.innerWidth <= 768 || window.innerHeight <= 500) return;
 
-    var toggles = [
+    const toggles = [
         document.querySelector("#showToggleView .toggle-text"),
         document.querySelector("#showToggleTheme .toggle-text"),
         document.querySelector("#showToggleLanguage .toggle-text")
@@ -576,7 +486,7 @@ function alignToggleChevrons() {
 
     toggles.forEach(function (t) { t.style.minWidth = ""; });
 
-    var maxWidth = 0;
+    let maxWidth = 0;
     toggles.forEach(function (t) {
         if (t.offsetWidth > maxWidth) maxWidth = t.offsetWidth;
     });
@@ -588,7 +498,7 @@ function alignToggleChevrons() {
 
 function updateToggles() {
     document.querySelector("#toggleView .desktop-toggle-label").textContent =
-        isSatellite ? translate("street") : translate("satellite");
+        isSatellite ? translate("map") : translate("satellite");
 
     document.querySelector("#toggleTheme .desktop-toggle-label").textContent =
         isDark ? translate("light") : translate("dark");
@@ -607,17 +517,17 @@ function updateToggles() {
 }
 
 function updateUploadButtons() {
-    var isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
-    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
-    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
+    const panelOpen = isPanelOpen();
+    const stripOpen = isStripOpen();
 
-    var showMobileUpload = isMobile && (panelOpen || stripOpen);
+    const showMobileUpload = isMobile && (panelOpen || stripOpen);
 
     document.getElementById("imageInputLabel").classList.toggle("mobile-hidden", showMobileUpload);
     document.getElementById("imageInputLabelPanel").classList.toggle("visible", showMobileUpload);
 }
 
-var resizeTimeout;
+let resizeTimeout;
 
 window.addEventListener("resize", function () {
 
@@ -625,7 +535,7 @@ window.addEventListener("resize", function () {
 
     resizeTimeout = setTimeout(function () {
 
-        if (document.getElementById("resultPanel").classList.contains("open")) {
+        if (isPanelOpen()) {
 
             openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
 
@@ -662,14 +572,12 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     currentIsAI = isAI;
 
     if (isTouchDevice) {
-        if (document.body.classList.contains("strip-open")) {
+        if (isStripOpen()) {
             history.pushState({}, "");
-            historyDepth++;
         }
-        if (!document.body.classList.contains("strip-open") && !document.body.classList.contains("panel-open")) {
+        if (!isStripOpen() && !isPanelOpen()) {
             history.pushState({}, "");
             history.pushState({}, "");
-            historyDepth += 2;
         }
     }
 
@@ -680,7 +588,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     document.getElementById("panelPhoto").innerHTML = photoHtml;
 
     if (moreContentIsOpen && lockedPhotoHeight) {
-        var img = document.querySelector("#panelPhoto img");
+        const img = document.querySelector("#panelPhoto img");
         if (img) {
             img.style.maxHeight = lockedPhotoHeight + "px";
             img.style.width = "100%";
@@ -692,11 +600,11 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
     }
 
     if (!isAI) {
-        var sentence = translate("photoTakenIn").replace("{place}", placeName.replace(shortName, "<strong>" + shortName + "</strong>"));
+        const sentence = translate("photoTakenIn").replace("{place}", placeName.replace(shortName, "<strong>" + shortName + "</strong>"));
         document.getElementById("panelPlaceName").innerHTML = sentence;
     } else {
-        var sentence = currentSentence;
-        var boldedSentence = sentence.replace(
+        const sentence = currentSentence;
+        const boldedSentence = sentence.replace(
             shortName,
             "<strong>" + shortName + "</strong>"
         );
@@ -716,8 +624,8 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     document.body.classList.remove("strip-open");
 
-    var strip = document.getElementById("resultStrip");
-    if (strip.style.display === "flex") {
+    const strip = document.getElementById("resultStrip");
+    if (isStripOpen()) {
         strip.style.display = "none";
     }
 
@@ -770,12 +678,10 @@ function closePanel() {
 
     updateLocateUserButton();
 
-    if (!isTouchDevice) {
-        setTimeout(function () {
-            map.invalidateSize();
-            document.getElementById("welcome").style.display = "block";
-        }, 300);
-    }
+    setTimeout(function () {
+        if (!isTouchDevice) map.invalidateSize();
+        document.getElementById("welcome").style.display = "block";
+    }, 300);
 
     closeMoreContent();
 
@@ -794,7 +700,6 @@ function minimizePanel() {
     if (isTouchDevice && !handlingPopstate) {
         handlingPopstate = true;
         history.back();
-        historyDepth--;
     }
 
     document.getElementById("resultPanel").classList.remove('open');
@@ -802,7 +707,7 @@ function minimizePanel() {
     document.getElementById("wrapper").classList.remove('panel-open');
     document.body.classList.remove("panel-open");
 
-    var strip = document.getElementById("resultStrip");
+    const strip = document.getElementById("resultStrip");
     strip.style.display = "flex";
     strip.style.opacity = "";
     strip.style.transform = "";
@@ -818,8 +723,8 @@ function minimizePanel() {
     setTimeout(function () {
         if (!isTouchDevice) map.invalidateSize();
         if (photoMarker) {
-            var popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
-            var miniPopup = L.popup({
+            const popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
+            const miniPopup = L.popup({
                 closeButton: false,
                 maxWidth: popupWidth,
                 closeOnClick: false,
@@ -836,7 +741,6 @@ function closeStrip() {
     if (isTouchDevice && !handlingPopstate) {
         handlingPopstate = true;
         history.back();
-        historyDepth--;
     }
 
     map.stop();
@@ -869,6 +773,10 @@ function closeStrip() {
     currentLng = null;
 }
 
+function isPanelOpen() { return document.body.classList.contains("panel-open"); }
+
+function isStripOpen() { return document.body.classList.contains("strip-open"); }
+
 function closeMoreContent() {
 
     closeGeoInfo();
@@ -900,19 +808,19 @@ async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiC
 
     await buildGeoInfo(lat, lng, aiConfidence, aiCountryCode);
 
-    var hasGeo = document.querySelectorAll("#panelGeoInfo .active").length > 0;
-    var hasWiki = document.getElementById("panelWiki").innerHTML.trim().length > 0;
+    const hasGeo = document.querySelectorAll("#panelGeoInfo .active").length > 0;
+    const hasWiki = document.getElementById("panelWiki").innerHTML.trim().length > 0;
     document.getElementById("learnMore").style.display = (hasGeo || hasWiki) ? "flex" : "none";
 }
 
 async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode) {
 
-    var result = null;
+    let result = null;
 
     if (!aiPlace) {
-        var regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-        var countryName = aiCountryCode ? regionNames.of(aiCountryCode.toUpperCase()) : "";
-        var EnGeocodedPlace = geocodedPlace.split(",")[0].trim() + ", " + countryName;
+        const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+        const countryName = aiCountryCode ? regionNames.of(aiCountryCode.toUpperCase()) : "";
+        const EnGeocodedPlace = geocodedPlace.split(",")[0].trim() + ", " + countryName;
         result = await getWikiResult(EnGeocodedPlace, geocodedPlace, lat, lng, "exif");
 
     } else {
@@ -924,7 +832,7 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, 
         return;
     }
 
-    var text = result.extract;
+    const text = result.extract;
 
     document.getElementById("panelWiki").innerHTML =
         "<strong>" + result.title + "</strong><br>" +
@@ -956,18 +864,18 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
     */
     wikiBlacklisted = 0;
 
-    var queries = buildWikiFallbackQueries(aiPlace);
+    const queries = buildWikiFallbackQueries(aiPlace);
 
-    var result = null;
+    let result = null;
 
-    for (var i = 0; i < queries.length; i++) {
+    for (let i = 0; i < queries.length; i++) {
         result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
 
         if (result && currentLang != "en") {
-            var translatedTitle = getWikiTitleTranslation(result);
+            const translatedTitle = getWikiTitleTranslation(result);
             if (translatedTitle) {
 
-                var translatedResult = await getWikiPageByTitle(translatedTitle, currentLang) || result;
+                const translatedResult = await getWikiPageByTitle(translatedTitle, currentLang) || result;
                 if (translatedResult != result) {
                     result = translatedResult;
                     break;
@@ -975,7 +883,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
             }
 
             if (i === wikiBlacklisted + geocodingFellback) {
-                var enResult = result;
+                const enResult = result;
 
                 result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
                 if (result) break;
@@ -1000,7 +908,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
             if (currentLang != "en") {
                 result = await wikiGeoSearch(geocodedPlace, "en", lat, lng, aiConfidence);
                 if (result) {
-                    var geoTranslatedTitle = getWikiTitleTranslation(result);
+                    const geoTranslatedTitle = getWikiTitleTranslation(result);
                     if (geoTranslatedTitle) {
 
                         result = await getWikiPageByTitle(geoTranslatedTitle, currentLang) || result;
@@ -1016,13 +924,11 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
     return result;
 }
 
-async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
-    var url =
-        "https://" + language + ".wikipedia.org/w/api.php?action=query" +
-        "&generator=geosearch" +
-        "&ggscoord=" + encodeURIComponent(lat + "|" + lng) +
-        "&ggsradius=10000" +
-        "&ggslimit=20" +
+// Builds a Wikipedia API query URL: the fixed base plus the shared extract/
+// coordinate props, with the generator-specific params passed in.
+function buildWikiApiUrl(language, params) {
+    return "https://" + language + ".wikipedia.org/w/api.php?action=query" +
+        params +
         "&redirects=1" +
         "&prop=extracts|coordinates|info|langlinks|pageprops" +
         "&exintro=1" +
@@ -1031,14 +937,22 @@ async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
         "&lllimit=500" +
         "&format=json" +
         "&origin=*";
+}
 
-    var response = await fetch(url);
+async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
+    const url = buildWikiApiUrl(language,
+        "&generator=geosearch" +
+        "&ggscoord=" + encodeURIComponent(lat + "|" + lng) +
+        "&ggsradius=10000" +
+        "&ggslimit=20");
+
+    const response = await fetch(url);
 
     if (!response.ok) return null;
 
-    var data = await response.json();
+    const data = await response.json();
 
-    var pages = Object.values((data.query && data.query.pages) || {});
+    const pages = Object.values((data.query && data.query.pages) || {});
     if (pages.length === 0) return null;
 
     return pickBestWikiResult(pages, query, lat, lng, aiConfidence);
@@ -1046,51 +960,32 @@ async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
 
 async function getWikiData(query, language, lat, lng, aiConfidence) {
 
-    var url =
-        "https://" + language + ".wikipedia.org/w/api.php?action=query" +
+    const url = buildWikiApiUrl(language,
         "&generator=search" +
         "&gsrsearch=" + encodeURIComponent(query) +
-        "&gsrlimit=20" +
-        "&redirects=1" +
-        "&prop=extracts|coordinates|info|langlinks|pageprops" +
-        "&exintro=1" +
-        "&explaintext=1" +
-        "&inprop=url" +
-        "&lllimit=500" +
-        "&format=json" +
-        "&origin=*";
+        "&gsrlimit=20");
 
-    var response = await fetch(url);
+    const response = await fetch(url);
 
     if (!response.ok) return null;
 
-    var data = await response.json();
+    const data = await response.json();
 
-    var pages = Object.values((data.query && data.query.pages) || {});
+    const pages = Object.values((data.query && data.query.pages) || {});
     if (pages.length === 0) return null;
 
     return pickBestWikiResult(pages, query, lat, lng, aiConfidence);
 }
 
 async function getWikiPageByTitle(title, language) {
-    var url =
-        "https://" + language + ".wikipedia.org/w/api.php?action=query" +
-        "&titles=" + encodeURIComponent(title) +
-        "&redirects=1" +
-        "&prop=extracts|coordinates|info|langlinks|pageprops" +
-        "&exintro=1" +
-        "&explaintext=1" +
-        "&inprop=url" +
-        "&lllimit=500" +
-        "&format=json" +
-        "&origin=*";
+    const url = buildWikiApiUrl(language, "&titles=" + encodeURIComponent(title));
 
-    var response = await fetch(url);
+    const response = await fetch(url);
     if (!response.ok) return null;
 
-    var data = await response.json();
-    var pages = Object.values((data.query && data.query.pages) || {});
-    var page = pages[0];
+    const data = await response.json();
+    const pages = Object.values((data.query && data.query.pages) || {});
+    const page = pages[0];
 
     if (!page || page.missing !== undefined) return null;
     if (page.pageprops && Object.prototype.hasOwnProperty.call(page.pageprops, "disambiguation")) return null;
@@ -1108,14 +1003,14 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
         return !isListPage(r);
     });
 
-    var scored = results.map(function (r, index) {
-        var score = wikiTitleScore(r.title || "", query);
-        var isClose = false;
+    const scored = results.map(function (r, index) {
+        let score = wikiTitleScore(r.title || "", query);
+        let isClose = false;
 
         if (lat != null && lng != null && r.coordinates && r.coordinates[0]) {
-            var dist = haversineKm(lat, lng, r.coordinates[0].lat, r.coordinates[0].lon);
+            const dist = haversineKm(lat, lng, r.coordinates[0].lat, r.coordinates[0].lon);
 
-            var maxDist =
+            let maxDist =
                 aiConfidence === "country" ? 1000 :
                     aiConfidence === "region" ? 300 :
                         aiConfidence === "exif" ? 70 :
@@ -1152,7 +1047,7 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
         return b.score - a.score || a.index - b.index;
     });
 
-    for (var i = 0; i < scored.length; i++) {
+    for (let i = 0; i < scored.length; i++) {
         if (scored[i].close && scored[i].score >= 90) return scored[i].page;
         if (isProperNounAcrossLanguages(scored[i].page)) {
             return scored[i].page;
@@ -1163,33 +1058,33 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
 }
 
 function wikiTitleScore(title, query) {
-    var primaryQuery = query.split(",")[0].trim();
-    var primaryTokens = tokenizePlaceName(primaryQuery);
-    var titleTokens = tokenizePlaceName(title);
+    const primaryQuery = query.split(",")[0].trim();
+    const primaryTokens = tokenizePlaceName(primaryQuery);
+    const titleTokens = tokenizePlaceName(title);
 
     if (primaryTokens.length === 0 || titleTokens.length === 0) return -100;
 
-    var hasForeignPrefix = false;
-    var normalizedTitle = (title || "").toLowerCase()
+    let hasForeignPrefix = false;
+    const normalizedTitle = (title || "").toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
-    var firstPrimaryToken = primaryTokens[0];
-    var firstTokenPos = normalizedTitle.indexOf(firstPrimaryToken);
+    const firstPrimaryToken = primaryTokens[0];
+    const firstTokenPos = normalizedTitle.indexOf(firstPrimaryToken);
     if (firstTokenPos > 0) {
-        var prefix = normalizedTitle.substring(0, firstTokenPos);
-        var prefixWords = prefix.match(/[\p{L}\p{N}]+/gu) || [];
+        const prefix = normalizedTitle.substring(0, firstTokenPos);
+        const prefixWords = prefix.match(/[\p{L}\p{N}]+/gu) || [];
         hasForeignPrefix = prefixWords.some(function (w) {
             return !primaryTokens.includes(w);
         });
     }
 
-    var queryHasAccent = hasAccent(primaryQuery);
-    var titleHasAccent = hasAccent(title);
+    const queryHasAccent = hasAccent(primaryQuery);
+    const titleHasAccent = hasAccent(title);
 
-    var accentInsensitiveMatch =
+    const accentInsensitiveMatch =
         stripAccents(primaryQuery) === stripAccents(title);
 
-    var badAccentDirection =
+    const badAccentDirection =
         queryHasAccent &&
         !titleHasAccent &&
         accentInsensitiveMatch;
@@ -1204,34 +1099,34 @@ function wikiTitleScore(title, query) {
         return 100;
     }
 
-    var containsPrimaryTokens = primaryTokens.every(function (token) {
+    const containsPrimaryTokens = primaryTokens.every(function (token) {
         return titleTokens.includes(token);
     });
 
     if (containsPrimaryTokens) {
-        var extraTitleTokens = titleTokens.filter(function (token) {
+        const extraTitleTokens = titleTokens.filter(function (token) {
             return !primaryTokens.includes(token);
         });
 
-        var score = 80 - extraTitleTokens.length * 15;
+        let score = 80 - extraTitleTokens.length * 15;
 
         if (hasForeignPrefix) score -= 35;
 
         return score;
     }
 
-    var titleContainedInQuery = titleTokens.every(function (token) {
+    const titleContainedInQuery = titleTokens.every(function (token) {
         return primaryTokens.includes(token);
     });
 
-    var noCommaAmbiguity = !primaryQuery.includes(",") && !title.includes(",");
+    const noCommaAmbiguity = !primaryQuery.includes(",") && !title.includes(",");
 
     if (titleContainedInQuery && noCommaAmbiguity) {
-        var missingQueryTokens = primaryTokens.filter(function (token) {
+        const missingQueryTokens = primaryTokens.filter(function (token) {
             return !titleTokens.includes(token);
         });
 
-        var score = 85 - missingQueryTokens.length * 15;
+        const score = 85 - missingQueryTokens.length * 15;
 
         return score;
     }
@@ -1244,31 +1139,31 @@ function isProperNounAcrossLanguages(page) {
     if (!page) return true;
     if (!page.langlinks || page.langlinks.length < 3) return true;
 
-    var allTitles = page.langlinks.map(function (l) { return l["*"]; });
+    const allTitles = page.langlinks.map(function (l) { return l["*"]; });
     allTitles.push(page.title);
 
-    var totalTitles = allTitles.length;
-    var requiredCount = Math.max(Math.ceil(totalTitles * 0.3), 4);
+    const totalTitles = allTitles.length;
+    const requiredCount = Math.max(Math.ceil(totalTitles * 0.3), 4);
 
-    var normalizedTitles = allTitles.map(function (title) {
+    const normalizedTitles = allTitles.map(function (title) {
         return (title || "").toLowerCase()
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "");
     });
 
-    var allTokens = new Set();
+    const allTokens = new Set();
     allTitles.forEach(function (title) {
         tokenizePlaceName(title).forEach(function (token) {
             allTokens.add(token);
         });
     });
 
-    var tokens = Array.from(allTokens);
+    const tokens = Array.from(allTokens);
 
-    for (var i = 0; i < tokens.length; i++) {
-        var token = tokens[i];
-        var matchCount = 0;
-        for (var j = 0; j < normalizedTitles.length; j++) {
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        let matchCount = 0;
+        for (let j = 0; j < normalizedTitles.length; j++) {
             if (normalizedTitles[j].indexOf(token) !== -1) matchCount++;
         }
         if (matchCount >= requiredCount) return true;
@@ -1289,7 +1184,7 @@ function stripAccents(str) {
 }
 
 function isListPage(page) {
-    var title = (page.title || "").toLowerCase().trim();
+    const title = (page.title || "").toLowerCase().trim();
 
     return title.startsWith("list of ") ||
         title.startsWith("lists of ");
@@ -1299,18 +1194,18 @@ function buildWikiFallbackQueries(query) {
 
     if (!query) return null;
 
-    var cleaned = query.replace(/(\w+)\/(\w+)/g, "$1");
-    var parts = cleaned.split(",").map(p => p.trim()).filter(Boolean);
+    const cleaned = query.replace(/(\w+)\/(\w+)/g, "$1");
+    const parts = cleaned.split(",").map(p => p.trim()).filter(Boolean);
 
-    var primary = parts[0] || cleaned;
-    var country = parts.length > 1 ? parts[parts.length - 1] : null;
-    var admin = parts.length > 2 ? parts[1] : null;
+    const primary = parts[0] || cleaned;
+    const country = parts.length > 1 ? parts[parts.length - 1] : null;
+    const admin = parts.length > 2 ? parts[1] : null;
 
-    var queries = [];
+    const queries = [];
 
     queries.push(primary);
 
-    var blacklistedPrimary = tokenizePlaceName(primary)
+    const blacklistedPrimary = tokenizePlaceName(primary)
         .filter(function (token) {
             return !STOPWORDS.includes(token);
         })
@@ -1340,7 +1235,7 @@ function buildWikiFallbackQueries(query) {
 function getWikiTitleTranslation(page) {
     if (!page || !page.langlinks) return null;
 
-    var match = page.langlinks.find(function (link) {
+    const match = page.langlinks.find(function (link) {
         return link.lang === currentLang;
     });
 
@@ -1351,7 +1246,7 @@ function showScrollHint() {
     if (scrollHintShown) return;
     if (window.innerWidth > 768 && window.innerHeight > 500) return;
 
-    var panelContent = document.getElementById("panelContent");
+    const panelContent = document.getElementById("panelContent");
     if (panelContent.scrollHeight <= panelContent.clientHeight) return;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -1378,7 +1273,7 @@ document.getElementById("learnMore").addEventListener("click", function () {
     this.classList.toggle("expanded");
 
     moreContentIsOpen = !document.getElementById("moreContent").classList.contains("collapsed");
-    var panelContent = document.getElementById("panelContent");
+    const panelContent = document.getElementById("panelContent");
 
     setTimeout(function () {
         if (moreContentIsOpen || panelContent.scrollHeight > panelContent.clientHeight) {
@@ -1403,15 +1298,15 @@ document.getElementById("learnMore").addEventListener("click", function () {
 // ── LOGICAL CORE ───────────────────────────────────────────────────
 // aiLocator, placeMarkerFromEXIF, placeMarkerFromAI, getZoomLevel, locateImage
 async function aiLocator(image) {
-    var promptWithLang = languageInstructions[currentLang] + "\n\n" + AI_PROMPT;
+    const promptWithLang = languageInstructions[currentLang] + "\n\n" + AI_PROMPT;
 
-    var imageBase64 = await new Promise(function (resolve) {
-        var reader = new FileReader();
+    const imageBase64 = await new Promise(function (resolve) {
+        const reader = new FileReader();
         reader.onload = function (e) { resolve(e.target.result); };
         reader.readAsDataURL(image);
     });
 
-    var aiResponse;
+    let aiResponse;
 
     try {
         aiResponse = await fetch(WORKER_URL, {
@@ -1448,9 +1343,9 @@ async function aiLocator(image) {
         return null;
     }
 
-    var data = await aiResponse.json();
-    var raw = data.choices[0].message.content;
-    var clean = raw.replace(/```json|```/g, "").trim();
+    const data = await aiResponse.json();
+    const raw = data.choices[0].message.content;
+    const clean = raw.replace(/```json|```/g, "").trim();
     try {
         return JSON.parse(clean);
     } catch (e) {
@@ -1466,44 +1361,42 @@ async function aiLocator(image) {
 
 async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
-    var url = "https://nominatim.openstreetmap.org/reverse?lat=" +
+    const url = "https://nominatim.openstreetmap.org/reverse?lat=" +
         photoCoordinates.latitude + "&lon=" + photoCoordinates.longitude +
         "&format=json&zoom=18&addressdetails=1&accept-language=" + currentLang;
 
-    var response = await fetch(url, {
-        headers: { "User-Agent": "PhotoGeolocator/1.0" }
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
         showError(error("network"));
         return null;
     }
 
-    var result = await response.json();
+    const result = await response.json();
 
     moreContentIsOpen = false;
 
-    var placeName = "Unknown location";
-    var shortName = "Unknown location";
+    let placeName = "Unknown location";
+    let shortName = "Unknown location";
 
     if (result && result.address) {
-        var address = result.address;
-        var city = address.city || address.town || address.village || address.municipality || address.county || "";
-        var country = address.country || "";
+        const address = result.address;
+        const city = address.city || address.town || address.village || address.municipality || address.county || "";
+        const country = address.country || "";
         shortName = city && country ? city + ", " + country : (result.display_name || "Unknown location");
 
-        var streetName =
+        const streetName =
             address.road ||
             address.pedestrian ||
             address.footway ||
             address.path ||
             address.residential;
 
-        var street = [address.house_number, streetName]
+        const street = [address.house_number, streetName]
             .filter(Boolean)
             .join(" ");
 
-        var prefix = street ? street + ", " : "";
+        const prefix = street ? street + ", " : "";
         placeName = prefix + shortName;
     } else if (result && result.display_name) {
         placeName = result.display_name;
@@ -1520,7 +1413,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         locationPolygon = null;
     }
 
-    var countryCode = (result.address && result.address.country_code)
+    const countryCode = (result.address && result.address.country_code)
         ? result.address.country_code.toUpperCase()
         : null;
 
@@ -1546,7 +1439,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
 async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
 
-    var queries = generateFallbackQueries(aiPlace);
+    const queries = generateFallbackQueries(aiPlace);
 
     if (aiConfidence === "landmark") {
         return await getLocationDataLandmark(queries, aiCountryCode);
@@ -1557,97 +1450,82 @@ async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
 
 async function getLocationDataLandmark(queries, aiCountryCode) {
 
+    let result = null;
+
     // Strict pass with type filter
-    for (var i = 0; i < queries.length; i++) {
-
-        if (i === 2) geocodingFellback = true;
-
-        // Try Nominatim
-        var nominatimResult = await tryNominatim(queries[i], "landmark", aiCountryCode);
-        if (nominatimResult === "error") return null;
-        if (nominatimResult) return nominatimResult;
-
-        // Try OpenCage
-        var openCageResult = await tryOpenCage(queries[i], "landmark", aiCountryCode);
-        if (openCageResult === "error") return null;
-        if (openCageResult) return openCageResult;
-    }
-    geocodingFellback = false;
+    result = await loopThroughLandmarkQueries(queries, "landmark", aiCountryCode);
+    if (result) return result;
 
     // Loose pass without type filter
-    for (var j = 0; j < queries.length; j++) {
+    result = await loopThroughLandmarkQueries(queries, null, aiCountryCode);
 
-        if (j === 2) geocodingFellback = true;
+    return result;
+}
+
+async function loopThroughLandmarkQueries(queries, aiConfidence, aiCountryCode) {
+    for (let i = 0; i < queries.length; i++) {
+
+        if (i === 2) geocodingFellback = 1;
 
         // Try Nominatim
-        var nominatimResult = await tryNominatim(queries[j], null, aiCountryCode);
+        const nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
         if (nominatimResult === "error") return null;
         if (nominatimResult) return nominatimResult;
 
         // Try OpenCage
-        var openCageResult = await tryOpenCage(queries[j], null, aiCountryCode);
+        const openCageResult = await tryOpenCage(queries[i], aiConfidence, aiCountryCode);
         if (openCageResult === "error") return null;
         if (openCageResult) return openCageResult;
     }
-
-    geocodingFellback = false;
-
+    geocodingFellback = 0;
     return null;
 
 }
 
 async function getLocationDataAreas(queries, aiConfidence, aiCountryCode) {
 
+    let result = null;
+
     // Strict Nominatim pass with type filter
-    for (var i = 0; i < queries.length; i++) {
-
-        if (i === 2) geocodingFellback = true;
-
-        var nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
-        if (nominatimResult === "error") return null;
-        if (nominatimResult) return nominatimResult;
-    }
-    geocodingFellback = false;
+    result = await loopThroughAreaQueries(queries, aiConfidence, aiCountryCode, "nominatim");
+    if (result) return result;
 
     // Strict OpenCage pass with type filter
-    for (var j = 0; j < queries.length; j++) {
-
-        if (j === 2) geocodingFellback = true;
-
-        var openCageResult = await tryOpenCage(queries[j], aiConfidence, aiCountryCode);
-        if (openCageResult === "error") return null;
-        if (openCageResult) return openCageResult;
-    }
-    geocodingFellback = false;
+    result = await loopThroughAreaQueries(queries, aiConfidence, aiCountryCode, "opencage");
+    if (result) return result;
 
     // Loose Nominatim pass without type filter
-    for (var k = 0; k < queries.length; k++) {
-
-        if (k === 2) geocodingFellback = true;
-
-        var nominatimResult = await tryNominatim(queries[k], null, aiCountryCode);
-        if (nominatimResult === "error") return null;
-        if (nominatimResult) return nominatimResult;
-    }
-    geocodingFellback = false;
+    result = await loopThroughAreaQueries(queries, null, aiCountryCode, "nominatim");
+    if (result) return result;
 
     // Loose OpenCage pass without type filter
-    for (var l = 0; l < queries.length; l++) {
+    result = await loopThroughAreaQueries(queries, null, aiCountryCode, "opencage");
 
-        if (l === 2) geocodingFellback = true;
+    return result;
+}
 
-        var openCageResult = await tryOpenCage(queries[l], null, aiCountryCode);
-        if (openCageResult === "error") return null;
-        if (openCageResult) return openCageResult;
+async function loopThroughAreaQueries(queries, aiConfidence, aiCountryCode, apiCall) {
+    for (let i = 0; i < queries.length; i++) {
+
+        if (i === 2) geocodingFellback = 1;
+
+        if (apiCall === "nominatim") {
+            const nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
+            if (nominatimResult === "error") return null;
+            if (nominatimResult) return nominatimResult;
+        } else if (apiCall === "opencage") {
+            const openCageResult = await tryOpenCage(queries[i], aiConfidence, aiCountryCode);
+            if (openCageResult === "error") return null;
+            if (openCageResult) return openCageResult;
+        }
     }
-    geocodingFellback = false;
-
+    geocodingFellback = 0;
     return null;
 }
 
 async function tryNominatim(query, aiConfidence, aiCountryCode) {
 
-    var url = "https://nominatim.openstreetmap.org/search?q=" +
+    let url = "https://nominatim.openstreetmap.org/search?q=" +
         encodeURIComponent(query) +
         "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
 
@@ -1655,19 +1533,17 @@ async function tryNominatim(query, aiConfidence, aiCountryCode) {
         url += "&countrycodes=" + aiCountryCode.toLowerCase();
     }
 
-    var response = await fetch(url, {
-        headers: { "User-Agent": "PhotoGeolocator/1.0" }
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
         showError(error("network"));
         return "error";
     }
 
-    var results = await response.json();
+    const results = await response.json();
 
     if (results.length > 0) {
-        var result = pickBestNominatimResult(results, query, aiConfidence);
+        const result = pickBestNominatimResult(results, query, aiConfidence);
 
         if (result) {
             return {
@@ -1687,7 +1563,7 @@ async function tryNominatim(query, aiConfidence, aiCountryCode) {
 
 async function tryOpenCage(query, aiConfidence, aiCountryCode) {
 
-    var url = "https://api.opencagedata.com/geocode/v1/json?q=" +
+    let url = "https://api.opencagedata.com/geocode/v1/json?q=" +
         encodeURIComponent(query) +
         "&key=" + OPENCAGE_API_KEY +
         "&limit=5" +
@@ -1697,27 +1573,27 @@ async function tryOpenCage(query, aiConfidence, aiCountryCode) {
     if (aiCountryCode) {
         url += "&countrycode=" + aiCountryCode.toLowerCase();
     }
-    var response = await fetch(url);
+    const response = await fetch(url);
 
     if (!response.ok) {
         showError(error("network"));
         return "error";
     }
 
-    var data = await response.json();
+    const data = await response.json();
 
     if (data.status && data.status.code !== 200) {
         showError(error("network"));
         return "error";
     }
 
-    var results = data.results || [];
+    const results = data.results || [];
 
     if (results.length > 0) {
-        var result = pickBestOpenCageResult(results, query, aiConfidence);
+        const result = pickBestOpenCageResult(results, query, aiConfidence);
 
         if (result) {
-            var extraDataFromNominatim = (await getExtraDataFromNominatim(result, aiConfidence, aiCountryCode)) || {};
+            const extraDataFromNominatim = (await getExtraDataFromNominatim(result, aiConfidence, aiCountryCode)) || {};
             return {
                 lat: extraDataFromNominatim.lat ? parseFloat(extraDataFromNominatim.lat) : result.geometry.lat,
                 lng: extraDataFromNominatim.lng ? parseFloat(extraDataFromNominatim.lng) : result.geometry.lng,
@@ -1742,7 +1618,7 @@ async function tryOpenCage(query, aiConfidence, aiCountryCode) {
 }
 
 async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountryCode) {
-    var query = openCageResult.formatted;
+    let query = openCageResult.formatted;
     if (!query) return null;
 
     query = query
@@ -1751,13 +1627,13 @@ async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountry
         .replace(/\s+/g, ' ')
         .trim();
 
-    for (var i = 0; i < 2; i++) {
+    for (let i = 0; i < 2; i++) {
         if (i === 1) {
-            var reduced = query.split(",")[0].trim();
+            const reduced = query.split(",")[0].trim();
             if (reduced === query) break;
             query = reduced;
         }
-        var url = "https://nominatim.openstreetmap.org/search?q=" +
+        let url = "https://nominatim.openstreetmap.org/search?q=" +
             encodeURIComponent(query) +
             "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
 
@@ -1765,14 +1641,12 @@ async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountry
             url += "&countrycodes=" + aiCountryCode.toLowerCase();
         }
 
-        var response = await fetch(url, {
-            headers: { "User-Agent": "PhotoGeolocator/1.0" }
-        });
+        const response = await fetch(url);
         if (!response.ok) continue;
 
-        var results = await response.json();
+        const results = await response.json();
 
-        var matching = findClosestExtraResult(results, openCageResult, aiConfidence);
+        const matching = findClosestExtraResult(results, openCageResult, aiConfidence);
 
         if (matching) {
             return {
@@ -1785,16 +1659,14 @@ async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountry
         }
     }
 
-    var zoom = getZoomLevel(aiConfidence);
-    var reverseUrl = "https://nominatim.openstreetmap.org/reverse?lat=" + openCageResult.geometry.lat +
+    const zoom = getZoomLevel(aiConfidence);
+    const reverseUrl = "https://nominatim.openstreetmap.org/reverse?lat=" + openCageResult.geometry.lat +
         "&lon=" + openCageResult.geometry.lng + "&format=json&zoom=" + zoom +
         "&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
 
-    var reverseResponse = await fetch(reverseUrl, {
-        headers: { "User-Agent": "PhotoGeolocator/1.0" }
-    });
+    const reverseResponse = await fetch(reverseUrl);
     if (!reverseResponse.ok) return null;
-    var reverseResult = await reverseResponse.json();
+    const reverseResult = await reverseResponse.json();
     if (reverseResult) {
         return {
             lat: reverseResult.lat,
@@ -1810,8 +1682,8 @@ async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountry
 function findClosestExtraResult(results, openCageResult, aiConfidence) {
     if (!results || results.length === 0) return null;
 
-    var typeFilteredResults = results;
-    var preferredTypes = getPreferredTypes(aiConfidence);
+    let typeFilteredResults = results;
+    const preferredTypes = getPreferredTypes(aiConfidence);
 
     if (aiConfidence && aiConfidence !== "landmark") {
         typeFilteredResults = results.filter(function (r) {
@@ -1829,18 +1701,18 @@ function findClosestExtraResult(results, openCageResult, aiConfidence) {
         typeFilteredResults = results;
     }
 
-    var maxDist = (aiConfidence === "country") ? 1000 : (aiConfidence === "region") ? 300 : (aiConfidence === "city") ? 25 : (aiConfidence === "landmark") ? 5 : 1;
+    const maxDist = (aiConfidence === "country") ? 1000 : (aiConfidence === "region") ? 300 : (aiConfidence === "city") ? 25 : (aiConfidence === "landmark") ? 5 : 1;
 
-    var sorted = typeFilteredResults
+    const sorted = typeFilteredResults
         .filter(function (r) {
             if (!r.geojson || r.geojson.type === "Point") return false;
 
-            var distR = haversineKm(parseFloat(r.lat), parseFloat(r.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            const distR = haversineKm(parseFloat(r.lat), parseFloat(r.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
             return distR < maxDist;
         })
         .sort(function (a, b) {
-            var distA = haversineKm(parseFloat(a.lat), parseFloat(a.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
-            var distB = haversineKm(parseFloat(b.lat), parseFloat(b.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            const distA = haversineKm(parseFloat(a.lat), parseFloat(a.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
+            const distB = haversineKm(parseFloat(b.lat), parseFloat(b.lon), openCageResult.geometry.lat, openCageResult.geometry.lng);
             return distA - distB;
         });
 
@@ -1856,17 +1728,17 @@ function getZoomLevel(aiConfidence) {
 }
 
 function generateFallbackQueries(aiPlace) {
-    var cleaned = aiPlace.replace(/(\w+)\/(\w+)/g, "$1");
+    let cleaned = aiPlace.replace(/(\w+)\/(\w+)/g, "$1");
     if (!cleaned.includes(",")) {
         cleaned = cleaned.replace(/\b(\w+)\s+\1\b/gi, "$1, $1");
     }
 
-    var parts = cleaned.split(",").map(p => p.trim());
-    var queries = [cleaned];
+    const parts = cleaned.split(",").map(p => p.trim());
+    const queries = [cleaned];
 
-    var blacklisted = cleaned.toLowerCase();
+    let blacklisted = cleaned.toLowerCase();
     STOPWORDS.forEach(function (word) {
-        var regex = new RegExp("\\b" + word + "\\b", "gi");
+        const regex = new RegExp("\\b" + word + "\\b", "gi");
         blacklisted = blacklisted.replace(regex, " ");
     });
     blacklisted = blacklisted.replace(/\s+/g, " ").trim();
@@ -1878,8 +1750,8 @@ function generateFallbackQueries(aiPlace) {
         queries.push(blacklisted);
     }
 
-    for (var skip = 1; skip < parts.length - 1; skip++) {
-        var trimmed = [parts[0]].concat(parts.slice(skip + 1));
+    for (let skip = 1; skip < parts.length - 1; skip++) {
+        const trimmed = [parts[0]].concat(parts.slice(skip + 1));
         if (trimmed.length > 1 && trimmed.length < parts.length) {
             queries.push(trimmed.join(", "));
         }
@@ -1889,7 +1761,7 @@ function generateFallbackQueries(aiPlace) {
         queries.push(parts[0]);
     }
 
-    for (var i = 1; i < parts.length; i++) {
+    for (let i = 1; i < parts.length; i++) {
         queries.push(parts.slice(i).join(", "));
     }
 
@@ -1910,28 +1782,28 @@ function showPolygon(confidence, polygon) {
 function isPolygonLarge(geojson) {
     if (!geojson.coordinates) return false;
 
-    var coords = geojson.type === "Polygon" ? geojson.coordinates[0] : geojson.coordinates[0][0];
+    const coords = geojson.type === "Polygon" ? geojson.coordinates[0] : geojson.coordinates[0][0];
     if (!coords || coords.length < 3) return false;
 
-    var lats = coords.map(c => c[1]);
-    var lngs = coords.map(c => c[0]);
-    var latSpan = Math.max(...lats) - Math.min(...lats);
-    var lngSpan = Math.max(...lngs) - Math.min(...lngs);
-    var area = latSpan * lngSpan;
+    const lats = coords.map(c => c[1]);
+    const lngs = coords.map(c => c[0]);
+    const latSpan = Math.max(...lats) - Math.min(...lats);
+    const lngSpan = Math.max(...lngs) - Math.min(...lngs);
+    const area = latSpan * lngSpan;
 
     return area > 0.00005;
 }
 
 function buildShortName(result) {
-    var a = result.address || {};
-    var n = result.namedetails || {};
+    const a = result.address || {};
+    const n = result.namedetails || {};
 
-    var localName =
+    const localName =
         n["name:" + currentLang] ||
         n.name ||
         (result.display_name ? result.display_name.split(",")[0].trim() : null);
 
-    var country = a.country;
+    const country = a.country;
 
     if (localName && country) {
         return localName + ", " + country;
@@ -1945,9 +1817,9 @@ function buildShortName(result) {
 }
 
 function buildShortNameFromOpenCage(result) {
-    var a = result.components || {};
+    const a = result.components || {};
 
-    var localName =
+    const localName =
         a._normalized_city ||
         a.city ||
         a.town ||
@@ -1960,7 +1832,7 @@ function buildShortNameFromOpenCage(result) {
         a.natural ||
         a.attraction;
 
-    var country = a.country;
+    const country = a.country;
 
     if (localName && country) {
         return localName + ", " + country;
@@ -1975,9 +1847,9 @@ function buildShortNameFromOpenCage(result) {
 
 function pickBestNominatimResult(results, aiPlace, aiConfidence) {
 
-    var preferredTypes = getPreferredTypes(aiConfidence);
+    const preferredTypes = getPreferredTypes(aiConfidence);
 
-    var typeFilteredResults = results;
+    let typeFilteredResults = results;
 
     if (aiConfidence && aiConfidence !== "landmark") {
         typeFilteredResults = results.filter(function (r) {
@@ -1993,11 +1865,11 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
 
     if (typeFilteredResults.length === 0) return null;
 
-    var tokenMatches = typeFilteredResults.filter(function (r) {
-        var nameEn = r.namedetails && r.namedetails["name:en"];
-        var localName = r.namedetails && r.namedetails.name;
-        var display = r.display_name || "";
-        var primaryPart = aiPlace.split(",")[0].trim();
+    const tokenMatches = typeFilteredResults.filter(function (r) {
+        const nameEn = r.namedetails && r.namedetails["name:en"];
+        const localName = r.namedetails && r.namedetails.name;
+        const display = r.display_name || "";
+        const primaryPart = aiPlace.split(",")[0].trim();
 
         return (usefulName(nameEn) && bidirectionalTokenMatch(aiPlace, nameEn)) ||
             (usefulName(localName) && bidirectionalTokenMatch(aiPlace, localName)) ||
@@ -2014,28 +1886,28 @@ function pickBestNominatimResult(results, aiPlace, aiConfidence) {
 }
 
 function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
-    var preferredTypes = getPreferredTypes(aiConfidence);
+    const preferredTypes = getPreferredTypes(aiConfidence);
 
-    var typeFilteredResults = results;
+    let typeFilteredResults = results;
 
     if (aiConfidence && aiConfidence !== "landmark") {
         typeFilteredResults = results.filter(function (r) {
-            var type = r.components && r.components._type;
+            const type = r.components && r.components._type;
             return preferredTypes.includes(type);
         });
     } else if (aiConfidence === "landmark") {
         typeFilteredResults = results.filter(function (r) {
-            var type = r.components && r.components._type;
+            const type = r.components && r.components._type;
             return !preferredTypes.includes(type);
         });
     }
 
     if (typeFilteredResults.length === 0) return null;
 
-    var tokenMatches = typeFilteredResults.filter(function (r) {
-        var primaryPart = aiPlace.split(",")[0].trim();
-        var a = r.components || {};
-        var names = [
+    const tokenMatches = typeFilteredResults.filter(function (r) {
+        const primaryPart = aiPlace.split(",")[0].trim();
+        const a = r.components || {};
+        const names = [
             a._normalized_city,
             a.city,
             a.town,
@@ -2096,8 +1968,8 @@ function tokenizePlaceName(value) {
 }
 
 function containsTokens(source, target) {
-    var sourceTokens = tokenizePlaceName(source);
-    var targetLower = (target || "").toLowerCase()
+    const sourceTokens = tokenizePlaceName(source);
+    const targetLower = (target || "").toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/['’ʻ`´]/g, "")
@@ -2200,19 +2072,19 @@ function getPreferredTypes(confidence) {
 
 async function placeMarkerFromAI(image, photoHtml) {
 
-    geocodingFellback = false;
+    geocodingFellback = 0;
 
     moreContentIsOpen = false;
 
     document.getElementById("welcome").style.display = "none";
 
-    var aiResult = await aiLocator(image);
+    const aiResult = await aiLocator(image);
 
     if (!aiResult) return;
 
-    var aiLocation = aiResult.place || "";
+    const aiLocation = aiResult.place || "";
 
-    var aiConfidence = aiResult.confidence || "";
+    const aiConfidence = aiResult.confidence || "";
 
     if (aiLocation.toLowerCase().trim() === "unknown" ||
         aiLocation === "" ||
@@ -2247,9 +2119,9 @@ async function placeMarkerFromAI(image, photoHtml) {
         return;
     }
 
-    var queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
+    const queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
 
-    var location = await getLocationData(queryLocation, aiConfidence, aiResult.countryCode);
+    const location = await getLocationData(queryLocation, aiConfidence, aiResult.countryCode);
 
     if (!location) {
         openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location", true);
@@ -2294,7 +2166,7 @@ async function placeMarkerFromAI(image, photoHtml) {
             visiblePadding()
         );
     } else {
-        var z = getZoomLevel(aiConfidence);
+        const z = getZoomLevel(aiConfidence);
         map.flyTo(offsetCenterForPanel(L.latLng(location.lat, location.lng), z), z);
     }
 
@@ -2327,9 +2199,10 @@ function showPanelLoading(photoHtml) {
         lockPanelPhotoSize(true);
     }, 50);
 
-    var strip = document.getElementById("resultStrip");
-    if (strip.style.display === "flex") {
+    const strip = document.getElementById("resultStrip");
+    if (isStripOpen()) {
         strip.style.display = "none";
+        document.body.classList.remove("strip-open");
         document.getElementById("resultPanel").classList.add('open');
         document.getElementById("map").classList.add('panel-open');
         document.getElementById("wrapper").classList.add('panel-open');
@@ -2353,7 +2226,7 @@ async function rerunSearch() {
     isSearching = true;
     scrollHintShown = false;
 
-    var photoLatLng = await exifr.gps(currentImageFile);
+    const photoLatLng = await exifr.gps(currentImageFile);
 
     if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
         await placeMarkerFromEXIF(photoLatLng, currentPhotoHtml);
@@ -2366,9 +2239,9 @@ async function rerunSearch() {
 
 async function locateImage(input) {
 
-    var image = input.files[0];
+    const image = input.files[0];
 
-    var allowedTypes = ["image/jpeg", "image/png"];
+    const allowedTypes = ["image/jpeg", "image/png"];
 
     if (!image) return;
 
@@ -2382,18 +2255,23 @@ async function locateImage(input) {
 
     currentImageFile = image;
 
-    var photoImgSrc = URL.createObjectURL(image);
-    var photoImgHtml = '<img src="' + photoImgSrc + '" style="border-radius:4px;margin-top:6px;">';
+    if (currentPhotoObjectUrl) {
+        URL.revokeObjectURL(currentPhotoObjectUrl);
+        currentPhotoObjectUrl = null;
+    }
+
+    currentPhotoObjectUrl = URL.createObjectURL(image);
+    const photoImgHtml = '<img src="' + currentPhotoObjectUrl + '" style="border-radius:4px;margin-top:6px;">';
     currentPhotoHtml = photoImgHtml;
 
-    var panelOpen = document.getElementById("resultPanel").classList.contains("open");
-    var stripOpen = document.getElementById("resultStrip").style.display === "flex";
+    const panelOpen = isPanelOpen();
+    const stripOpen = isStripOpen();
     if (panelOpen || stripOpen) {
         isSearching = true;
         showPanelLoading(photoImgHtml);
     } else showSearching();
 
-    var photoLatLng = await exifr.gps(image);
+    const photoLatLng = await exifr.gps(image);
 
     if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
 
@@ -2406,20 +2284,19 @@ async function locateImage(input) {
         await placeMarkerFromAI(image, photoImgHtml);
 
     }
-    hasUploadedFirstPhoto = true;
     input.value = "";
 }
 
 if (isDark) {
-    toDarkTheme();
+    changeTheme();
     if (!isSatellite) {
-        map.removeLayer(streetLayerLight);
-        streetLayerDark.addTo(map);
+        map.removeLayer(mapLayerLight);
+        mapLayerDark.addTo(map);
     }
 }
 
 if (isSatellite) {
-    map.removeLayer(streetLayerLight);
+    map.removeLayer(mapLayerLight);
     satelliteLayer.addTo(map);
 }
 updateToggles();

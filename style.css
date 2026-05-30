@@ -19,6 +19,71 @@ body {
     width: 70vw;
 }
 
+.box {
+    background: rgba(255, 255, 255, 0.4);
+    color: #000;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .box {
+    background: rgba(15, 15, 25, 0.75);
+    color: #f0f0f0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-control-zoom a,
+.leaflet-control-attribution {
+    background: rgba(255, 255, 255, 0.4);
+    color: #000000;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .leaflet-control-zoom a,
+body.dark .leaflet-control-attribution {
+    background: rgba(15, 15, 25, 0.75);
+    color: #f0f0f0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+#resultPanel {
+    background: rgba(248, 247, 244, 0.96);
+    color: #000;
+}
+
+body.dark #resultPanel {
+    background: rgba(15, 15, 25, 0.95);
+    color: #f0f0f0;
+}
+
+#panelMethod {
+    color: #666;
+}
+
+body.dark #panelMethod {
+    color: #aaa;
+}
+
+#panelClose,
+#panelToggle,
+#stripClose,
+#stripToggle {
+    background: rgba(0, 0, 0, 0.08);
+    color: #000;
+}
+
+body.dark #panelClose,
+body.dark #panelToggle,
+body.dark #stripClose,
+body.dark #stripToggle {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f0f0f0;
+}
+
+
 #resultPanel {
     position: fixed;
     top: 0;
@@ -559,7 +624,7 @@ body.dark #panelWiki {
     text-align: center;
 }
 
-#panelGeoInfo>div .emoji {
+#panelGeoInfo>div .icon {
     font-size: 1.3rem;
     line-height: 1.2;
     margin-bottom: 4px;
@@ -593,7 +658,7 @@ body.dark #panelWiki {
     display: flex;
 }
 
-#distance .emoji {
+#distance .icon {
     margin-bottom: 4px;
 }
 
@@ -930,6 +995,16 @@ body.dark .distance-line-label div {
 
 .leaflet-popup-tip {
     background: rgba(255, 255, 255, 0.85) !important;
+}
+
+body.dark .leaflet-popup-content-wrapper {
+    background: rgba(15, 15, 25, 0.6) !important;
+    color: #f0f0f0 !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark .leaflet-popup-tip {
+    background: rgba(15, 15, 25, 0.6) !important;
 }
 
 .leaflet-control-attribution {

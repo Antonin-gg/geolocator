@@ -1,4 +1,4 @@
-var TRANSLATIONS = {
+const TRANSLATIONS = {
     "en": {
         "title": "Photo geolocator",
         "welcome": "Welcome! Upload a photo to identify where it was taken.",
@@ -8,7 +8,7 @@ var TRANSLATIONS = {
         "theme": "Theme",
         "language": "Language",
         "satellite": "Satellite",
-        "street": "Map",
+        "map": "Map",
         "dark": "Dark",
         "light": "Light",
         "unknownLocation": "The location of this photo could not be identified",
@@ -27,7 +27,7 @@ var TRANSLATIONS = {
         "theme": "المظهر",
         "language": "اللغة",
         "satellite": "القمر الصناعي",
-        "street": "خريطة",
+        "map": "خريطة",
         "dark": "داكن",
         "light": "فاتح",
         "unknownLocation": "تعذر تحديد موقع هذه الصورة",
@@ -45,7 +45,7 @@ var TRANSLATIONS = {
         "theme": "Тема",
         "language": "Език",
         "satellite": "Сателит",
-        "street": "Карта",
+        "map": "Карта",
         "dark": "Тъмна",
         "light": "Светла",
         "unknownLocation": "Местоположението на тази снимка не можа да бъде определено",
@@ -63,7 +63,7 @@ var TRANSLATIONS = {
         "theme": "থিম",
         "language": "ভাষা",
         "satellite": "স্যাটেলাইট",
-        "street": "মানচিত্র",
+        "map": "মানচিত্র",
         "dark": "ডার্ক",
         "light": "লাইট",
         "unknownLocation": "এই ছবির অবস্থান শনাক্ত করা যায়নি",
@@ -81,7 +81,7 @@ var TRANSLATIONS = {
         "theme": "Motiv",
         "language": "Jazyk",
         "satellite": "Satelit",
-        "street": "Mapa",
+        "map": "Mapa",
         "dark": "Tmavý",
         "light": "Světlý",
         "unknownLocation": "Místo této fotografie se nepodařilo určit",
@@ -99,7 +99,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Sprog",
         "satellite": "Satellit",
-        "street": "Kort",
+        "map": "Kort",
         "dark": "Mørk",
         "light": "Lys",
         "unknownLocation": "Placeringen af dette billede kunne ikke identificeres",
@@ -117,7 +117,7 @@ var TRANSLATIONS = {
         "theme": "Design",
         "language": "Sprache",
         "satellite": "Satellit",
-        "street": "Karte",
+        "map": "Karte",
         "dark": "Dunkel",
         "light": "Hell",
         "unknownLocation": "Der Ort dieses Fotos konnte nicht identifiziert werden",
@@ -135,7 +135,7 @@ var TRANSLATIONS = {
         "theme": "Θέμα",
         "language": "Γλώσσα",
         "satellite": "Δορυφόρος",
-        "street": "Χάρτης",
+        "map": "Χάρτης",
         "dark": "Σκούρο",
         "light": "Ανοιχτό",
         "unknownLocation": "Δεν ήταν δυνατός ο εντοπισμός της τοποθεσίας αυτής της φωτογραφίας",
@@ -153,7 +153,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Idioma",
         "satellite": "Satélite",
-        "street": "Mapa",
+        "map": "Mapa",
         "dark": "Oscuro",
         "light": "Claro",
         "unknownLocation": "No se pudo identificar la ubicación de esta foto",
@@ -171,7 +171,7 @@ var TRANSLATIONS = {
         "theme": "Teema",
         "language": "Keel",
         "satellite": "Satelliit",
-        "street": "Kaart",
+        "map": "Kaart",
         "dark": "Tume",
         "light": "Hele",
         "unknownLocation": "Selle foto asukohta ei õnnestunud tuvastada",
@@ -189,7 +189,7 @@ var TRANSLATIONS = {
         "theme": "تم",
         "language": "زبان",
         "satellite": "ماهواره",
-        "street": "نقشه",
+        "map": "نقشه",
         "dark": "تیره",
         "light": "روشن",
         "unknownLocation": "موقعیت این عکس قابل شناسایی نبود",
@@ -207,7 +207,7 @@ var TRANSLATIONS = {
         "theme": "Teema",
         "language": "Kieli",
         "satellite": "Satelliitti",
-        "street": "Kartta",
+        "map": "Kartta",
         "dark": "Tumma",
         "light": "Vaalea",
         "unknownLocation": "Tämän kuvan sijaintia ei voitu tunnistaa",
@@ -225,7 +225,7 @@ var TRANSLATIONS = {
         "theme": "Thème",
         "language": "Langue",
         "satellite": "Satellite",
-        "street": "Carte",
+        "map": "Carte",
         "dark": "Sombre",
         "light": "Clair",
         "unknownLocation": "Le lieu de cette photo n'a pas pu être identifié",
@@ -243,7 +243,7 @@ var TRANSLATIONS = {
         "theme": "ערכת נושא",
         "language": "שפה",
         "satellite": "לוויין",
-        "street": "מפה",
+        "map": "מפה",
         "dark": "כהה",
         "light": "בהיר",
         "unknownLocation": "לא ניתן היה לזהות את מיקום התמונה",
@@ -261,7 +261,7 @@ var TRANSLATIONS = {
         "theme": "थीम",
         "language": "भाषा",
         "satellite": "सैटेलाइट",
-        "street": "नक्शा",
+        "map": "नक्शा",
         "dark": "डार्क",
         "light": "लाइट",
         "unknownLocation": "इस फोटो का स्थान पहचाना नहीं जा सका",
@@ -279,7 +279,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Jezik",
         "satellite": "Satelit",
-        "street": "Karta",
+        "map": "Karta",
         "dark": "Tamna",
         "light": "Svijetla",
         "unknownLocation": "Lokacija ove fotografije nije mogla biti identificirana",
@@ -297,7 +297,7 @@ var TRANSLATIONS = {
         "theme": "Téma",
         "language": "Nyelv",
         "satellite": "Műhold",
-        "street": "Térkép",
+        "map": "Térkép",
         "dark": "Sötét",
         "light": "Világos",
         "unknownLocation": "A fénykép helyét nem sikerült azonosítani",
@@ -315,7 +315,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Bahasa",
         "satellite": "Satelit",
-        "street": "Peta",
+        "map": "Peta",
         "dark": "Gelap",
         "light": "Terang",
         "unknownLocation": "Lokasi foto ini tidak dapat diidentifikasi",
@@ -333,7 +333,7 @@ var TRANSLATIONS = {
         "theme": "Þema",
         "language": "Tungumál",
         "satellite": "Gervihnöttur",
-        "street": "Kort",
+        "map": "Kort",
         "dark": "Dökkt",
         "light": "Ljóst",
         "unknownLocation": "Ekki tókst að staðsetja þessa mynd",
@@ -351,7 +351,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Lingua",
         "satellite": "Satellite",
-        "street": "Mappa",
+        "map": "Mappa",
         "dark": "Scuro",
         "light": "Chiaro",
         "unknownLocation": "Non è stato possibile identificare la posizione di questa foto",
@@ -369,7 +369,7 @@ var TRANSLATIONS = {
         "theme": "テーマ",
         "language": "言語",
         "satellite": "衛星",
-        "street": "地図",
+        "map": "地図",
         "dark": "ダーク",
         "light": "ライト",
         "unknownLocation": "この写真の場所を特定できませんでした",
@@ -387,7 +387,7 @@ var TRANSLATIONS = {
         "theme": "테마",
         "language": "언어",
         "satellite": "위성",
-        "street": "지도",
+        "map": "지도",
         "dark": "다크",
         "light": "라이트",
         "unknownLocation": "이 사진의 위치를 확인할 수 없습니다",
@@ -405,7 +405,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Kalba",
         "satellite": "Palydovas",
-        "street": "Žemėlapis",
+        "map": "Žemėlapis",
         "dark": "Tamsi",
         "light": "Šviesi",
         "unknownLocation": "Nepavyko nustatyti šios nuotraukos vietos",
@@ -423,7 +423,7 @@ var TRANSLATIONS = {
         "theme": "Tēma",
         "language": "Valoda",
         "satellite": "Satelīts",
-        "street": "Karte",
+        "map": "Karte",
         "dark": "Tumšs",
         "light": "Gaišs",
         "unknownLocation": "Šī fotoattēla atrašanās vietu neizdevās noteikt",
@@ -441,7 +441,7 @@ var TRANSLATIONS = {
         "theme": "Thema",
         "language": "Taal",
         "satellite": "Satelliet",
-        "street": "Kaart",
+        "map": "Kaart",
         "dark": "Donker",
         "light": "Licht",
         "unknownLocation": "De locatie van deze foto kon niet worden geïdentificeerd",
@@ -459,7 +459,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Språk",
         "satellite": "Satellitt",
-        "street": "Kart",
+        "map": "Kart",
         "dark": "Mørk",
         "light": "Lys",
         "unknownLocation": "Plasseringen til dette bildet kunne ikke identifiseres",
@@ -477,7 +477,7 @@ var TRANSLATIONS = {
         "theme": "Motyw",
         "language": "Język",
         "satellite": "Satelita",
-        "street": "Mapa",
+        "map": "Mapa",
         "dark": "Ciemny",
         "light": "Jasny",
         "unknownLocation": "Nie udało się zidentyfikować lokalizacji tego zdjęcia",
@@ -495,7 +495,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Idioma",
         "satellite": "Satélite",
-        "street": "Mapa",
+        "map": "Mapa",
         "dark": "Escuro",
         "light": "Claro",
         "unknownLocation": "Não foi possível identificar a localização desta foto",
@@ -513,7 +513,7 @@ var TRANSLATIONS = {
         "theme": "Temă",
         "language": "Limbă",
         "satellite": "Satelit",
-        "street": "Hartă",
+        "map": "Hartă",
         "dark": "Întunecat",
         "light": "Deschis",
         "unknownLocation": "Locația acestei fotografii nu a putut fi identificată",
@@ -531,7 +531,7 @@ var TRANSLATIONS = {
         "theme": "Тема",
         "language": "Язык",
         "satellite": "Спутник",
-        "street": "Карта",
+        "map": "Карта",
         "dark": "Тёмная",
         "light": "Светлая",
         "unknownLocation": "Не удалось определить местоположение этой фотографии",
@@ -549,7 +549,7 @@ var TRANSLATIONS = {
         "theme": "Téma",
         "language": "Jazyk",
         "satellite": "Satelit",
-        "street": "Mapa",
+        "map": "Mapa",
         "dark": "Tmavý",
         "light": "Svetlý",
         "unknownLocation": "Polohu tejto fotografie sa nepodarilo identifikovať",
@@ -567,7 +567,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Jezik",
         "satellite": "Satelit",
-        "street": "Zemljevid",
+        "map": "Zemljevid",
         "dark": "Temna",
         "light": "Svetla",
         "unknownLocation": "Lokacije te fotografije ni bilo mogoče določiti",
@@ -585,7 +585,7 @@ var TRANSLATIONS = {
         "theme": "Тема",
         "language": "Језик",
         "satellite": "Сателит",
-        "street": "Мапа",
+        "map": "Мапа",
         "dark": "Тамна",
         "light": "Светла",
         "unknownLocation": "Локација ове фотографије није могла бити идентификована",
@@ -603,7 +603,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Språk",
         "satellite": "Satellit",
-        "street": "Karta",
+        "map": "Karta",
         "dark": "Mörk",
         "light": "Ljus",
         "unknownLocation": "Platsen för detta foto kunde inte identifieras",
@@ -621,7 +621,7 @@ var TRANSLATIONS = {
         "theme": "தீம்",
         "language": "மொழி",
         "satellite": "செயற்கைக்கோள்",
-        "street": "வரைபடம்",
+        "map": "வரைபடம்",
         "dark": "இருண்ட",
         "light": "ஒளிரும்",
         "unknownLocation": "இந்த புகைப்படத்தின் இருப்பிடத்தை கண்டறிய முடியவில்லை",
@@ -639,7 +639,7 @@ var TRANSLATIONS = {
         "theme": "ธีม",
         "language": "ภาษา",
         "satellite": "ดาวเทียม",
-        "street": "แผนที่",
+        "map": "แผนที่",
         "dark": "มืด",
         "light": "สว่าง",
         "unknownLocation": "ไม่สามารถระบุตำแหน่งของรูปภาพนี้ได้",
@@ -657,7 +657,7 @@ var TRANSLATIONS = {
         "theme": "Tema",
         "language": "Dil",
         "satellite": "Uydu",
-        "street": "Harita",
+        "map": "Harita",
         "dark": "Koyu",
         "light": "Açık",
         "unknownLocation": "Bu fotoğrafın konumu belirlenemedi",
@@ -675,7 +675,7 @@ var TRANSLATIONS = {
         "theme": "Тема",
         "language": "Мова",
         "satellite": "Супутник",
-        "street": "Карта",
+        "map": "Карта",
         "dark": "Темна",
         "light": "Світла",
         "unknownLocation": "Не вдалося визначити місцезнаходження цієї фотографії",
@@ -693,7 +693,7 @@ var TRANSLATIONS = {
         "theme": "تھیم",
         "language": "زبان",
         "satellite": "سیٹلائٹ",
-        "street": "نقشہ",
+        "map": "نقشہ",
         "dark": "گہرا",
         "light": "ہلکا",
         "unknownLocation": "اس تصویر کا مقام معلوم نہیں ہو سکا",
@@ -711,7 +711,7 @@ var TRANSLATIONS = {
         "theme": "Giao diện",
         "language": "Ngôn ngữ",
         "satellite": "Vệ tinh",
-        "street": "Bản đồ",
+        "map": "Bản đồ",
         "dark": "Tối",
         "light": "Sáng",
         "unknownLocation": "Không thể xác định vị trí của bức ảnh này",
@@ -729,7 +729,7 @@ var TRANSLATIONS = {
         "theme": "主题",
         "language": "语言",
         "satellite": "卫星",
-        "street": "地图",
+        "map": "地图",
         "dark": "深色",
         "light": "浅色",
         "unknownLocation": "无法识别这张照片的位置",
@@ -740,7 +740,7 @@ var TRANSLATIONS = {
     }
 }
 
-var READ_MORE_TRANSLATIONS = {
+const READ_MORE_TRANSLATIONS = {
     en: "Read more",
     ar: "اقرأ المزيد",
     bg: "Прочетете още",
@@ -784,7 +784,7 @@ var READ_MORE_TRANSLATIONS = {
     zh: "继续阅读"
 };
 
-var UNIT_TRANSLATIONS = {
+const UNIT_TRANSLATIONS = {
     en: { m: "m", km: "km", mi: "mi", ft: "ft" },
     ar: { m: "م", km: "كم", mi: "ميل", ft: "قدم" },
     bg: { m: "м", km: "км", mi: "ми", ft: "фт" },
@@ -828,7 +828,7 @@ var UNIT_TRANSLATIONS = {
     zh: { m: "米", km: "公里", mi: "英里", ft: "英尺" }
 };
 
-var COORDINATE_TRANSLATIONS = {
+const COORDINATE_TRANSLATIONS = {
     en: { N: "N", S: "S", E: "E", W: "W" },
     ar: { N: "N", S: "S", E: "E", W: "W" },
     bg: { N: "С", S: "Ю", E: "И", W: "З" },
@@ -872,7 +872,7 @@ var COORDINATE_TRANSLATIONS = {
     zh: { N: "北", S: "南", E: "东", W: "西" }
 };
 
-var DISTANCE_TRANSLATIONS = {
+const DISTANCE_TRANSLATIONS = {
     en: "{distance} from you",
     ar: "على بُعد {distance} منك",
     bg: "на {distance} от вас",
@@ -916,7 +916,7 @@ var DISTANCE_TRANSLATIONS = {
     zh: "距您{distance}"
 };
 
-var CONTINENT_TRANSLATIONS = {
+const CONTINENT_TRANSLATIONS = {
     en: { "002": "Africa", "019": "Americas", "142": "Asia", "150": "Europe", "009": "Oceania", "010": "Antarctica" },
     ar: { "002": "إفريقيا", "019": "الأمريكتان", "142": "آسيا", "150": "أوروبا", "009": "أوقيانوسيا", "010": "أنتاركتيكا" },
     bg: { "002": "Африка", "019": "Америка", "142": "Азия", "150": "Европа", "009": "Океания", "010": "Антарктида" },
@@ -960,7 +960,7 @@ var CONTINENT_TRANSLATIONS = {
     zh: { "002": "非洲", "019": "美洲", "142": "亚洲", "150": "欧洲", "009": "大洋洲", "010": "南极洲" }
 };
 
-var ERROR_TRANSLATIONS = {
+const ERROR_TRANSLATIONS = {
     en: {
         network: "Network error. Please try again.",
         file: "Please upload a JPG or PNG image file."
@@ -1127,7 +1127,7 @@ var ERROR_TRANSLATIONS = {
     }
 };
 
-var LOCATE_HINT_TRANSLATIONS = {
+const LOCATE_HINT_TRANSLATIONS = {
     en: "Click to show distance from you",
     ar: "انقر لعرض المسافة منك",
     bg: "Щракнете, за да видите разстоянието от вас",
@@ -1171,7 +1171,7 @@ var LOCATE_HINT_TRANSLATIONS = {
     zh: "点击显示与你的距离"
 };
 
-var languageInstructions = {
+const languageInstructions = {
     en: "Respond with field values in English ONLY. Do not switch to any other language regardless of what text, signage, or visual context appears in the image. The user has selected English.",
 
     ar: "أجب بقيم الحقول باللغة العربية فقط. لا تنتقل إلى أي لغة أخرى مهما ظهر من نصوص أو لافتات أو سياق بصري في الصورة. لقد اختار المستخدم اللغة العربية.",
