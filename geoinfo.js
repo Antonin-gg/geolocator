@@ -5,6 +5,16 @@
 let userCoordinatesPromise = null;
 let _previewToken = 0;
 
+// ── TUNABLES ───────────────────────────────────────────────────────
+const DEFAULT_ZOOM = 13;             // default close-in zoom for a located point (also used in script.js)
+const LOCATE_BTN_DELAY_MS = 320;     // delay before the locate button fades in
+const HINT_DURATION_MS = 7000;       // how long the "locate me" hint stays visible
+// Distance-preview choreography:
+const PREVIEW_START_DELAY_MS = 1000; // pause on the user's position before flying to the bounds
+const PREVIEW_LINE_HOLD_MS = 2500;   // how long the distance line/label stay before fading
+const PREVIEW_FADE_MS = 700;         // fade-out duration before flying back to the result
+const PREVIEW_SAFETY_MS = 12000;     // hard cap that unlocks the map if the sequence stalls
+
 const userLocationIcon = L.divIcon({
     className: "user-location-marker",
     html: '<div class="user-location-dot"></div>',
@@ -58,8 +68,8 @@ function getUserCoordinates() {
 let locateButtonTimeout = null;
 
 function updateLocateUserButton() {
-    const desktopButton = document.getElementById("locateUserButton");
-    const mobileButton = document.getElementById("locateUserButtonMobile");
+    const desktopButton = elements.locateBtn;
+    const mobileButton = elements.locateBtnMobile;
     if (!desktopButton || !mobileButton) return;
 
     const panelOpen = isPanelOpen();
@@ -83,7 +93,7 @@ function updateLocateUserButton() {
             showLocateUserHint();
             locateHintShown = true;
         }
-    }, 320);
+    }, LOCATE_BTN_DELAY_MS);
 }
 
 function showUserLocationPreview() {
@@ -120,7 +130,7 @@ function showUserLocationPreview() {
         [userLat, userLng]
     ]);
 
-    map.setView(offsetCenterForPanel(L.latLng(userLat, userLng), 13), 13);
+    map.setView(offsetCenterForPanel(L.latLng(userLat, userLng), DEFAULT_ZOOM), DEFAULT_ZOOM);
     lockMapInteraction();
 
     locationPreviewTimeout1 = setTimeout(function () {
@@ -151,9 +161,9 @@ function showUserLocationPreview() {
                     if (locationPolygon) {
                         map.flyToBounds(locationPolygon.getBounds(), visiblePadding());
                     } else {
-                        map.flyTo(offsetCenterForPanel(L.latLng(currentLat, currentLng), 13), 13)
+                        map.flyTo(offsetCenterForPanel(L.latLng(currentLat, currentLng), DEFAULT_ZOOM), DEFAULT_ZOOM)
                     }
-                }, 700);
+                }, PREVIEW_FADE_MS);
                 map.once("moveend", function () {
                     if (_previewToken !== token) return;
                     if (userMarker) {
@@ -162,16 +172,16 @@ function showUserLocationPreview() {
                     locationPreviewInProgress = false;
                     unlockMapInteraction();
                 });
-            }, 2500);
+            }, PREVIEW_LINE_HOLD_MS);
         });
 
-    }, 1000);
+    }, PREVIEW_START_DELAY_MS);
     setTimeout(function () {
         if (locationPreviewInProgress) {
             locationPreviewInProgress = false;
             unlockMapInteraction();
         }
-    }, 12000);
+    }, PREVIEW_SAFETY_MS);
 }
 
 function stopUserLocationPreview() {
@@ -250,7 +260,7 @@ function showUserDistanceLine(userLat, userLng) {
     }).addTo(map);
 }
 
-document.getElementById("locateUserButton").addEventListener("click", async function () {
+elements.locateBtn.addEventListener("click", async function () {
 
     if (!hasAcceptedLocationOnce) {
         userCoordinates = null;
@@ -281,14 +291,14 @@ document.getElementById("locateUserButton").addEventListener("click", async func
     showUserLocationPreview();
 });
 
-document.getElementById("locateUserButtonMobile").addEventListener("click", async function () {
-    document.getElementById("locateUserButton").click();
+elements.locateBtnMobile.addEventListener("click", async function () {
+    elements.locateBtn.click();
 });
 
 let hintHideTimeout = null;
 
 function showLocateUserHint() {
-    const hint = document.getElementById("locateUserHint");
+    const hint = elements.locateHint;
     if (!hint) return;
 
     clearTimeout(hintHideTimeout);
@@ -296,7 +306,7 @@ function showLocateUserHint() {
 
     hintHideTimeout = setTimeout(function () {
         hint.classList.remove("visible");
-    }, 7000);
+    }, HINT_DURATION_MS);
 }
 
 const geoInfoCache = {
@@ -348,17 +358,17 @@ async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
 
     await buildDistanceItem(lat, lng);
 
-    const hasAltitude = document.getElementById("altitude").classList.contains("active");
-    const hasDistance = document.getElementById("distance").classList.contains("active");
-    const hasWeather = document.getElementById("weather").classList.contains("active");
+    const hasAltitude = elements.altitude.classList.contains("active");
+    const hasDistance = elements.distance.classList.contains("active");
+    const hasWeather = elements.weather.classList.contains("active");
     const hasConvertible = hasAltitude || hasDistance || hasWeather;
-    document.getElementById("toggleUnits").classList.toggle("active", hasConvertible);
+    elements.toggleUnits.classList.toggle("active", hasConvertible);
 
     balanceGeoInfoLayout();
 }
 
 function buildCoordinatesItem(lat, lng) {
-    const coordinates = document.getElementById("coordinates");
+    const coordinates = elements.coordinates;
 
     if (lat === null || lat === undefined || lng === null || lng === undefined) {
         clearGeoItem("coordinates");
@@ -392,7 +402,7 @@ function formatCoordinatesDMS(lat, lng) {
 }
 
 async function buildDistanceItem(lat, lng) {
-    const distanceEl = document.getElementById("distance");
+    const distanceEl = elements.distance;
 
     if (!userCoordinates) {
         clearGeoItem("distance");
@@ -434,7 +444,7 @@ function formatDistanceSentence(km) {
 
 function buildWeatherItem(temp, weatherCode, isDay) {
 
-    const weather = document.getElementById("weather");
+    const weather = elements.weather;
 
     if (temp == null) {
         clearGeoItem("weather");
@@ -454,7 +464,7 @@ function buildWeatherItem(temp, weatherCode, isDay) {
 }
 
 async function buildAltitudeItem(lat, lng, elevation) {
-    const altitude = document.getElementById("altitude");
+    const altitude = elements.altitude;
     let altitudeMeters = null;
 
     if (elevation != null) {
@@ -513,7 +523,7 @@ async function getAltitude(lat, lng) {
 }
 
 function buildTimeItem(timezone) {
-    const time = document.getElementById("time");
+    const time = elements.time;
 
     if (!timezone) {
         clearGeoItem("time");
@@ -534,7 +544,7 @@ function buildTimeItem(timezone) {
 
 function buildCountryItem(lat, lng, aiCountryCode) {
 
-    const country = document.getElementById("country");
+    const country = elements.country;
 
     if (!aiCountryCode) {
         clearGeoItem("country");
@@ -619,7 +629,7 @@ function closeGeoInfo() {
     ["country", "coordinates", "altitude", "distance", "weather", "time"].forEach(clearGeoItem);
 }
 
-document.getElementById("toggleUnits").addEventListener("click", function () {
+elements.toggleUnits.addEventListener("click", function () {
     isImperial = !isImperial;
     localStorage.setItem("isImperial", isImperial);
 
@@ -627,7 +637,7 @@ document.getElementById("toggleUnits").addEventListener("click", function () {
 });
 
 function balanceGeoInfoLayout() {
-    const container = document.getElementById("panelGeoInfo");
+    const container = elements.geoInfo;
     const activeItems = container.querySelectorAll(":scope > div.active");
     const total = activeItems.length;
     if (total === 0) return;

@@ -18,6 +18,12 @@ const ICONS = {
 
 
 
+// ── UI TUNABLES ────────────────────────────────────────────────────
+const MOBILE_MAX_WIDTH = 768;        // px — viewport width at/below which the mobile layout applies (matches CSS)
+const LANDSCAPE_MAX_HEIGHT = 500;    // px — viewport height at/below which the short-landscape layout applies (matches CSS)
+const ERROR_DISPLAY_MS = 3000;       // how long the error banner stays up
+// PANEL_TRANSITION_MS (touch-ui-helpers.js) and DEFAULT_ZOOM (geoinfo.js) are also used here.
+
 // ── STATE ──────────────────────────────────────────────────────────
 let isSatellite = false;
 let isDark = true;
@@ -103,9 +109,9 @@ mapLayerLight.addTo(map);
 
 map.attributionControl.setPrefix('<a href="https://github.com/antonin-gg" target="_blank">© A.G.</a>');
 
-document.getElementById("welcome").textContent = translate("welcome");
+elements.welcome.textContent = translate("welcome");
 
-const fileInput = document.getElementById('imageInput');
+const fileInput = elements.imageInput;
 if (/Android/i.test(navigator.userAgent)) {
     fileInput.accept = 'image/*,model/gltf+json';
 } else {
@@ -141,14 +147,14 @@ const cameraIconDark = new L.Icon({
     shadowSize: [41, 41]
 });
 
-document.getElementById("showToggleTheme").addEventListener("click", function () {
+elements.showTheme.addEventListener("click", function () {
     openDropdown("theme");
 });
 
-document.getElementById("toggleTheme").addEventListener("click", function () {
-    if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
-        document.getElementById("languageOptions").classList.add("hidden-language");
-        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+elements.toggleTheme.addEventListener("click", function () {
+    if (!elements.langOptions.classList.contains("hidden-language")) {
+        elements.langOptions.classList.add("hidden-language");
+        elements.showLang.classList.remove("dropdown-open");
     }
     if (isDark) {
         isDark = false;
@@ -173,24 +179,24 @@ document.getElementById("toggleTheme").addEventListener("click", function () {
     }
 
     this.classList.toggle("hidden-theme");
-    document.getElementById("showToggleTheme").classList.remove("dropdown-open");
+    elements.showTheme.classList.remove("dropdown-open");
 
     localStorage.setItem("isDark", isDark);
 });
 
-document.getElementById("showToggleView").addEventListener("click", function () {
+elements.showView.addEventListener("click", function () {
     openDropdown("view");
 });
 
-document.getElementById("toggleView").addEventListener("click", function () {
+elements.toggleView.addEventListener("click", function () {
 
-    if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
-        document.getElementById("toggleTheme").classList.add("hidden-theme");
+    if (!elements.toggleTheme.classList.contains("hidden-theme")) {
+        elements.toggleTheme.classList.add("hidden-theme");
     }
 
-    if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
-        document.getElementById("languageOptions").classList.add("hidden-language");
-        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+    if (!elements.langOptions.classList.contains("hidden-language")) {
+        elements.langOptions.classList.add("hidden-language");
+        elements.showLang.classList.remove("dropdown-open");
     }
 
     if (isSatellite) {
@@ -222,12 +228,12 @@ document.getElementById("toggleView").addEventListener("click", function () {
     }
 
     this.classList.toggle("hidden-view");
-    document.getElementById("showToggleView").classList.remove("dropdown-open");
+    elements.showView.classList.remove("dropdown-open");
 
     localStorage.setItem("isSatellite", isSatellite);
 });
 
-document.getElementById("showToggleLanguage").addEventListener("click", function () {
+elements.showLang.addEventListener("click", function () {
     openDropdown("language");
 });
 
@@ -235,8 +241,8 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
     button.addEventListener("click", function () {
 
-        if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
-            document.getElementById("languageOptions").classList.add("hidden-language");
+        if (!elements.langOptions.classList.contains("hidden-language")) {
+            elements.langOptions.classList.add("hidden-language");
         }
 
         document.querySelector('[data-lang="' + currentLang + '"]').classList.remove("active-lang");
@@ -245,8 +251,8 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
         changeLanguage();
 
-        document.getElementById("languageOptions").classList.add("hidden-language");
-        document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+        elements.langOptions.classList.add("hidden-language");
+        elements.showLang.classList.remove("dropdown-open");
 
         if (isTouchDevice && !handlingPopstate) {
             handlingPopstate = true;
@@ -270,18 +276,18 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 function openDropdown(which) {
     const configs = {
         theme: {
-            content: document.getElementById("toggleTheme"),
-            trigger: document.getElementById("showToggleTheme"),
+            content: elements.toggleTheme,
+            trigger: elements.showTheme,
             hiddenClass: "hidden-theme"
         },
         view: {
-            content: document.getElementById("toggleView"),
-            trigger: document.getElementById("showToggleView"),
+            content: elements.toggleView,
+            trigger: elements.showView,
             hiddenClass: "hidden-view"
         },
         language: {
-            content: document.getElementById("languageOptions"),
-            trigger: document.getElementById("showToggleLanguage"),
+            content: elements.langOptions,
+            trigger: elements.showLang,
             hiddenClass: "hidden-language"
         }
     };
@@ -329,22 +335,22 @@ document.addEventListener("click", function (e) {
     const clickedInsideToggles = e.target.closest("#wrapperToggles");
 
     if (!clickedInsideToggles) {
-        if (!document.getElementById("toggleView").classList.contains("hidden-view")) {
-            document.getElementById("toggleView").classList.add("hidden-view");
-            document.getElementById("showToggleView").classList.remove("dropdown-open");
+        if (!elements.toggleView.classList.contains("hidden-view")) {
+            elements.toggleView.classList.add("hidden-view");
+            elements.showView.classList.remove("dropdown-open");
         }
-        if (!document.getElementById("toggleTheme").classList.contains("hidden-theme")) {
-            document.getElementById("toggleTheme").classList.add("hidden-theme");
-            document.getElementById("showToggleTheme").classList.remove("dropdown-open");
+        if (!elements.toggleTheme.classList.contains("hidden-theme")) {
+            elements.toggleTheme.classList.add("hidden-theme");
+            elements.showTheme.classList.remove("dropdown-open");
         }
-        if (!document.getElementById("languageOptions").classList.contains("hidden-language")) {
-            document.getElementById("languageOptions").classList.add("hidden-language");
-            document.getElementById("showToggleLanguage").classList.remove("dropdown-open");
+        if (!elements.langOptions.classList.contains("hidden-language")) {
+            elements.langOptions.classList.add("hidden-language");
+            elements.showLang.classList.remove("dropdown-open");
         }
     }
 });
 
-document.getElementById("wrapperToggles").addEventListener("click", function (e) {
+elements.wrapperToggles.addEventListener("click", function (e) {
     e.stopPropagation();
 });
 
@@ -355,26 +361,26 @@ document.getElementById("wrapperToggles").addEventListener("click", function (e)
 function showSearching() {
     isSearching = true;
 
-    document.getElementById("welcome").style.display = "none";
+    elements.welcome.style.display = "none";
 
-    document.getElementById("searching").style.display = "flex";
+    elements.searching.style.display = "flex";
 
-    document.getElementById("searchingText")
+    elements.searchingText
         .classList.add("searching-active");
 
-    document.getElementById("searchingGlobe")
+    elements.searchingGlobe
         .classList.add("globe-active");
 }
 
 function hideSearching() {
     isSearching = false;
 
-    document.getElementById("searching").style.display = "none";
+    elements.searching.style.display = "none";
 
-    document.getElementById("searchingText")
+    elements.searchingText
         .classList.remove("searching-active");
 
-    document.getElementById("searchingGlobe")
+    elements.searchingGlobe
         .classList.remove("globe-active");
 }
 
@@ -383,22 +389,22 @@ function showError(message) {
     const stripOpen = isStripOpen();
     if (panelOpen || stripOpen) {
         if (isSearching) {
-            document.getElementById("panelPlaceName").classList.remove("loading");
-            document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+            elements.placeName.classList.remove("loading");
+            elements.panelGlobe.classList.remove("globe-active");
             isSearching = false;
         }
     } else if (isSearching) hideSearching();
     if (panelOpen) closePanel();
     else if (stripOpen) closeStrip();
 
-    document.getElementById("welcome").style.display = "none";
-    document.getElementById("noData").style.display = "block";
-    document.getElementById("noData").textContent = message;
+    elements.welcome.style.display = "none";
+    elements.noData.style.display = "block";
+    elements.noData.textContent = message;
     setTimeout(() => {
-        document.getElementById("noData").style.display = "none";
-        document.getElementById("noData").textContent = null;
-        document.getElementById("welcome").style.display = "block";
-    }, 3000);
+        elements.noData.style.display = "none";
+        elements.noData.textContent = null;
+        elements.welcome.style.display = "block";
+    }, ERROR_DISPLAY_MS);
 }
 
 function getPolygonColor() {
@@ -410,8 +416,8 @@ function getPolygonColor() {
 function lockPanelPhotoSize(force) {
     if (moreContentIsOpen && !force) return;
 
-    const panelContent = document.getElementById("panelContent");
-    const panelPhoto = document.getElementById("panelPhoto");
+    const panelContent = elements.content;
+    const panelPhoto = elements.photo;
     const img = panelPhoto.querySelector("img");
 
     if (!img) return;
@@ -445,8 +451,8 @@ function lockPanelPhotoSize(force) {
             reservedResultHeight += 30; // panelMethod likely one line
             reservedResultHeight += 30; // learnMore button
             reservedResultHeight += 28; // two gaps, roughly 14px each
-            if ((window.innerWidth <= 768 && window.innerHeight > window.innerWidth) ||
-                (window.innerHeight <= 500 && window.innerWidth > window.innerHeight)) {
+            if ((window.innerWidth <= MOBILE_MAX_WIDTH && window.innerHeight > window.innerWidth) ||
+                (window.innerHeight <= LANDSCAPE_MAX_HEIGHT && window.innerWidth > window.innerHeight)) {
 
                 reservedResultHeight += 140; //panelMethod likely at least one more line on mobile
             }
@@ -476,7 +482,7 @@ function lockPanelPhotoSize(force) {
 
 function alignToggleChevrons() {
 
-    if (window.innerWidth <= 768 || window.innerHeight <= 500) return;
+    if (window.innerWidth <= MOBILE_MAX_WIDTH || window.innerHeight <= LANDSCAPE_MAX_HEIGHT) return;
 
     const toggles = [
         document.querySelector("#showToggleView .toggle-text"),
@@ -517,14 +523,14 @@ function updateToggles() {
 }
 
 function updateUploadButtons() {
-    const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
+    const isMobile = window.innerWidth <= MOBILE_MAX_WIDTH || window.innerHeight <= LANDSCAPE_MAX_HEIGHT;
     const panelOpen = isPanelOpen();
     const stripOpen = isStripOpen();
 
     const showMobileUpload = isMobile && (panelOpen || stripOpen);
 
-    document.getElementById("imageInputLabel").classList.toggle("mobile-hidden", showMobileUpload);
-    document.getElementById("imageInputLabelPanel").classList.toggle("visible", showMobileUpload);
+    elements.uploadLabel.classList.toggle("mobile-hidden", showMobileUpload);
+    elements.uploadLabelPanel.classList.toggle("visible", showMobileUpload);
 }
 
 let resizeTimeout;
@@ -544,7 +550,7 @@ window.addEventListener("resize", function () {
                 balanceGeoInfoLayout();
 
                 if (moreContentIsOpen) {
-                    document.getElementById("panelContent").classList.add("scrollable");
+                    elements.content.classList.add("scrollable");
                 }
             }, 80);
 
@@ -581,11 +587,11 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
         }
     }
 
-    document.getElementById("panelContent").scrollTop = 0;
+    elements.content.scrollTop = 0;
 
     if (photoMarker) photoMarker.closePopup();
 
-    document.getElementById("panelPhoto").innerHTML = photoHtml;
+    elements.photo.innerHTML = photoHtml;
 
     if (moreContentIsOpen && lockedPhotoHeight) {
         const img = document.querySelector("#panelPhoto img");
@@ -601,7 +607,7 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
 
     if (!isAI) {
         const sentence = translate("photoTakenIn").replace("{place}", placeName.replace(shortName, "<strong>" + shortName + "</strong>"));
-        document.getElementById("panelPlaceName").innerHTML = sentence;
+        elements.placeName.innerHTML = sentence;
     } else {
         const sentence = currentSentence;
         const boldedSentence = sentence.replace(
@@ -610,45 +616,45 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
         );
 
         if (boldedSentence === sentence) {
-            document.getElementById("panelPlaceName").innerHTML = "<strong>" + sentence + "</strong>";
+            elements.placeName.innerHTML = "<strong>" + sentence + "</strong>";
         } else {
-            document.getElementById("panelPlaceName").innerHTML = boldedSentence;
+            elements.placeName.innerHTML = boldedSentence;
         }
     }
-    document.getElementById("panelMethod").textContent = method;
+    elements.panelMethod.textContent = method;
 
-    document.getElementById("resultPanel").classList.add('open');
-    document.getElementById("map").classList.add('panel-open');
-    document.getElementById("wrapper").classList.add('panel-open');
+    elements.panel.classList.add('open');
+    elements.mapEl.classList.add('panel-open');
+    elements.wrapper.classList.add('panel-open');
     document.body.classList.add("panel-open");
 
     document.body.classList.remove("strip-open");
 
-    const strip = document.getElementById("resultStrip");
+    const strip = elements.strip;
     if (isStripOpen()) {
         strip.style.display = "none";
     }
 
-    document.getElementById("welcome").style.display = "none";
+    elements.welcome.style.display = "none";
 
     updateUploadButtons();
     updateLocateUserButton();
 
     if (moreContentIsOpen) {
-        document.getElementById("moreContent").classList.remove("collapsed");
-        document.getElementById("panelContent").classList.add("scrollable");
-        document.getElementById("learnMore").classList.add("expanded");
+        elements.moreContent.classList.remove("collapsed");
+        elements.content.classList.add("scrollable");
+        elements.learnMore.classList.add("expanded");
     } else {
-        document.getElementById("moreContent").classList.add("collapsed");
-        document.getElementById("panelContent").classList.remove("scrollable");
-        document.getElementById("learnMore").classList.remove("expanded");
+        elements.moreContent.classList.add("collapsed");
+        elements.content.classList.remove("scrollable");
+        elements.learnMore.classList.remove("expanded");
         setTimeout(lockPanelPhotoSize, 50);
     }
 
     if (!isTouchDevice) {
         setTimeout(function () {
             map.invalidateSize();
-        }, 300);
+        }, PANEL_TRANSITION_MS);
     }
 
     showScrollHint();
@@ -658,9 +664,15 @@ function closePanel() {
     map.stop();
     stopUserLocationPreview();
 
-    document.getElementById("resultPanel").classList.remove('open');
-    document.getElementById("map").classList.remove('panel-open');
-    document.getElementById("wrapper").classList.remove('panel-open');
+    if (isTouchDevice && !handlingPopstate) {
+        handlingPopstate = true;
+        history.back();
+        history.back();
+    }
+
+    elements.panel.classList.remove('open');
+    elements.mapEl.classList.remove('panel-open');
+    elements.wrapper.classList.remove('panel-open');
     document.body.classList.remove("panel-open");
 
     if (photoMarker) {
@@ -672,7 +684,7 @@ function closePanel() {
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
-    document.getElementById("locateUserHint").classList.remove("visible");
+    elements.locateHint.classList.remove("visible");
 
     updateUploadButtons();
 
@@ -680,8 +692,8 @@ function closePanel() {
 
     setTimeout(function () {
         if (!isTouchDevice) map.invalidateSize();
-        document.getElementById("welcome").style.display = "block";
-    }, 300);
+        elements.welcome.style.display = "block";
+    }, PANEL_TRANSITION_MS);
 
     closeMoreContent();
 
@@ -702,12 +714,12 @@ function minimizePanel() {
         history.back();
     }
 
-    document.getElementById("resultPanel").classList.remove('open');
-    document.getElementById("map").classList.remove('panel-open');
-    document.getElementById("wrapper").classList.remove('panel-open');
+    elements.panel.classList.remove('open');
+    elements.mapEl.classList.remove('panel-open');
+    elements.wrapper.classList.remove('panel-open');
     document.body.classList.remove("panel-open");
 
-    const strip = document.getElementById("resultStrip");
+    const strip = elements.strip;
     strip.style.display = "flex";
     strip.style.opacity = "";
     strip.style.transform = "";
@@ -715,9 +727,9 @@ function minimizePanel() {
     document.body.classList.add("strip-open");
 
     if (isSearching) {
-        document.getElementById("stripPlaceName").textContent = translate("searching");
+        elements.stripPlaceName.textContent = translate("searching");
     } else {
-        document.getElementById("stripPlaceName").textContent = currentShortName;
+        elements.stripPlaceName.textContent = currentShortName;
     }
 
     setTimeout(function () {
@@ -734,7 +746,7 @@ function minimizePanel() {
                 .setContent(getPopupPhotoHtml());
             photoMarker.bindPopup(miniPopup).openPopup();
         }
-    }, 300);
+    }, PANEL_TRANSITION_MS);
 }
 
 function closeStrip() {
@@ -746,7 +758,7 @@ function closeStrip() {
     map.stop();
     stopUserLocationPreview();
 
-    document.getElementById("resultStrip").style.display = "none";
+    elements.strip.style.display = "none";
 
     if (photoMarker) {
         map.removeLayer(photoMarker);
@@ -757,13 +769,13 @@ function closeStrip() {
         map.removeLayer(locationPolygon);
         locationPolygon = null;
     }
-    document.getElementById("locateUserHint").classList.remove("visible");
+    elements.locateHint.classList.remove("visible");
 
     updateUploadButtons();
 
     document.body.classList.remove("strip-open");
 
-    document.getElementById("welcome").style.display = "block";
+    elements.welcome.style.display = "block";
 
     closeMoreContent();
 
@@ -787,17 +799,17 @@ function closeMoreContent() {
 function closePanelWiki() {
     moreContentIsOpen = false;
 
-    if (document.getElementById("learnMore").style.display === "inline-block" ||
-        document.getElementById("learnMore").style.display === "block" ||
-        document.getElementById("learnMore").style.display === "flex") {
-        if (!document.getElementById("moreContent").classList.contains("collapsed")) {
-            document.getElementById("moreContent").classList.add("collapsed");
-            document.getElementById("learnMore").classList.remove("expanded");
+    if (elements.learnMore.style.display === "inline-block" ||
+        elements.learnMore.style.display === "block" ||
+        elements.learnMore.style.display === "flex") {
+        if (!elements.moreContent.classList.contains("collapsed")) {
+            elements.moreContent.classList.add("collapsed");
+            elements.learnMore.classList.remove("expanded");
         }
-        document.getElementById("panelWiki").innerHTML = "";
+        elements.wiki.innerHTML = "";
 
-        document.getElementById("learnMore").style.display = "none";
-        document.getElementById("panelContent").classList.remove("scrollable");
+        elements.learnMore.style.display = "none";
+        elements.content.classList.remove("scrollable");
     }
 
 }
@@ -809,8 +821,8 @@ async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiC
     await buildGeoInfo(lat, lng, aiConfidence, aiCountryCode);
 
     const hasGeo = document.querySelectorAll("#panelGeoInfo .active").length > 0;
-    const hasWiki = document.getElementById("panelWiki").innerHTML.trim().length > 0;
-    document.getElementById("learnMore").style.display = (hasGeo || hasWiki) ? "flex" : "none";
+    const hasWiki = elements.wiki.innerHTML.trim().length > 0;
+    elements.learnMore.style.display = (hasGeo || hasWiki) ? "flex" : "none";
 }
 
 async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode) {
@@ -828,13 +840,13 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, 
     }
 
     if (!result) {
-        document.getElementById("panelWiki").innerHTML = "";
+        elements.wiki.innerHTML = "";
         return;
     }
 
     const text = result.extract;
 
-    document.getElementById("panelWiki").innerHTML =
+    elements.wiki.innerHTML =
         "<strong>" + result.title + "</strong><br>" +
         text + " " +
         (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + READ_MORE_TRANSLATIONS[currentLang] + '</a>' : "");
@@ -1246,7 +1258,7 @@ function showScrollHint() {
     if (scrollHintShown) return;
     if (window.innerWidth > 768 && window.innerHeight > 500) return;
 
-    const panelContent = document.getElementById("panelContent");
+    const panelContent = elements.content;
     if (panelContent.scrollHeight <= panelContent.clientHeight) return;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -1262,18 +1274,18 @@ function showScrollHint() {
     scrollHintShown = true;
 }
 
-document.getElementById("panelClose").addEventListener("click", closePanel);
-document.getElementById("stripClose").addEventListener("click", closeStrip);
-document.getElementById("panelToggle").addEventListener("click", minimizePanel);
-document.getElementById("stripToggle").addEventListener("click", function () {
+elements.panelClose.addEventListener("click", closePanel);
+elements.stripClose.addEventListener("click", closeStrip);
+elements.panelToggle.addEventListener("click", minimizePanel);
+elements.stripToggle.addEventListener("click", function () {
     openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
 });
-document.getElementById("learnMore").addEventListener("click", function () {
-    document.getElementById("moreContent").classList.toggle("collapsed");
+elements.learnMore.addEventListener("click", function () {
+    elements.moreContent.classList.toggle("collapsed");
     this.classList.toggle("expanded");
 
-    moreContentIsOpen = !document.getElementById("moreContent").classList.contains("collapsed");
-    const panelContent = document.getElementById("panelContent");
+    moreContentIsOpen = !elements.moreContent.classList.contains("collapsed");
+    const panelContent = elements.content;
 
     setTimeout(function () {
         if (moreContentIsOpen || panelContent.scrollHeight > panelContent.clientHeight) {
@@ -1282,13 +1294,13 @@ document.getElementById("learnMore").addEventListener("click", function () {
             panelContent.scrollTo({ top: 0, behavior: "smooth" });
             setTimeout(function () {
                 panelContent.classList.remove("scrollable");
-            }, 300);
+            }, PANEL_TRANSITION_MS);
         }
     }, 250);
 
     if (moreContentIsOpen) {
         setTimeout(function () {
-            document.getElementById("panelGeoInfo").scrollIntoView({ behavior: "smooth", block: "start" });
+            elements.geoInfo.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 50);
     }
 });
@@ -1424,16 +1436,16 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
 
     hideSearching();
-    document.getElementById("panelPlaceName").classList.remove("loading");
-    document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+    elements.placeName.classList.remove("loading");
+    elements.panelGlobe.classList.remove("globe-active");
 
     openPanel(placeName, photoHtml, translate("methodGPS"), shortName, false);
 
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
-    map.flyTo(offsetCenterForPanel(L.latLng(currentLat, currentLng), 13), 13)
+    map.flyTo(offsetCenterForPanel(L.latLng(currentLat, currentLng), DEFAULT_ZOOM), DEFAULT_ZOOM)
 
-    document.getElementById("welcome").style.display = "none";
+    elements.welcome.style.display = "none";
 
 }
 
@@ -2076,7 +2088,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     moreContentIsOpen = false;
 
-    document.getElementById("welcome").style.display = "none";
+    elements.welcome.style.display = "none";
 
     const aiResult = await aiLocator(image);
 
@@ -2093,8 +2105,8 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         hideSearching();
 
-        document.getElementById("panelPlaceName").classList.remove("loading");
-        document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+        elements.placeName.classList.remove("loading");
+        elements.panelGlobe.classList.remove("globe-active");
 
         if (photoMarker) {
             map.removeLayer(photoMarker);
@@ -2125,7 +2137,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     if (!location) {
         openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location", true);
-        document.getElementById("panelPlaceName").innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
+        elements.placeName.innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
         return;
     }
 
@@ -2136,8 +2148,8 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     hideSearching();
 
-    document.getElementById("panelPlaceName").classList.remove("loading");
-    document.getElementById("panelSearchingGlobe").classList.remove("globe-active");
+    elements.placeName.classList.remove("loading");
+    elements.panelGlobe.classList.remove("globe-active");
 
     if (photoMarker) {
         map.removeLayer(photoMarker);
@@ -2170,7 +2182,7 @@ async function placeMarkerFromAI(image, photoHtml) {
         map.flyTo(offsetCenterForPanel(L.latLng(location.lat, location.lng), z), z);
     }
 
-    document.getElementById("welcome").style.display = "none";
+    elements.welcome.style.display = "none";
 }
 
 function showPanelLoading(photoHtml) {
@@ -2186,36 +2198,36 @@ function showPanelLoading(photoHtml) {
 
     closeMoreContent();
 
-    document.getElementById("locateUserHint").classList.remove("visible");
+    elements.locateHint.classList.remove("visible");
     clearTimeout(locateButtonTimeout);
 
-    document.getElementById("panelPhoto").innerHTML = photoHtml;
-    document.getElementById("panelPlaceName").innerHTML = "<strong> " + translate("searching") + "</strong>";
-    document.getElementById("panelPlaceName").classList.add("loading");
-    document.getElementById("panelSearchingGlobe").classList.add("globe-active");
-    document.getElementById("panelMethod").textContent = "";
+    elements.photo.innerHTML = photoHtml;
+    elements.placeName.innerHTML = "<strong> " + translate("searching") + "</strong>";
+    elements.placeName.classList.add("loading");
+    elements.panelGlobe.classList.add("globe-active");
+    elements.panelMethod.textContent = "";
 
     setTimeout(function () {
         lockPanelPhotoSize(true);
     }, 50);
 
-    const strip = document.getElementById("resultStrip");
+    const strip = elements.strip;
     if (isStripOpen()) {
         strip.style.display = "none";
         document.body.classList.remove("strip-open");
-        document.getElementById("resultPanel").classList.add('open');
-        document.getElementById("map").classList.add('panel-open');
-        document.getElementById("wrapper").classList.add('panel-open');
+        elements.panel.classList.add('open');
+        elements.mapEl.classList.add('panel-open');
+        elements.wrapper.classList.add('panel-open');
         document.body.classList.add("panel-open");
     }
 
-    document.getElementById("welcome").style.display = "none";
+    elements.welcome.style.display = "none";
 
     updateUploadButtons();
     updateLocateUserButton();
 
     if (!isTouchDevice) {
-        setTimeout(function () { map.invalidateSize(); }, 300);
+        setTimeout(function () { map.invalidateSize(); }, PANEL_TRANSITION_MS);
     }
 }
 
@@ -2310,4 +2322,4 @@ if (isTouchDevice) {
 
 // ── FINAL EVENT LISTENER ───────────────────────────────────────────
 // Triggers the search
-document.getElementById("imageInput").addEventListener("change", function (e) { locateImage(e.target) });
+elements.imageInput.addEventListener("change", function (e) { locateImage(e.target) });
