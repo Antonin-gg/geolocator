@@ -499,7 +499,7 @@ function visiblePadding() {
 //          back to center when minimizing).
 // Bounds → flyToBounds with panel-aware padding (absolute, state-driven).
 function recenterForPanelState() {
-    if (!isTouchDevice || currentLat == null || currentLng == null) return;
+    if (!isTouchDevice || locationPreviewInProgress || currentLat == null || currentLng == null) return;
 
     if (locationPolygon) {
         map.flyToBounds(locationPolygon.getBounds(), visiblePadding());

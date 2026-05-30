@@ -1535,7 +1535,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
-    map.flyTo(offsetCenterForPanel(L.latLng(lat, lng), 13), 13)
+    map.flyTo(offsetCenterForPanel(L.latLng(currentLat, currentLng), 13), 13)
 
     document.getElementById("welcome").style.display = "none";
 

@@ -1327,16 +1327,9 @@ body.touch #stripHandle .handle-line {
         transform: translateX(0);
     }
 
-    /* Map: right half when panel open */
-    body.touch #map.panel-open {
-        height: 100dvh;
-        margin-left: 50vw;
-        width: 50vw;
-    }
-
     /* Panel handle: right edge */
     body.touch #panelHandle {
-        flex-direction: row;
+        flex-direction: row-reverse;
         gap: 4px;
         top: 0;
         right: 0;
@@ -1415,17 +1408,17 @@ body.touch #stripHandle .handle-line {
 
     /* Rotate chevrons to point left/right for horizontal gestures */
     body.touch #panelHandle .handle-chevron-up svg {
-        transform: rotate(-90deg);
+        transform: rotate(90deg);
         /* → points right = expand */
     }
 
     body.touch #panelHandle .handle-chevron-down svg {
-        transform: rotate(-90deg);
+        transform: rotate(90deg);
         /* → points left = minimize */
     }
 
     body.touch #stripHandle .handle-chevron-up svg {
-        transform: rotate(-90deg);
+        transform: rotate(90deg);
         /* → points right = open panel */
     }
 
@@ -1444,6 +1437,7 @@ body.touch #stripHandle .handle-line {
     body.touch #resultStrip {
         top: 0;
         bottom: 0;
+        max-height: none;
         height: 100dvh;
         transform: none;
         padding-top: 12px;
