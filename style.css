@@ -1401,6 +1401,14 @@ body.touch #stripHandle .handle-line {
 
     }
 
+    body.touch #stripHandle .handle-chevron {
+        width: 5px;
+        /* visual width of the 16×5 svg after 90° rotation */
+        height: 16px;
+        /* visual height */
+        overflow: visible;
+    }
+
     body.touch #panelHandle .handle-chevron {
         width: 7px;
         /* visual width of a 20×7 SVG after 90° rotation */
