@@ -1307,29 +1307,39 @@ body.touch #stripHandle .handle-line {
 /* ── TOUCH LANDSCAPE ────────────────────────────────────────────── */
 @media (orientation: landscape) {
 
-    /* Panel: same bottom-slide behaviour as portrait */
+    /* Panel: slides from left, 50vw wide */
     body.touch #resultPanel {
-        top: auto;
+        top: 0;
         bottom: 0;
         left: 0;
-        width: 100%;
-        height: 50dvh;
-        transform: translateY(100%);
+        right: auto;
+        width: 50vw;
+        height: 100dvh;
+        transform: translateX(-100%);
         border-radius: 0;
-        padding: 16px 54px max(5px, env(safe-area-inset-bottom)) 16px;
+        padding: 60px 54px 60px 16px;   /* 54px right clears the handle */
+        transition: transform 0.3s ease, width 0.3s ease;
     }
 
     body.touch #resultPanel.open {
-        transform: translateY(0);
+        transform: translateX(0);
     }
 
+    /* Ultra: 30px map peek on the right */
+    body.touch.ultra-open #resultPanel {
+        width: calc(100vw - 30px) !important;
+        height: 100dvh !important;
+        transform: translateX(0);
+    }
+
+    /* Map: right half when panel open */
     body.touch #map.panel-open {
-        height: 50dvh;
-        margin-left: 0;
-        width: 100%;
+        height: 100dvh;
+        margin-left: 50vw;
+        width: 50vw;
     }
 
-    /* Panel handle: right side instead of top */
+    /* Panel handle: right edge */
     body.touch #panelHandle {
         top: 0;
         right: 0;
@@ -1339,35 +1349,47 @@ body.touch #stripHandle .handle-line {
         height: auto;
     }
 
-    /* Strip: same horizontal bottom bar as portrait */
-    body.touch #resultStrip {
-        top: auto;
+    /* dragging-panel-up extension goes RIGHT instead of down */
+    body.touch.dragging-panel-up #resultPanel::after {
+        top: 0;
         bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 52px;
-        transform: none;
-        flex-direction: row-reverse;
-        justify-content: space-between;
-        border-radius: 10px 10px 0 0;
-        padding-top: 0;
-        padding-right: 28px; /* room for the right-side strip handle */
-        padding-left: 16px;
-        writing-mode: horizontal-tb;
+        left: auto;
+        right: -60vw;
+        width: 60vw;
+        height: auto;
     }
 
-    /* Shortname visible again — no buttons blocking it */
+    /* Strip: vertical left sidebar (like desktop, but touch-enabled) */
+    body.touch #resultStrip {
+        top: 50%;
+        left: 0;
+        bottom: auto;
+        right: auto;
+        width: auto;
+        height: auto;
+        min-height: 52px;
+        transform: translateY(-50%);
+        flex-direction: column;
+        justify-content: center;
+        border-radius: 0 10px 10px 0;
+        padding: 12px 8px;
+        writing-mode: vertical-rl;
+        padding-top: 0;
+        align-items: center;
+    }
+
     body.touch #stripPlaceName {
-        writing-mode: horizontal-tb;
-        transform: none;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        flex: 1 1 auto;
+        text-align: center;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        flex: 1;
-        text-align: center;
+        display: block;   /* override the max-height:500px rule that hides it */
     }
 
-    /* Strip handle: right side */
+    /* Strip handle: right edge of the strip */
     body.touch #stripHandle {
         top: 0;
         right: 0;
@@ -1377,17 +1399,34 @@ body.touch #stripHandle .handle-line {
         height: auto;
     }
 
-    /* Chevrons: same up/down directions as portrait since gestures are still vertical */
-    .chevron-left,
-    .chevron-right {
-        display: none;
+    /* Rotate chevrons to point left/right for horizontal gestures */
+    body.touch #panelHandle .handle-chevron-up svg {
+        transform: rotate(90deg);    /* → points right = expand */
+    }
+    body.touch #panelHandle .handle-chevron-down svg {
+        transform: rotate(-90deg);   /* → points left = minimize */
+    }
+    body.touch #stripHandle .handle-chevron-up svg {
+        transform: rotate(90deg);    /* → points right = open panel */
     }
 
-    .chevron-down,
-    .chevron-up {
-        display: block;
+    /* Handle line becomes vertical */
+    body.touch #panelHandle .handle-line {
+        width: 4px;
+        height: 36px;
+    }
+    body.touch #stripHandle .handle-line {
+        width: 3px;
+        height: 28px;
+    }
+
+    /* Strip padding override (handle is on right, not top) */
+    body.touch #resultStrip {
+        padding-top: 12px;
+        padding-right: 24px;    /* room for strip handle */
     }
 }
+
 
 @media (max-width: 768px) and (orientation: portrait) {
 
