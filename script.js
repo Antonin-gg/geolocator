@@ -881,16 +881,11 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
         result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
 
         if (result && currentLang != "en") {
-            console.warn("Wiki EN result:", result.title, result.fullurl);
-            console.warn("Wiki langlinks available:", result.langlinks);
-
+            
             const translatedTitle = getWikiTitleTranslation(result);
-            console.warn("Wiki translated title for", currentLang + ":", translatedTitle);
 
             if (translatedTitle) {
                 const translatedResult = await getWikiPageByTitle(translatedTitle, currentLang) || result;
-
-                console.warn("Wiki translated page result:", translatedResult && translatedResult.title, translatedResult && translatedResult.fullurl);
 
                 if (translatedResult != result) {
                     result = translatedResult;
