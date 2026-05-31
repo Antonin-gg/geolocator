@@ -2233,7 +2233,11 @@ async function placeMarkerFromAI(image, photoHtml) {
     if (location.showPolygon && location.polygon) {
         locationPolygon = L.geoJSON(location.polygon, {
             style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
-        }).addTo(map);
+        });
+        // Country polygons are useful context during the fly. Smaller ones are
+        // re-projected every animation frame (lag/colour-splotch), so they're
+        // added only once the fly settles (moveend, below).
+        if (aiConfidence === "country") locationPolygon.addTo(map);
     }
 
     currentSentence = aiResult.displaySentence;
@@ -2249,6 +2253,18 @@ async function placeMarkerFromAI(image, photoHtml) {
     } else {
         const z = getZoomLevel(aiConfidence);
         map.flyTo(offsetCenterForPanel(L.latLng(location.lat, location.lng), z), z);
+    }
+
+    // Reveal a non-country polygon only once the fly settles. Guarded so a
+    // closed/replaced result, or an in-flight locate preview, never gets a
+    // stale polygon dropped onto the map.
+    if (locationPolygon && aiConfidence !== "country") {
+        const polygonToShow = locationPolygon;
+        map.once("moveend", function () {
+            if (locationPolygon === polygonToShow && !locationPreviewInProgress) {
+                polygonToShow.addTo(map);
+            }
+        });
     }
 
     elements.welcome.style.display = "none";
