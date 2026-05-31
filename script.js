@@ -888,9 +888,10 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
             console.warn("Wiki translated title for", currentLang + ":", translatedTitle);
 
             if (translatedTitle) {
+                const translatedResult = await getWikiPageByTitle(translatedTitle, currentLang) || result;
+
                 console.warn("Wiki translated page result:", translatedResult && translatedResult.title, translatedResult && translatedResult.fullurl);
 
-                const translatedResult = await getWikiPageByTitle(translatedTitle, currentLang) || result;
                 if (translatedResult != result) {
                     result = translatedResult;
                     break;
