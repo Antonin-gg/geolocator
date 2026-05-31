@@ -15,6 +15,24 @@ const ICONS = {
 
     language: '<svg class="mobile-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>'
 };
+const DROPDOWNS = {
+    theme: {
+        content: elements.toggleTheme,
+        trigger: elements.showTheme,
+        hiddenClass: "hidden-theme"
+    },
+    view: {
+        content: elements.toggleView,
+        trigger: elements.showView,
+        hiddenClass: "hidden-view"
+    },
+    language: {
+        content: elements.langOptions,
+        trigger: elements.showLang,
+        hiddenClass: "hidden-language",
+        usesHistory: true
+    }
+};
 
 
 
@@ -27,20 +45,7 @@ const ERROR_DISPLAY_MS = 3000;       // how long the error banner stays up
 // ── STATE ──────────────────────────────────────────────────────────
 let isSatellite = false;
 let isDark = true;
-let photoMarker;
-let currentPlaceName = null;
-let currentLat = null;
-let currentLng = null;
-let currentSentence = null;
-let currentPhotoObjectUrl = null;
-let currentPhotoHtml = null;
-let currentImageFile = null;
-let currentMethod = null;
-let currentShortName = null;
-let currentIsAI = false;
-let currentConfidence = null;
-let locationPolygon = null;
-let currentLang = "en";
+let uiLang = "en";   // UI language preference (persisted) — not result state, so not in currentResult
 let isSearching = false;
 let scrollHintShown = false;
 let moreContentIsOpen = false;
@@ -58,13 +63,88 @@ let userDistanceLine = null;
 let userDistanceLabel = null;
 let locationPreviewInProgress = false;
 
+const currentResult = {
+    marker: null,
+    polygon: null,
+    placeName: null,
+    shortName: null,
+    sentence: null,
+    method: null,
+    lat: null,
+    lng: null,
+    confidence: null,
+    isAI: false,
+    photoHtml: null,
+    photoObjectUrl: null,
+    imageFile: null,
+
+    // Remove just the Leaflet layers (marker + polygon). Used between searches,
+    // where the photo/metadata must survive (e.g. a language re-search reuses them).
+    clearLayers() {
+        if (this.marker) {
+            map.removeLayer(this.marker);
+            this.marker = null;
+        }
+        if (this.polygon) {
+            map.removeLayer(this.polygon);
+            this.polygon = null;
+        }
+    },
+
+    // Full teardown: layers + photo object URL + all metadata. Used when a result
+    // is closed, or when a brand-new image replaces the current one.
+    reset() {
+        if (this.photoObjectUrl) {
+            URL.revokeObjectURL(this.photoObjectUrl);
+        }
+        this.clearLayers();
+        this.placeName = null;
+        this.shortName = null;
+        this.sentence = null;
+        this.method = null;
+        this.lat = null;
+        this.lng = null;
+        this.confidence = null;
+        this.isAI = false;
+        this.photoHtml = null;
+        this.photoObjectUrl = null;
+        this.imageFile = null;
+    },
+
+    hasLocation() {
+        return this.lat != null && this.lng != null;
+    },
+
+    setFromAI(aiResult, location, photoHtml) {
+        this.placeName = location.shortName;
+        this.shortName = location.shortName;
+        this.method = aiResult.method;
+        this.sentence = aiResult.displaySentence;
+        this.lat = location.lat;
+        this.lng = location.lng;
+        this.isAI = true;
+        this.photoHtml = photoHtml;
+    },
+
+    setFromExif(placeName, shortName, method, sentence, photoCoordinates,photoHtml) {
+        this.placeName = placeName;
+        this.shortName = shortName;
+        this.method = method;
+        this.sentence = sentence;
+        this.lat = photoCoordinates.latitude;
+        this.lng = photoCoordinates.longitude;
+        this.isAI = false;
+        this.photoHtml = photoHtml;
+    }
+};
+
 
 
 // ── MAP & INITIAL SETUP ────────────────────────────────────────────
 // L.map, tile layers, icons, attribution
 const browserLang = navigator.language.split("-")[0];
 if (TRANSLATIONS[browserLang]) {
-    currentLang = browserLang;
+    uiLang = browserLang;
     changeLanguage();
 }
 
@@ -74,20 +154,20 @@ if (savedDark !== null) isDark = savedDark === "true";
 const savedSatellite = localStorage.getItem("isSatellite");
 if (savedSatellite !== null) isSatellite = savedSatellite === "true";
 
-const savedLang = localStorage.getItem("currentLang");
+const savedLang = localStorage.getItem("uiLang");
 if (savedLang !== null && TRANSLATIONS[savedLang]) {
-    currentLang = savedLang;
+    uiLang = savedLang;
     changeLanguage();
 }
 
 setTimeout(alignToggleChevrons, 50);
 
-if (currentLang === "en" && navigator.language === "en-US") isImperial = true;
+if (uiLang === "en" && navigator.language === "en-US") isImperial = true;
 
 const savedImperial = localStorage.getItem("isImperial");
 if (savedImperial !== null) isImperial = savedImperial === "true";
 
-document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
+document.querySelector('[data-lang="' + uiLang + '"]').classList.add("active-lang");
 
 const map = L.map('map').setView([0, 0], 2);
 
@@ -125,8 +205,8 @@ if (/Android/i.test(navigator.userAgent)) {
 // changeTheme, eventListeners
 function changeTheme() {
     document.body.classList.toggle("dark", isDark);
-    if (photoMarker && !isSatellite) photoMarker.setIcon(isDark ? cameraIconDark : cameraIconLight);
-    if (locationPolygon) locationPolygon.setStyle({ color: getPolygonColor() });
+    if (currentResult.marker && !isSatellite) currentResult.marker.setIcon(isDark ? cameraIconDark : cameraIconLight);
+    if (currentResult.polygon) currentResult.polygon.setStyle({ color: getPolygonColor() });
 }
 
 
@@ -153,37 +233,33 @@ elements.showTheme.addEventListener("click", function () {
 });
 
 elements.toggleTheme.addEventListener("click", function () {
-    if (!elements.langOptions.classList.contains("hidden-language")) {
-        elements.langOptions.classList.add("hidden-language");
-        elements.showLang.classList.remove("dropdown-open");
-    }
-    if (isDark) {
-        isDark = false;
-        if (!isSatellite) {
-            map.removeLayer(mapLayerDark);
-            mapLayerLight.addTo(map);
-        }
-    } else {
-        isDark = true;
-        if (!isSatellite) {
+
+    closeOtherDropdowns("theme");
+
+    toggleTheme();
+
+    closeDropdown("theme");
+
+});
+
+function toggleTheme() {
+    isDark = !isDark;
+
+    if (!isSatellite) {
+        if (isDark) {
             map.removeLayer(mapLayerLight);
             mapLayerDark.addTo(map);
+        } else {
+            map.removeLayer(mapLayerDark);
+            mapLayerLight.addTo(map);
         }
     }
 
     changeTheme();
-
     updateToggles();
 
-    if (locationPolygon) {
-        locationPolygon.setStyle({ color: getPolygonColor() });
-    }
-
-    this.classList.toggle("hidden-theme");
-    elements.showTheme.classList.remove("dropdown-open");
-
     localStorage.setItem("isDark", isDark);
-});
+}
 
 elements.showView.addEventListener("click", function () {
     openDropdown("view");
@@ -191,48 +267,45 @@ elements.showView.addEventListener("click", function () {
 
 elements.toggleView.addEventListener("click", function () {
 
-    if (!elements.toggleTheme.classList.contains("hidden-theme")) {
-        elements.toggleTheme.classList.add("hidden-theme");
-    }
+    closeOtherDropdowns("view");
 
-    if (!elements.langOptions.classList.contains("hidden-language")) {
-        elements.langOptions.classList.add("hidden-language");
-        elements.showLang.classList.remove("dropdown-open");
-    }
+    toggleMapView();
+
+    closeDropdown("view");
+
+});
+
+function toggleMapView() {
+    isSatellite = !isSatellite;
 
     if (isSatellite) {
-        map.removeLayer(satelliteLayer);
-        if (isDark) {
-            mapLayerDark.addTo(map);
-            if (photoMarker) photoMarker.setIcon(cameraIconDark);
-        }
-        else {
-            mapLayerLight.addTo(map);
-        }
-        isSatellite = false;
-    } else {
         if (isDark) {
             map.removeLayer(mapLayerDark);
-            if (photoMarker) photoMarker.setIcon(cameraIconLight);
-        }
-        else {
+            if (currentResult.marker) currentResult.marker.setIcon(cameraIconLight);
+        } else {
             map.removeLayer(mapLayerLight);
         }
+
         satelliteLayer.addTo(map);
-        isSatellite = true;
+    } else {
+        map.removeLayer(satelliteLayer);
+
+        if (isDark) {
+            mapLayerDark.addTo(map);
+            if (currentResult.marker) currentResult.marker.setIcon(cameraIconDark);
+        } else {
+            mapLayerLight.addTo(map);
+        }
     }
 
     updateToggles();
 
-    if (locationPolygon) {
-        locationPolygon.setStyle({ color: getPolygonColor() });
+    if (currentResult.polygon) {
+        currentResult.polygon.setStyle({ color: getPolygonColor() });
     }
 
-    this.classList.toggle("hidden-view");
-    elements.showView.classList.remove("dropdown-open");
-
     localStorage.setItem("isSatellite", isSatellite);
-});
+}
 
 elements.showLang.addEventListener("click", function () {
     openDropdown("language");
@@ -241,33 +314,22 @@ elements.showLang.addEventListener("click", function () {
 document.querySelectorAll(".lang-option").forEach(function (button) {
 
     button.addEventListener("click", function () {
+        document.querySelector('[data-lang="' + uiLang + '"]').classList.remove("active-lang");
 
-        if (!elements.langOptions.classList.contains("hidden-language")) {
-            elements.langOptions.classList.add("hidden-language");
-        }
-
-        document.querySelector('[data-lang="' + currentLang + '"]').classList.remove("active-lang");
-
-        currentLang = this.getAttribute("data-lang");
+        uiLang = this.getAttribute("data-lang");
 
         changeLanguage();
 
-        elements.langOptions.classList.add("hidden-language");
-        elements.showLang.classList.remove("dropdown-open");
+        closeDropdown("language");
 
-        if (isTouchDevice && !handlingPopstate) {
-            handlingPopstate = true;
-            history.back();
-        }
+        document.querySelector('[data-lang="' + uiLang + '"]').classList.add("active-lang");
 
-        document.querySelector('[data-lang="' + currentLang + '"]').classList.add("active-lang");
-
-        localStorage.setItem("currentLang", currentLang);
+        localStorage.setItem("uiLang", uiLang);
 
         const panelOpen = isPanelOpen();
         const stripOpen = isStripOpen();
 
-        if ((panelOpen || stripOpen) && currentImageFile) {
+        if ((panelOpen || stripOpen) && currentResult.imageFile) {
             rerunSearch();
         }
     });
@@ -275,46 +337,14 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 });
 
 function openDropdown(which) {
-    const configs = {
-        theme: {
-            content: elements.toggleTheme,
-            trigger: elements.showTheme,
-            hiddenClass: "hidden-theme"
-        },
-        view: {
-            content: elements.toggleView,
-            trigger: elements.showView,
-            hiddenClass: "hidden-view"
-        },
-        language: {
-            content: elements.langOptions,
-            trigger: elements.showLang,
-            hiddenClass: "hidden-language"
-        }
-    };
-
-    const config = configs[which];
+    const config = DROPDOWNS[which];
     if (!config) return;
 
-    Object.keys(configs).forEach(function (key) {
-        if (key === which) return;
-
-        const other = configs[key];
-
-        if (!other.content.classList.contains(other.hiddenClass)) {
-            other.content.classList.add(other.hiddenClass);
-            other.trigger.classList.remove("dropdown-open");
-
-            if (key === "language" && isTouchDevice && !handlingPopstate) {
-                handlingPopstate = true;
-                history.back();
-            }
-        }
-    });
+    closeOtherDropdowns(which);
 
     config.content.classList.toggle(config.hiddenClass);
 
-    const isOpen = !config.content.classList.contains(config.hiddenClass);
+    const isOpen = isDropdownOpen(which);
 
     if (which === "language") {
         if (isOpen) {
@@ -332,22 +362,42 @@ function openDropdown(which) {
     config.trigger.classList.toggle("dropdown-open", isOpen);
 }
 
+function isDropdownOpen(which) {
+    const config = DROPDOWNS[which];
+    return config && !config.content.classList.contains(config.hiddenClass);
+}
+
+function closeDropdown(which) {
+    const config = DROPDOWNS[which];
+    if (!config) return;
+
+    if (config.content.classList.contains(config.hiddenClass)) return;
+
+    config.content.classList.add(config.hiddenClass);
+    config.trigger.classList.remove("dropdown-open");
+
+    if (config.usesHistory && isTouchDevice && !handlingPopstate) {
+        handlingPopstate = true;
+        history.back();
+    }
+}
+
+function closeOtherDropdowns(exceptWhich) {
+    Object.keys(DROPDOWNS).forEach(function (key) {
+        if (key === exceptWhich) return;
+        closeDropdown(key);
+    });
+}
+
+function closeAllDropdowns() {
+    Object.keys(DROPDOWNS).forEach(closeDropdown);
+}
+
 document.addEventListener("click", function (e) {
     const clickedInsideToggles = e.target.closest("#wrapperToggles");
 
     if (!clickedInsideToggles) {
-        if (!elements.toggleView.classList.contains("hidden-view")) {
-            elements.toggleView.classList.add("hidden-view");
-            elements.showView.classList.remove("dropdown-open");
-        }
-        if (!elements.toggleTheme.classList.contains("hidden-theme")) {
-            elements.toggleTheme.classList.add("hidden-theme");
-            elements.showTheme.classList.remove("dropdown-open");
-        }
-        if (!elements.langOptions.classList.contains("hidden-language")) {
-            elements.langOptions.classList.add("hidden-language");
-            elements.showLang.classList.remove("dropdown-open");
-        }
+        closeAllDropdowns();
     }
 });
 
@@ -544,7 +594,7 @@ window.addEventListener("resize", function () {
 
         if (isPanelOpen()) {
 
-            openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
+            openPanel();
 
             setTimeout(function () {
                 lockPanelPhotoSize(true);
@@ -570,29 +620,44 @@ window.addEventListener("resize", function () {
 
 
 // ── PANEL CONTROLS ─────────────────────────────────────────────────
-function openPanel(placeName, photoHtml, method, shortName, isAI) {
+function openPanel() {
+    pushPanelHistory();
 
-    currentPlaceName = placeName;
-    currentPhotoHtml = photoHtml;
-    currentMethod = method;
-    currentShortName = shortName;
-    currentIsAI = isAI;
+    resetPanel();
 
-    if (isTouchDevice) {
-        if (isStripOpen()) {
-            history.pushState({}, "");
-        }
-        if (!isStripOpen() && !isPanelOpen()) {
-            history.pushState({}, "");
-            history.pushState({}, "");
-        }
+    renderPanelContent();
+
+    setPanelOpenClasses();
+
+    syncMoreContentState();
+
+    updateUiAfterOpen();
+}
+
+function pushPanelHistory() {
+    if (!isTouchDevice) return;
+
+    if (isStripOpen()) {
+        history.pushState({}, "");
+        return;
     }
 
+    if (!isPanelOpen()) {
+        history.pushState({}, "");
+        history.pushState({}, "");
+    }
+}
+
+function resetPanel() {
     elements.content.scrollTop = 0;
 
-    if (photoMarker) photoMarker.closePopup();
+    if (currentResult.marker) {
+        currentResult.marker.closePopup();
+    }
+}
 
-    elements.photo.innerHTML = photoHtml;
+function renderPanelContent() {
+    elements.photo.innerHTML = currentResult.photoHtml;
 
     if (moreContentIsOpen && lockedPhotoHeight) {
         const img = document.querySelector("#panelPhoto img");
@@ -606,48 +671,50 @@ function openPanel(placeName, photoHtml, method, shortName, isAI) {
         }
     }
 
-    if (!isAI) {
-        const sentence = translate("photoTakenIn").replace("{place}", placeName.replace(shortName, "<strong>" + shortName + "</strong>"));
-        elements.placeName.innerHTML = sentence;
+    const boldedSentence = currentResult.sentence.replace(
+        currentResult.shortName,
+        "<strong>" + currentResult.shortName + "</strong>"
+    );
+
+    if (boldedSentence === currentResult.sentence) {
+        elements.placeName.innerHTML = "<strong>" + currentResult.sentence + "</strong>";
     } else {
-        const sentence = currentSentence;
-        const boldedSentence = sentence.replace(
-            shortName,
-            "<strong>" + shortName + "</strong>"
-        );
-
-        if (boldedSentence === sentence) {
-            elements.placeName.innerHTML = "<strong>" + sentence + "</strong>";
-        } else {
-            elements.placeName.innerHTML = boldedSentence;
-        }
+        elements.placeName.innerHTML = boldedSentence;
     }
-    elements.panelMethod.textContent = method;
 
-    elements.panel.classList.add('open');
-    elements.mapEl.classList.add('panel-open');
-    elements.wrapper.classList.add('panel-open');
+    elements.panelMethod.textContent = currentResult.method;
+}
+
+function setPanelOpenClasses() {
+    elements.panel.classList.add("open");
+    elements.mapEl.classList.add("panel-open");
+    elements.wrapper.classList.add("panel-open");
     document.body.classList.add("panel-open");
 
     document.body.classList.remove("strip-open");
 
     elements.strip.style.display = "none";
-
     elements.welcome.style.display = "none";
+}
 
-    updateUploadButtons();
-    updateLocateUserButton();
-
+function syncMoreContentState() {
     if (moreContentIsOpen) {
         elements.moreContent.classList.remove("collapsed");
         elements.content.classList.add("scrollable");
         elements.learnMore.classList.add("expanded");
-    } else {
-        elements.moreContent.classList.add("collapsed");
-        elements.content.classList.remove("scrollable");
-        elements.learnMore.classList.remove("expanded");
-        setTimeout(lockPanelPhotoSize, 50);
+        return;
     }
+
+    elements.moreContent.classList.add("collapsed");
+    elements.content.classList.remove("scrollable");
+    elements.learnMore.classList.remove("expanded");
+
+    setTimeout(lockPanelPhotoSize(true), 50);
+}
+
+function updateUiAfterOpen() {
+    updateUploadButtons();
+    updateLocateUserButton();
 
     if (!isTouchDevice) {
         setTimeout(function () {
@@ -673,15 +740,7 @@ function closePanel() {
     elements.wrapper.classList.remove('panel-open');
     document.body.classList.remove("panel-open");
 
-    if (photoMarker) {
-        map.removeLayer(photoMarker);
-        photoMarker = null;
-    }
-
-    if (locationPolygon) {
-        map.removeLayer(locationPolygon);
-        locationPolygon = null;
-    }
+    currentResult.reset();
     elements.locateHint.classList.remove("visible");
 
     updateUploadButtons();
@@ -694,13 +753,10 @@ function closePanel() {
     }, PANEL_TRANSITION_MS);
 
     closeMoreContent();
-
-    currentLat = null;
-    currentLng = null;
 }
 
 function getPopupPhotoHtml() {
-    return currentPhotoHtml.replace(
+    return currentResult.photoHtml.replace(
         "<img ",
         '<img style="max-width:100%;height:auto;border-radius:4px;" '
     );
@@ -727,12 +783,12 @@ function minimizePanel() {
     if (isSearching) {
         elements.stripPlaceName.textContent = translate("searching");
     } else {
-        elements.stripPlaceName.textContent = currentShortName;
+        elements.stripPlaceName.textContent = currentResult.shortName;
     }
 
     setTimeout(function () {
         if (!isTouchDevice) map.invalidateSize();
-        if (photoMarker) {
+        if (currentResult.marker) {
             const popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
             const miniPopup = L.popup({
                 closeButton: false,
@@ -742,7 +798,7 @@ function minimizePanel() {
                 autoPan: false
             })
                 .setContent(getPopupPhotoHtml());
-            photoMarker.bindPopup(miniPopup).openPopup();
+            currentResult.marker.bindPopup(miniPopup).openPopup();
         }
     }, PANEL_TRANSITION_MS);
 }
@@ -759,15 +815,7 @@ function closeStrip() {
     elements.strip.style.display = "none";
     document.body.classList.remove("strip-open");
 
-    if (photoMarker) {
-        map.removeLayer(photoMarker);
-        photoMarker = null;
-    }
-
-    if (locationPolygon) {
-        map.removeLayer(locationPolygon);
-        locationPolygon = null;
-    }
+    currentResult.reset();
     elements.locateHint.classList.remove("visible");
 
     updateUploadButtons();
@@ -777,9 +825,6 @@ function closeStrip() {
     closeMoreContent();
 
     updateLocateUserButton();
-
-    currentLat = null;
-    currentLng = null;
 }
 
 function isPanelOpen() { return document.body.classList.contains("panel-open"); }
@@ -846,7 +891,7 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, 
     elements.wiki.innerHTML =
         "<strong>" + result.title + "</strong><br>" +
         text + " " +
-        (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + READ_MORE_TRANSLATIONS[currentLang] + '</a>' : "");
+        (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + READ_MORE_TRANSLATIONS[uiLang] + '</a>' : "");
 
 }
 
@@ -889,7 +934,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
         result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
 
         //Step 2
-        if (result && currentLang != "en") {
+        if (result && uiLang != "en") {
 
             //Step 2a
             const translatedResult = await translateWikiResultToCurrentLang(result);
@@ -903,10 +948,10 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
             if (i === localFallbackIndex) {
                 const enResult = result;
 
-                result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
+                result = await getWikiData(geocodedPlace, uiLang, lat, lng, aiConfidence);
                 if (result) break;
 
-                result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
+                result = await wikiGeoSearch(geocodedPlace, uiLang, lat, lng, aiConfidence);
                 if (result) break;
 
                 result = enResult;
@@ -920,16 +965,16 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
         //Step 3a
         if (i === localFallbackIndex) {
             //Step 3b
-            result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
+            result = await getWikiData(geocodedPlace, uiLang, lat, lng, aiConfidence);
             if (result) break;
 
             //Step 3c
-            result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
+            result = await wikiGeoSearch(geocodedPlace, uiLang, lat, lng, aiConfidence);
             if (result) break;
 
 
             //Step 3d
-            if (currentLang != "en") {
+            if (uiLang != "en") {
                 result = await wikiGeoSearch(geocodedPlace, "en", lat, lng, aiConfidence);
                 if (result) {
                     const geoTranslatedResult = await translateWikiResultToCurrentLang(result);
@@ -950,12 +995,12 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
 }
 
 async function translateWikiResultToCurrentLang(result) {
-    if (!result || currentLang === "en") return null;
+    if (!result || uiLang === "en") return null;
 
     const translatedTitle = getWikiTitleTranslation(result);
     if (!translatedTitle) return null;
 
-    return await getWikiPageByTitle(translatedTitle, currentLang);
+    return await getWikiPageByTitle(translatedTitle, uiLang);
 }
 
 // Builds a Wikipedia API query URL: the fixed base plus the shared extract/
@@ -1270,7 +1315,7 @@ function getWikiTitleTranslation(page) {
     if (!page || !page.langlinks) return null;
 
     const match = page.langlinks.find(function (link) {
-        return link.lang === currentLang;
+        return link.lang === uiLang;
     });
 
     return match ? match["*"] : null;
@@ -1300,7 +1345,7 @@ elements.panelClose.addEventListener("click", closePanel);
 elements.stripClose.addEventListener("click", closeStrip);
 elements.panelToggle.addEventListener("click", minimizePanel);
 elements.stripToggle.addEventListener("click", function () {
-    openPanel(currentPlaceName, currentPhotoHtml, currentMethod, currentShortName, currentIsAI);
+    openPanel();
 });
 elements.learnMore.addEventListener("click", function () {
     elements.moreContent.classList.toggle("collapsed");
@@ -1335,7 +1380,7 @@ async function aiLocator(image) {
     // Static prompt first, variable language block appended last — matches the
     // prompt's own "appended to this prompt" wording and lets the large static
     // prefix be reused by the model's automatic prompt caching across languages.
-    const promptWithLang = AI_PROMPT + "\n\n" + languageInstructions[currentLang];
+    const promptWithLang = AI_PROMPT + "\n\n" + languageInstructions[uiLang];
 
     const imageBase64 = await new Promise(function (resolve) {
         const reader = new FileReader();
@@ -1423,7 +1468,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     const url = "https://nominatim.openstreetmap.org/reverse?lat=" +
         photoCoordinates.latitude + "&lon=" + photoCoordinates.longitude +
-        "&format=json&zoom=18&addressdetails=1&accept-language=" + currentLang;
+        "&format=json&zoom=18&addressdetails=1&accept-language=" + uiLang;
 
     const response = await fetch(url);
 
@@ -1463,24 +1508,15 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         shortName = result.display_name;
     }
 
-    if (photoMarker) {
-        map.removeLayer(photoMarker);
-        photoMarker = null;
-    }
-
-    if (locationPolygon) {
-        map.removeLayer(locationPolygon);
-        locationPolygon = null;
-    }
+    currentResult.clearLayers();
 
     const countryCode = (result.address && result.address.country_code)
         ? result.address.country_code.toUpperCase()
         : null;
 
-
-    currentLat = photoCoordinates.latitude;
-    currentLng = photoCoordinates.longitude;
-    currentConfidence = "city";
+    const sentence = translate("photoTakenIn").replace("{place}", placeName);
+    currentResult.setFromExif(placeName, shortName, translate("methodGPS"), sentence, photoCoordinates, photoHtml);
+    currentResult.confidence = "city";
 
     await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
 
@@ -1488,11 +1524,11 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     elements.placeName.classList.remove("loading");
     elements.panelGlobe.classList.remove("globe-active");
 
-    openPanel(placeName, photoHtml, translate("methodGPS"), shortName, false);
+    openPanel();
 
-    photoMarker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+    currentResult.marker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
-    map.flyTo(offsetCenterForPanel(L.latLng(currentLat, currentLng), DEFAULT_ZOOM), DEFAULT_ZOOM)
+    map.flyTo(offsetCenterForPanel(L.latLng(currentResult.lat, currentResult.lng), DEFAULT_ZOOM), DEFAULT_ZOOM)
 
     elements.welcome.style.display = "none";
 
@@ -1607,7 +1643,7 @@ async function tryNominatim(query, aiConfidence, aiCountryCode) {
 
     let url = "https://nominatim.openstreetmap.org/search?q=" +
         encodeURIComponent(query) +
-        "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+        "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + uiLang;
 
     if (aiCountryCode && aiCountryCode !== "AQ") {
         url += "&countrycodes=" + aiCountryCode.toLowerCase();
@@ -1715,7 +1751,7 @@ async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountry
         }
         let url = "https://nominatim.openstreetmap.org/search?q=" +
             encodeURIComponent(query) +
-            "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+            "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + uiLang;
 
         if (aiCountryCode) {
             url += "&countrycodes=" + aiCountryCode.toLowerCase();
@@ -1742,7 +1778,7 @@ async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountry
     const zoom = getZoomLevel(aiConfidence);
     const reverseUrl = "https://nominatim.openstreetmap.org/reverse?lat=" + openCageResult.geometry.lat +
         "&lon=" + openCageResult.geometry.lng + "&format=json&zoom=" + zoom +
-        "&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
+        "&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + uiLang;
 
     const reverseResponse = await fetch(reverseUrl);
     if (!reverseResponse.ok) return null;
@@ -1879,7 +1915,7 @@ function buildShortName(result) {
     const n = result.namedetails || {};
 
     const localName =
-        n["name:" + currentLang] ||
+        n["name:" + uiLang] ||
         n.name ||
         (result.display_name ? result.display_name.split(",")[0].trim() : null);
 
@@ -2176,30 +2212,21 @@ async function placeMarkerFromAI(image, photoHtml) {
         elements.placeName.classList.remove("loading");
         elements.panelGlobe.classList.remove("globe-active");
 
-        if (photoMarker) {
-            map.removeLayer(photoMarker);
-            photoMarker = null;
-        }
+        currentResult.clearLayers();
 
-        if (locationPolygon) {
-            map.removeLayer(locationPolygon);
-            locationPolygon = null;
-        }
+        currentResult.lat = null;
+        currentResult.lng = null;
 
-        currentLat = null;
-        currentLng = null;
+        currentResult.sentence = "<strong>" + translate("unknownLocation") + "</strong>";
+        currentResult.placeName = translate("unknownLocationShort");
+        currentResult.photoHtml = photoHtml;
+        currentResult.method = aiResult.method;
+        currentResult.shortName = translate("unknownLocationShort");
+        currentResult.isAI = true;
 
-        currentSentence = "<strong>" + translate("unknownLocation") + "</strong>";
+        if (aiConfidence === "space") currentResult.sentence = aiResult.displaySentence;
 
-        if (aiConfidence === "space") currentSentence = aiResult.displaySentence;
-
-        openPanel(
-            translate("unknownLocationShort"),
-            photoHtml,
-            aiResult.method,
-            translate("unknownLocationShort"),
-            true
-        );
+        openPanel();
 
         return;
     }
@@ -2213,23 +2240,22 @@ async function placeMarkerFromAI(image, photoHtml) {
         elements.placeName.classList.remove("loading");
         elements.panelGlobe.classList.remove("globe-active");
 
-        currentSentence = "<strong>" + translate("unknownLocation") + "</strong>";
+        currentResult.sentence = "<strong>" + translate("unknownLocation") + "</strong>";
+        currentResult.placeName = translate("unknownLocationShort");
+        currentResult.photoHtml = photoHtml;
+        currentResult.method = aiResult.method;
+        currentResult.shortName = translate("unknownLocationShort");
+        currentResult.isAI = true;
 
-        openPanel(
-            translate("unknownLocationShort"),
-            photoHtml,
-            aiResult.method,
-            translate("unknownLocationShort"),
-            true
-        );
+        openPanel();
 
         elements.placeName.innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
         return;
     }
 
-    currentLat = location.lat;
-    currentLng = location.lng;
-    currentConfidence = aiConfidence;
+    currentResult.clearLayers();
+    currentResult.setFromAI(aiResult, location, photoHtml);
+    currentResult.confidence = aiConfidence;
 
     await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode);
 
@@ -2238,31 +2264,19 @@ async function placeMarkerFromAI(image, photoHtml) {
     elements.placeName.classList.remove("loading");
     elements.panelGlobe.classList.remove("globe-active");
 
-    if (photoMarker) {
-        map.removeLayer(photoMarker);
-        photoMarker = null;
-    }
-
-    if (locationPolygon) {
-        map.removeLayer(locationPolygon);
-        locationPolygon = null;
-    }
-
     if (location.showPolygon && location.polygon) {
-        locationPolygon = L.geoJSON(location.polygon, {
+        currentResult.polygon = L.geoJSON(location.polygon, {
             style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
         });
         // Country polygons are useful context during the fly. Smaller ones are
         // re-projected every animation frame (lag/colour-splotch), so they're
         // added only once the fly settles (moveend, below).
-        if (aiConfidence === "country") locationPolygon.addTo(map);
+        if (aiConfidence === "country") currentResult.polygon.addTo(map);
     }
 
-    currentSentence = aiResult.displaySentence;
+    openPanel();
 
-    openPanel(location.shortName, photoHtml, aiResult.method, location.shortName, true);
-
-    photoMarker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+    currentResult.marker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
     if (location.bounds) {
         map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]],
@@ -2276,10 +2290,10 @@ async function placeMarkerFromAI(image, photoHtml) {
     // Reveal a non-country polygon only once the fly settles. Guarded so a
     // closed/replaced result, or an in-flight locate preview, never gets a
     // stale polygon dropped onto the map.
-    if (locationPolygon && aiConfidence !== "country") {
-        const polygonToShow = locationPolygon;
+    if (currentResult.polygon && aiConfidence !== "country") {
+        const polygonToShow = currentResult.polygon;
         map.once("moveend", function () {
-            if (locationPolygon === polygonToShow && !locationPreviewInProgress) {
+            if (currentResult.polygon === polygonToShow && !locationPreviewInProgress) {
                 polygonToShow.addTo(map);
             }
         });
@@ -2289,15 +2303,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 }
 
 function showPanelLoading(photoHtml) {
-    if (photoMarker) {
-        map.removeLayer(photoMarker);
-        photoMarker = null;
-    }
-
-    if (locationPolygon) {
-        map.removeLayer(locationPolygon);
-        locationPolygon = null;
-    }
+    currentResult.clearLayers();
 
     closeMoreContent();
 
@@ -2335,18 +2341,18 @@ function showPanelLoading(photoHtml) {
 }
 
 async function rerunSearch() {
-    if (!currentImageFile) return;
+    if (!currentResult.imageFile) return;
 
-    showPanelLoading(currentPhotoHtml);
+    showPanelLoading(currentResult.photoHtml);
     isSearching = true;
     scrollHintShown = false;
 
-    const photoLatLng = await exifr.gps(currentImageFile);
+    const photoLatLng = await exifr.gps(currentResult.imageFile);
 
     if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
-        await placeMarkerFromEXIF(photoLatLng, currentPhotoHtml);
+        await placeMarkerFromEXIF(photoLatLng, currentResult.photoHtml);
     } else {
-        await placeMarkerFromAI(currentImageFile, currentPhotoHtml);
+        await placeMarkerFromAI(currentResult.imageFile, currentResult.photoHtml);
     }
 
     hideSearching();
@@ -2368,16 +2374,14 @@ async function locateImage(input) {
 
     scrollHintShown = false;
 
-    currentImageFile = image;
+    // Fully tear down the previous result (revokes its photo URL, clears layers
+    // and metadata) before building the new one.
+    currentResult.reset();
 
-    if (currentPhotoObjectUrl) {
-        URL.revokeObjectURL(currentPhotoObjectUrl);
-        currentPhotoObjectUrl = null;
-    }
-
-    currentPhotoObjectUrl = URL.createObjectURL(image);
-    const photoImgHtml = '<img src="' + currentPhotoObjectUrl + '" style="border-radius:4px;margin-top:6px;">';
-    currentPhotoHtml = photoImgHtml;
+    currentResult.imageFile = image;
+    currentResult.photoObjectUrl = URL.createObjectURL(image);
+    const photoImgHtml = '<img src="' + currentResult.photoObjectUrl + '" style="border-radius:4px;margin-top:6px;">';
+    currentResult.photoHtml = photoImgHtml;
 
     const panelOpen = isPanelOpen();
     const stripOpen = isStripOpen();
@@ -2386,7 +2390,7 @@ async function locateImage(input) {
         showPanelLoading(photoImgHtml);
     } else showSearching();
 
-    const photoLatLng = null;
+    let photoLatLng = null;
     try {
         photoLatLng = await exifr.gps(image);
     } catch (e) {

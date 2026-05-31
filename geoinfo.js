@@ -74,7 +74,7 @@ function updateLocateUserButton() {
 
     const panelOpen = isPanelOpen();
     const stripOpen = isStripOpen();
-    const hasMappableResult = currentLat != null && currentLng != null;
+    const hasMappableResult = currentResult.hasLocation();
 
     const shouldShow = (panelOpen || stripOpen) && !isSearching && hasMappableResult;
 
@@ -99,7 +99,7 @@ function updateLocateUserButton() {
 
 function showUserLocationPreview() {
     if (locationPreviewInProgress) return;
-    if (!userCoordinates || currentLat == null || currentLng == null) return;
+    if (!userCoordinates || !currentResult.hasLocation()) return;
 
     const token = ++_previewToken;
 
@@ -127,7 +127,7 @@ function showUserLocationPreview() {
     }
 
     const bounds = L.latLngBounds([
-        [currentLat, currentLng],
+        [currentResult.lat, currentResult.lng],
         [userLat, userLng]
     ]);
 
@@ -137,7 +137,7 @@ function showUserLocationPreview() {
     // Hide the polygon during the preview's flights — re-projecting it every animation
     // frame causes the lag/colour-splotch. A country polygon is kept as useful context;
     // smaller (region/city/landmark) polygons are restored once the final fly settles.
-    if (locationPolygon && currentConfidence !== "country") map.removeLayer(locationPolygon);
+    if (currentResult.polygon && currentResult.confidence !== "country") map.removeLayer(currentResult.polygon);
 
     locationPreviewTimeout1 = setTimeout(function () {
         map.flyToBounds(bounds, visiblePadding());
@@ -164,10 +164,10 @@ function showUserLocationPreview() {
                         map.removeLayer(userDistanceLabel);
                         userDistanceLabel = null;
                     }
-                    if (locationPolygon) {
-                        map.flyToBounds(locationPolygon.getBounds(), visiblePadding());
+                    if (currentResult.polygon) {
+                        map.flyToBounds(currentResult.polygon.getBounds(), visiblePadding());
                     } else {
-                        map.flyTo(offsetCenterForPanel(L.latLng(currentLat, currentLng), DEFAULT_ZOOM), DEFAULT_ZOOM)
+                        map.flyTo(offsetCenterForPanel(L.latLng(currentResult.lat, currentResult.lng), DEFAULT_ZOOM), DEFAULT_ZOOM)
                     }
                 }, PREVIEW_FADE_MS);
                 map.once("moveend", function () {
@@ -175,7 +175,7 @@ function showUserLocationPreview() {
                     if (userMarker) {
                         map.removeLayer(userMarker);
                     }
-                    if (locationPolygon) locationPolygon.addTo(map);   // restore (no-op if it was never hidden)
+                    if (currentResult.polygon) currentResult.polygon.addTo(map);   // restore (no-op if it was never hidden)
                     locationPreviewInProgress = false;
                     unlockMapInteraction();
                 });
@@ -187,7 +187,7 @@ function showUserLocationPreview() {
         if (locationPreviewInProgress) {
             locationPreviewInProgress = false;
             if (userMarker) map.removeLayer(userMarker);
-            if (locationPolygon) locationPolygon.addTo(map);
+            if (currentResult.polygon) currentResult.polygon.addTo(map);
             unlockMapInteraction();
         }
     }, PREVIEW_SAFETY_MS);
@@ -246,7 +246,7 @@ function showUserDistanceLine(userLat, userLng) {
     if (userDistanceLabel) map.removeLayer(userDistanceLabel);
 
     userDistanceLine = L.polyline(
-        [[currentLat, currentLng], [userLat, userLng]],
+        [[currentResult.lat, currentResult.lng], [userLat, userLng]],
         {
             className: "user-distance-line",
             weight: 3,
@@ -254,8 +254,8 @@ function showUserDistanceLine(userLat, userLng) {
         }
     ).addTo(map);
 
-    const midLat = (currentLat + userLat) / 2;
-    const midLng = (currentLng + userLng) / 2;
+    const midLat = (currentResult.lat + userLat) / 2;
+    const midLng = (currentResult.lng + userLng) / 2;
 
     const distance = formatDistance(geoInfoCache.distanceKm);
 
@@ -291,9 +291,9 @@ elements.locateBtn.addEventListener("click", async function () {
 
         if (!panelOpen && !stripOpen) return;
 
-        if (currentLat == null || currentLng == null) return;
+        if (!currentResult.hasLocation()) return;
 
-        await buildDistanceItem(currentLat, currentLng);
+        await buildDistanceItem(currentResult.lat, currentResult.lng);
         balanceGeoInfoLayout();
     }
 
@@ -428,7 +428,7 @@ async function buildDistanceItem(lat, lng) {
 }
 
 function formatDistanceSentence(km) {
-    const template = DISTANCE_TRANSLATIONS[currentLang] || DISTANCE_TRANSLATIONS.en;
+    const template = DISTANCE_TRANSLATIONS[uiLang] || DISTANCE_TRANSLATIONS.en;
 
     const parts = template.split("{distance}");
     const before = parts[0].trim();
@@ -573,7 +573,7 @@ function buildCountryItem(lat, lng, aiCountryCode) {
         return;
     }
 
-    const regionNames = new Intl.DisplayNames([currentLang], { type: "region" });
+    const regionNames = new Intl.DisplayNames([uiLang], { type: "region" });
 
     const flagHtml = getFlagImg(aiCountryCode);
 
@@ -603,11 +603,11 @@ function getLocalTime(timezone) {
     if (!timezone) return null;
 
     try {
-        const formatter = new Intl.DateTimeFormat(currentLang, {
+        const formatter = new Intl.DateTimeFormat(uiLang, {
             timeZone: timezone,
             hour: "2-digit",
             minute: "2-digit",
-            hour12: currentLang === "en" && navigator.language === "en-US"
+            hour12: uiLang === "en" && navigator.language === "en-US"
         });
         return formatter.format(new Date());
     } catch (e) {
@@ -744,7 +744,7 @@ function getContinentName(countryCode) {
     const continentCode = COUNTRY_TO_CONTINENT[countryCode.toUpperCase()];
     if (!continentCode) return null;
 
-    const langTable = CONTINENT_TRANSLATIONS[currentLang] || CONTINENT_TRANSLATIONS.en;
+    const langTable = CONTINENT_TRANSLATIONS[uiLang] || CONTINENT_TRANSLATIONS.en;
     return langTable[continentCode] || CONTINENT_TRANSLATIONS.en[continentCode] || null;
 }
 

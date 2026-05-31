@@ -202,10 +202,7 @@ function attachStripGestures() {
             // primary = horizontal, secondary = vertical
             if (axis === "h") {
                 if (dx > SWIPE_DISTANCE || vx > SWIPE_VELOCITY) {
-                    openPanel(
-                        currentPlaceName, currentPhotoHtml,
-                        currentMethod, currentShortName, currentIsAI
-                    );
+                    openPanel();
                     panel.style.transform = "";
                     recenterForPanelState();
                 } else {
@@ -224,10 +221,7 @@ function attachStripGestures() {
             // Commit to opening the panel if the drag was far enough OR
             // fast enough (a quick flick shouldn't need full distance).
             if (dy < -SWIPE_DISTANCE || vy > SWIPE_VELOCITY) {
-                openPanel(
-                    currentPlaceName, currentPhotoHtml,
-                    currentMethod, currentShortName, currentIsAI
-                );
+                openPanel();
                 panel.style.transform = "";
                 recenterForPanelState();
             }
@@ -524,10 +518,10 @@ function visiblePadding() {
 //          back to center when minimizing).
 // Bounds → flyToBounds with panel-aware padding (absolute, state-driven).
 function recenterForPanelState() {
-    if (!isTouchDevice || locationPreviewInProgress || currentLat == null || currentLng == null) return;
+    if (!isTouchDevice || locationPreviewInProgress || !currentResult.hasLocation()) return;
 
-    if (locationPolygon) {
-        map.flyToBounds(locationPolygon.getBounds(), visiblePadding());
+    if (currentResult.polygon) {
+        map.flyToBounds(currentResult.polygon.getBounds(), visiblePadding());
         return;
     }
 

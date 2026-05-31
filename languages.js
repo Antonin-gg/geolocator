@@ -1256,29 +1256,29 @@ const languageInstructions = {
 };
 
 function translate(key) {
-    return TRANSLATIONS[currentLang][key] || TRANSLATIONS.en[key] || key;
+    return TRANSLATIONS[uiLang][key] || TRANSLATIONS.en[key] || key;
 }
 
 function unit(key) {
-    return (UNIT_TRANSLATIONS[currentLang] && UNIT_TRANSLATIONS[currentLang][key])
+    return (UNIT_TRANSLATIONS[uiLang] && UNIT_TRANSLATIONS[uiLang][key])
         || UNIT_TRANSLATIONS.en[key]
         || key;
 }
 
 function coord(key) {
-    return (COORDINATE_TRANSLATIONS[currentLang] && COORDINATE_TRANSLATIONS[currentLang][key])
+    return (COORDINATE_TRANSLATIONS[uiLang] && COORDINATE_TRANSLATIONS[uiLang][key])
         || COORDINATE_TRANSLATIONS.en[key]
         || key;
 }
 
 function error(key) {
-    return (ERROR_TRANSLATIONS[currentLang] && ERROR_TRANSLATIONS[currentLang][key])
+    return (ERROR_TRANSLATIONS[uiLang] && ERROR_TRANSLATIONS[uiLang][key])
         || ERROR_TRANSLATIONS.en[key]
         || key;
 }
 
 function locateHintText() {
-    return LOCATE_HINT_TRANSLATIONS[currentLang] || LOCATE_HINT_TRANSLATIONS.en;
+    return LOCATE_HINT_TRANSLATIONS[uiLang] || LOCATE_HINT_TRANSLATIONS.en;
 }
 
 function changeLanguage() {
