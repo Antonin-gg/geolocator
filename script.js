@@ -950,7 +950,7 @@ function buildWikiApiUrl(language, params) {
         "&exintro=1" +
         "&explaintext=1" +
         "&inprop=url" +
-        "&lllimit=500" +
+        "&lllimit=max" +
         "&format=json" +
         "&origin=*";
 }
