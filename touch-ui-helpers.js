@@ -1,6 +1,25 @@
 const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 if (isTouchDevice) document.body.classList.add("touch");
 
+// ── MOBILE UI MODE ─────────────────────────────────────────────────
+// Mobile UI applies to all touch devices regardless of screen size, plus
+// non-touch devices under the size threshold. This is computed in JS
+// (not media queries) because media queries can't read touch capability
+// reliably across browsers, and we want a single source of truth.
+const MOBILE_MAX_WIDTH = 768;        // px — width at/below which non-touch gets mobile UI (matches CSS orientation rules)
+const LANDSCAPE_MAX_HEIGHT = 500;    // px — height at/below which non-touch gets mobile UI
+
+function updateMobileMode() {
+    const isMobileSize = window.innerWidth <= MOBILE_MAX_WIDTH || window.innerHeight <= LANDSCAPE_MAX_HEIGHT;
+    document.body.classList.toggle("mobile-display", isTouchDevice || isMobileSize);
+}
+
+function isMobileMode() {
+    return document.body.classList.contains("mobile-display");
+}
+
+updateMobileMode();
+
 // ── TIMING & LAYOUT CONSTANTS ──────────────────────────────────────
 const PANEL_TRANSITION_MS = 300;   // wait for the panel CSS transition; must match #resultPanel transition (0.3s)
 const ULTRA_MAP_PEEK_PX = 30;      // map sliver left visible behind ultra; must match CSS calc(... - 30px)

@@ -19,10 +19,10 @@ const ICONS = {
 
 
 // ── UI TUNABLES ────────────────────────────────────────────────────
-const MOBILE_MAX_WIDTH = 768;        // px — viewport width at/below which the mobile layout applies (matches CSS)
-const LANDSCAPE_MAX_HEIGHT = 500;    // px — viewport height at/below which the short-landscape layout applies (matches CSS)
 const ERROR_DISPLAY_MS = 3000;       // how long the error banner stays up
-// PANEL_TRANSITION_MS (touch-ui-helpers.js) and DEFAULT_ZOOM (geoinfo.js) are also used here.
+// PANEL_TRANSITION_MS (touch-ui-helpers.js), DEFAULT_ZOOM (geoinfo.js), and the mobile-mode
+// breakpoints MOBILE_MAX_WIDTH / LANDSCAPE_MAX_HEIGHT (touch-ui-helpers.js) are also used here.
+// "Is this mobile UI?" is read via isMobileMode() (touch-ui-helpers.js), never recomputed from size.
 
 // ── STATE ──────────────────────────────────────────────────────────
 let isSatellite = false;
@@ -452,9 +452,7 @@ function lockPanelPhotoSize(force) {
             reservedResultHeight += 30; // panelMethod likely one line
             reservedResultHeight += 30; // learnMore button
             reservedResultHeight += 28; // two gaps, roughly 14px each
-            if ((window.innerWidth <= MOBILE_MAX_WIDTH && window.innerHeight > window.innerWidth) ||
-                (window.innerHeight <= LANDSCAPE_MAX_HEIGHT && window.innerWidth > window.innerHeight)) {
-
+            if (isMobileMode()) {
                 reservedResultHeight += 140; //panelMethod likely at least one more line on mobile
             }
         }
@@ -483,7 +481,7 @@ function lockPanelPhotoSize(force) {
 
 function alignToggleChevrons() {
 
-    if (window.innerWidth <= MOBILE_MAX_WIDTH || window.innerHeight <= LANDSCAPE_MAX_HEIGHT) return;
+    if (isMobileMode()) return;
 
     const toggles = [
         document.querySelector("#showToggleView .toggle-text"),
@@ -524,7 +522,7 @@ function updateToggles() {
 }
 
 function updateUploadButtons() {
-    const isMobile = window.innerWidth <= MOBILE_MAX_WIDTH || window.innerHeight <= LANDSCAPE_MAX_HEIGHT;
+    const isMobile = isMobileMode();
     const panelOpen = isPanelOpen();
     const stripOpen = isStripOpen();
 
@@ -541,6 +539,8 @@ window.addEventListener("resize", function () {
     clearTimeout(resizeTimeout);
 
     resizeTimeout = setTimeout(function () {
+
+        updateMobileMode();
 
         if (isPanelOpen()) {
 

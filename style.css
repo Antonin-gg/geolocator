@@ -1533,9 +1533,9 @@ body.touch #stripHandle .handle-line {
 }
 
 
-@media (max-width: 768px) and (orientation: portrait) {
+@media (orientation: portrait) {
 
-    #resultPanel {
+    :where(body.mobile-display) #resultPanel {
         top: auto;
         bottom: 0;
         left: 0;
@@ -1546,28 +1546,28 @@ body.touch #stripHandle .handle-line {
         padding: 60px 16px max(5px, env(safe-area-inset-bottom)) 16px;
     }
 
-    #resultPanel.open {
+    :where(body.mobile-display) #resultPanel.open {
         transform: translateY(0);
     }
 
-    #panelToggle {
+    :where(body.mobile-display) #panelToggle {
         top: 16px;
         bottom: auto;
         left: 16px;
         right: auto;
     }
 
-    .chevron-left,
-    .chevron-right {
+    :where(body.mobile-display) .chevron-left,
+    :where(body.mobile-display) .chevron-right {
         display: none;
     }
 
-    .chevron-down,
-    .chevron-up {
+    :where(body.mobile-display) .chevron-down,
+    :where(body.mobile-display) .chevron-up {
         display: block;
     }
 
-    #resultStrip {
+    :where(body.mobile-display) #resultStrip {
         top: auto;
         bottom: 0;
         left: 0;
@@ -1581,7 +1581,7 @@ body.touch #stripHandle .handle-line {
         writing-mode: horizontal-tb;
     }
 
-    #stripPlaceName {
+    :where(body.mobile-display) #stripPlaceName {
         writing-mode: horizontal-tb;
         transform: none;
         overflow: hidden;
@@ -1592,197 +1592,196 @@ body.touch #stripHandle .handle-line {
         text-align: center;
     }
 
-    #map.panel-open {
+    :where(body.mobile-display) #map.panel-open {
         height: 50dvh;
         margin-left: 0;
         width: 100%;
     }
 }
 
-@media (max-width: 768px),
-(max-height: 500px) {
-
-    .leaflet-control-zoom {
-        display: none;
-    }
-
-    #panelPhoto {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-        min-height: 0;
-    }
-
-    #panelPhoto img {
-        width: auto;
-        height: auto;
-        max-width: 100%;
-        object-fit: contain;
-        display: block;
-    }
-
-    #imageInputLabelPanel {
-        display: none;
-        cursor: pointer;
-    }
-
-    .upload-icon {
-        width: 24px;
-        height: 24px;
-        display: block;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2.2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-
-    #locateUserButton.visible {
-        display: none;
-    }
-
-    #locateUserButtonMobile.visible {
-        display: flex;
-    }
-
-    #locateUserButtonMobile {
-        width: 38px;
-        height: 38px;
-        padding: 0;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px !important;
-        color: #1f5f9f !important;
-    }
-
-    body.dark #locateUserButtonMobile {
-        color: #7ab8ff !important;
-    }
-
-    .locate-mobile-icon {
-        width: 24px;
-        height: 24px;
-        display: block;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2.2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-
-    #wrapperToggles {
-        top: 10px;
-        right: 10px;
-        width: 38px;
-        z-index: 1003;
-        gap: 6px;
-        align-items: flex-end;
-    }
-
-    .desktop-toggle-label,
-    .toggle-chevron,
-    #showToggleView,
-    #showToggleTheme {
-        display: none;
-    }
-
-    .mobile-control-only {
-        display: none;
-    }
-
-    .mobile-toggle-label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #toggleView,
-    #toggleTheme,
-    #showToggleLanguage,
-    #imageInputLabelPanel {
-        width: 38px;
-        height: 38px;
-        padding: 0;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #showToggleLanguage,
-    #toggleView,
-    #toggleTheme {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px !important;
-    }
-
-    #languageOptions {
-        position: fixed;
-        top: 75px;
-        left: 75px;
-        right: 75px;
-        bottom: 75px;
-
-        width: auto;
-        max-height: none;
-        overflow-y: auto;
-
-        border-radius: 14px !important;
-        z-index: 3000;
-    }
-
-    .lang-option {
-        width: 100%;
-        border-radius: 0 !important;
-        padding: 10px 14px;
-    }
-
-    .lang-option:first-child {
-        border-top-left-radius: 14px !important;
-        border-top-right-radius: 14px !important;
-    }
-
-    .lang-option:last-child {
-        border-bottom-left-radius: 14px !important;
-        border-bottom-right-radius: 14px !important;
-    }
-
-    .mobile-toggle-icon {
-        width: 24px;
-        height: 24px;
-        display: block;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 2.2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-
-    body.panel-open #locateUserHint,
-    body.strip-open #locateUserHint,
-    #locateUserHint {
-        right: 56px;
-        left: auto;
-        top: 206px;
-        transform: translateY(-50%);
-    }
-
-    #locateUserHint .hint-text {
-        text-align: center;
-    }
-
-    .hint-arrow-left {
-        display: none;
-    }
-
-    .hint-arrow-right {
-        display: inline-block;
-    }
+/* Mobile chrome — applies whenever body has .mobile-display (touch any size,
+   or non-touch under the size threshold). :where() keeps each selector at its
+   original specificity so body.touch overrides still win exactly as before. */
+:where(body.mobile-display) .leaflet-control-zoom {
+    display: none;
 }
 
-@media (max-height: 500px) and (orientation: landscape) {
-    #panelPhoto {
+:where(body.mobile-display) #panelPhoto {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    min-height: 0;
+}
+
+:where(body.mobile-display) #panelPhoto img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+:where(body.mobile-display) #imageInputLabelPanel {
+    display: none;
+    cursor: pointer;
+}
+
+:where(body.mobile-display) .upload-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+:where(body.mobile-display) #locateUserButton.visible {
+    display: none;
+}
+
+:where(body.mobile-display) #locateUserButtonMobile.visible {
+    display: flex;
+}
+
+:where(body.mobile-display) #locateUserButtonMobile {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px !important;
+    color: #1f5f9f !important;
+}
+
+body.dark:where(.mobile-display) #locateUserButtonMobile {
+    color: #7ab8ff !important;
+}
+
+:where(body.mobile-display) .locate-mobile-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+:where(body.mobile-display) #wrapperToggles {
+    top: 10px;
+    right: 10px;
+    width: 38px;
+    z-index: 1003;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+:where(body.mobile-display) .desktop-toggle-label,
+:where(body.mobile-display) .toggle-chevron,
+:where(body.mobile-display) #showToggleView,
+:where(body.mobile-display) #showToggleTheme {
+    display: none;
+}
+
+:where(body.mobile-display) .mobile-control-only {
+    display: none;
+}
+
+:where(body.mobile-display) .mobile-toggle-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+:where(body.mobile-display) #toggleView,
+:where(body.mobile-display) #toggleTheme,
+:where(body.mobile-display) #showToggleLanguage,
+:where(body.mobile-display) #imageInputLabelPanel {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+:where(body.mobile-display) #showToggleLanguage,
+:where(body.mobile-display) #toggleView,
+:where(body.mobile-display) #toggleTheme {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px !important;
+}
+
+:where(body.mobile-display) #languageOptions {
+    position: fixed;
+    top: 75px;
+    left: 75px;
+    right: 75px;
+    bottom: 75px;
+
+    width: auto;
+    max-height: none;
+    overflow-y: auto;
+
+    border-radius: 14px !important;
+    z-index: 3000;
+}
+
+:where(body.mobile-display) .lang-option {
+    width: 100%;
+    border-radius: 0 !important;
+    padding: 10px 14px;
+}
+
+:where(body.mobile-display) .lang-option:first-child {
+    border-top-left-radius: 14px !important;
+    border-top-right-radius: 14px !important;
+}
+
+:where(body.mobile-display) .lang-option:last-child {
+    border-bottom-left-radius: 14px !important;
+    border-bottom-right-radius: 14px !important;
+}
+
+:where(body.mobile-display) .mobile-toggle-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body.panel-open:where(.mobile-display) #locateUserHint,
+body.strip-open:where(.mobile-display) #locateUserHint,
+:where(body.mobile-display) #locateUserHint {
+    right: 56px;
+    left: auto;
+    top: 206px;
+    transform: translateY(-50%);
+}
+
+:where(body.mobile-display) #locateUserHint .hint-text {
+    text-align: center;
+}
+
+:where(body.mobile-display) .hint-arrow-left {
+    display: none;
+}
+
+:where(body.mobile-display) .hint-arrow-right {
+    display: inline-block;
+}
+
+@media (orientation: landscape) {
+    :where(body.mobile-display) #panelPhoto {
         flex: 1;
         min-height: 0;
         overflow: hidden;
@@ -1791,7 +1790,7 @@ body.touch #stripHandle .handle-line {
         align-items: center;
     }
 
-    #panelPhoto img {
+    :where(body.mobile-display) #panelPhoto img {
         width: auto;
         height: 100%;
         max-width: 100%;
@@ -1799,7 +1798,7 @@ body.touch #stripHandle .handle-line {
         object-fit: contain;
     }
 
-    #stripPlaceName {
+    :where(body.mobile-display) #stripPlaceName {
         display: none;
     }
 }
