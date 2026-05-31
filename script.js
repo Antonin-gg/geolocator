@@ -1381,6 +1381,8 @@ async function aiLocator(image) {
         const raw = data.choices[0].message.content;
         return JSON.parse(raw);
     } catch (e) {
+        console.warn("aiLocator failed to parse AI response:", e, data);
+
         return {
             place: "unknown",
             countryCode: "",
@@ -1471,89 +1473,108 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
 }
 
+// Geocoding cascade strategy:
+// The AI returns one place string, but geocoders often need simpler or
+// broader variants to find the right result. Before the cascade starts,
+// generateFallbackQueries() builds those variants by progressively removing
+// less essential parts of the place name while keeping safer parent context.
+// This lets us try the most specific query first, then fall back to broader
+// geocodable versions if the exact name is not found.
+//
+// We use two geocoding sources because they are good at different things.
+// Nominatim is preferred for most area-level places because it can return
+// polygons and is usually more reliable for cities, regions, and countries.
+// OpenCage is useful as a backup, especially for landmarks, because it often
+// finds specific named places that Nominatim misses.
+//
+// Each search has two levels of strictness:
+//   1. Strict pass: require the geocoder result to match the expected map level
+//      from the AI confidence. This avoids accepting a similarly named place
+//      from the wrong type level, such as a city when we expected a region, or
+//      a region when we expected a country.
+//   2. Loose pass: retry without the type filter. This recovers valid results
+//      when a geocoder classifies the right place differently than our app does.
+//
+// During the strict pass, for city, region, and country results, we use a
+// whitelist of accepted geocoder types for each AI confidence level. For
+// landmarks, we use a blacklist instead, because landmark-like places can
+// appear under too many different geocoder types to whitelist reliably.
+//
+// Landmarks are handled differently from areas because they are fragile,
+// specific targets. For each landmark query, we try Nominatim and then
+// OpenCage immediately before moving to the next fallback query. OpenCage is
+// included early here because it is often good at finding landmarks when
+// Nominatim does not.
+//
+// Areas are more stable and broad, so we favour Nominatim first and exhaust
+// its queries before trying OpenCage: Nominatim strict, OpenCage strict,
+// Nominatim loose, OpenCage loose. This keeps higher-level places more
+// predictable while still providing fallback coverage.
+//
+// When OpenCage finds a result, we still try to recover a matching Nominatim
+// result afterward. This can give us more accuracy and, importantly, recover 
+// a polygon so the app can show an area outline instead of only a point marker.
 async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
-
     const queries = generateFallbackQueries(aiPlace);
 
-    if (aiConfidence === "landmark") {
-        return await getLocationDataLandmark(queries, aiCountryCode);
-    }
+    const passes = aiConfidence === "landmark"
+        ? [
+            // For landmarks, try both APIs for each query before moving to the next fallback query.
+            { sources: ["nominatim", "opencage"], filterByType: "landmark" },
+            { sources: ["nominatim", "opencage"], filterByType: null }
+        ]
+        : [
+            // For areas, exhaust Nominatim first, then OpenCage.
+            { sources: ["nominatim"], filterByType: aiConfidence },
+            { sources: ["opencage"], filterByType: aiConfidence },
+            { sources: ["nominatim"], filterByType: null },
+            { sources: ["opencage"], filterByType: null }
+        ];
 
-    return await getLocationDataAreas(queries, aiConfidence, aiCountryCode);
+    return await runGeocodingCascade(queries, passes, aiCountryCode);
 }
 
-async function getLocationDataLandmark(queries, aiCountryCode) {
-
-    let result = null;
-
-    // Strict pass with type filter
-    result = await loopThroughLandmarkQueries(queries, "landmark", aiCountryCode);
-    if (result) return result;
-
-    // Loose pass without type filter
-    result = await loopThroughLandmarkQueries(queries, null, aiCountryCode);
-
-    return result;
-}
-
-async function loopThroughLandmarkQueries(queries, aiConfidence, aiCountryCode) {
-    for (let i = 0; i < queries.length; i++) {
-
-        if (i === 2) geocodingFellback = 1;
-
-        // Try Nominatim
-        const nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
-        if (nominatimResult === "error") return null;
-        if (nominatimResult) return nominatimResult;
-
-        // Try OpenCage
-        const openCageResult = await tryOpenCage(queries[i], aiConfidence, aiCountryCode);
-        if (openCageResult === "error") return null;
-        if (openCageResult) return openCageResult;
-    }
+async function runGeocodingCascade(queries, passes, aiCountryCode) {
     geocodingFellback = 0;
-    return null;
 
-}
+    for (let p = 0; p < passes.length; p++) {
+        const pass = passes[p];
 
-async function getLocationDataAreas(queries, aiConfidence, aiCountryCode) {
+        for (let i = 0; i < queries.length; i++) {
+            if (i === 2) geocodingFellback = 1;
 
-    let result = null;
+            for (let s = 0; s < pass.sources.length; s++) {
+                const result = await tryGeocodingSource(
+                    pass.sources[s],
+                    queries[i],
+                    pass.filterByType,
+                    aiCountryCode
+                );
 
-    // Strict Nominatim pass with type filter
-    result = await loopThroughAreaQueries(queries, aiConfidence, aiCountryCode, "nominatim");
-    if (result) return result;
+                if (result === "error") {
+                    geocodingFellback = 0;
+                    return null;
+                }
 
-    // Strict OpenCage pass with type filter
-    result = await loopThroughAreaQueries(queries, aiConfidence, aiCountryCode, "opencage");
-    if (result) return result;
-
-    // Loose Nominatim pass without type filter
-    result = await loopThroughAreaQueries(queries, null, aiCountryCode, "nominatim");
-    if (result) return result;
-
-    // Loose OpenCage pass without type filter
-    result = await loopThroughAreaQueries(queries, null, aiCountryCode, "opencage");
-
-    return result;
-}
-
-async function loopThroughAreaQueries(queries, aiConfidence, aiCountryCode, apiCall) {
-    for (let i = 0; i < queries.length; i++) {
-
-        if (i === 2) geocodingFellback = 1;
-
-        if (apiCall === "nominatim") {
-            const nominatimResult = await tryNominatim(queries[i], aiConfidence, aiCountryCode);
-            if (nominatimResult === "error") return null;
-            if (nominatimResult) return nominatimResult;
-        } else if (apiCall === "opencage") {
-            const openCageResult = await tryOpenCage(queries[i], aiConfidence, aiCountryCode);
-            if (openCageResult === "error") return null;
-            if (openCageResult) return openCageResult;
+                if (result) {
+                    return result;
+                }
+            }
         }
+        geocodingFellback = 0;
     }
-    geocodingFellback = 0;
+    return null;
+}
+
+async function tryGeocodingSource(source, query, filterByType, aiCountryCode) {
+    if (source === "nominatim") {
+        return await tryNominatim(query, filterByType, aiCountryCode);
+    }
+
+    if (source === "opencage") {
+        return await tryOpenCage(query, filterByType, aiCountryCode);
+    }
+
     return null;
 }
 

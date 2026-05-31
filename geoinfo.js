@@ -75,8 +75,8 @@ function updateLocateUserButton() {
     const panelOpen = isPanelOpen();
     const stripOpen = isStripOpen();
     const hasMappableResult = currentLat != null && currentLng != null;
-    
-    const shouldShow = (panelOpen || stripOpen) && !isSearching &&hasMappableResult;
+
+    const shouldShow = (panelOpen || stripOpen) && !isSearching && hasMappableResult;
 
     clearTimeout(locateButtonTimeout);
 
@@ -342,13 +342,7 @@ async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
 
         buildCoordinatesItem(lat, lng);
 
-        const weatherData = await getWeatherData(lat, lng) || {
-            elevation: null,
-            timezone: null,
-            temperature: null,
-            weatherCode: null,
-            isDay: null
-        };
+        const weatherData = await getWeatherData(lat, lng);
 
         geoInfoCache.altitudeMeters = weatherData.elevation;
         geoInfoCache.weatherTempC = weatherData.temperature;
@@ -523,16 +517,29 @@ async function getAltitude(lat, lng) {
 
     try {
         const response = await fetch(url);
-        if (!response.ok) return null;
+
+        if (!response.ok) {
+            console.warn("getAltitude failed: non-OK response", response.status, response.statusText);
+            return null;
+        }
 
         const data = await response.json();
-        if (!data.results || !data.results[0]) return null;
+
+        if (!data.results || !data.results[0]) {
+            console.warn("getAltitude failed: missing results", data);
+            return null;
+        }
 
         const elevation = data.results[0].elevation;
-        if (elevation === null || elevation === undefined) return null;
+
+        if (elevation === null || elevation === undefined) {
+            console.warn("getAltitude failed: missing elevation", data.results[0]);
+            return null;
+        }
 
         return elevation;
     } catch (e) {
+        console.warn("getAltitude failed:", e);
         return null;
     }
 }
@@ -604,6 +611,7 @@ function getLocalTime(timezone) {
         });
         return formatter.format(new Date());
     } catch (e) {
+        console.warn("getLocalTime failed:", e, "timezone:", timezone);
         return null;
     }
 }
@@ -617,19 +625,29 @@ async function getWeatherData(lat, lng) {
 
     try {
         const response = await fetch(url);
-        if (!response.ok) return null;
+
+        if (!response.ok) {
+            console.warn("getWeatherData failed: non-OK response", response.status, response.statusText);
+            return {
+                elevation: null,
+                timezone: null,
+                temperature: null,
+                weatherCode: null,
+                isDay: null
+            };
+        }
 
         const data = await response.json();
 
         return {
-            elevation: data.elevation,
-            timezone: data.timezone,
-            temperature: data.current && data.current.temperature_2m,
-            weatherCode: data.current && data.current.weather_code,
-            isDay: data.current && data.current.is_day === 1,
+            elevation: data.elevation ?? null,
+            timezone: data.timezone ?? null,
+            temperature: data.current?.temperature_2m ?? null,
+            weatherCode: data.current?.weather_code ?? null,
+            isDay: data.current?.is_day === 1
         };
     } catch (e) {
-        //return null;
+        console.warn("getWeatherData failed:", e);
         return {
             elevation: null,
             timezone: null,
