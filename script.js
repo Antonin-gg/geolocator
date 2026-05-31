@@ -1617,7 +1617,7 @@ async function tryNominatim(query, aiConfidence, aiCountryCode) {
         encodeURIComponent(query) +
         "&format=json&limit=10&polygon_geojson=1&addressdetails=1&namedetails=1&accept-language=" + currentLang;
 
-    if (aiCountryCode) {
+    if (aiCountryCode && aiCountryCode !== "AQ") {
         url += "&countrycodes=" + aiCountryCode.toLowerCase();
     }
 
