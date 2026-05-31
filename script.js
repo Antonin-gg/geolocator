@@ -881,8 +881,14 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
         result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
 
         if (result && currentLang != "en") {
+            console.warn("Wiki EN result:", result.title, result.fullurl);
+            console.warn("Wiki langlinks available:", result.langlinks);
+
             const translatedTitle = getWikiTitleTranslation(result);
+            console.warn("Wiki translated title for", currentLang + ":", translatedTitle);
+
             if (translatedTitle) {
+                console.warn("Wiki translated page result:", translatedResult && translatedResult.title, translatedResult && translatedResult.fullurl);
 
                 const translatedResult = await getWikiPageByTitle(translatedTitle, currentLang) || result;
                 if (translatedResult != result) {
@@ -2345,7 +2351,12 @@ async function locateImage(input) {
         showPanelLoading(photoImgHtml);
     } else showSearching();
 
-    const photoLatLng = await exifr.gps(image);
+    const photoLatLng = null;
+    try {
+        photoLatLng = await exifr.gps(image);
+    } catch (e) {
+        console.warn("EXIF GPS read failed:", e);
+    }
 
     if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
 
