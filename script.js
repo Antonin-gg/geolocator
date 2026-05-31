@@ -1569,14 +1569,6 @@ async function runGeocodingCascade(queries, passes, aiCountryCode) {
             if (i === 2) geocodingFellback = 1;
 
             for (let s = 0; s < pass.sources.length; s++) {
-                console.warn("Geocoding attempt:", {
-                    pass: p,
-                    source: pass.sources[s],
-                    query: queries[i],
-                    filterByType: pass.filterByType,
-                    aiCountryCode
-                });
-
                 const result = await tryGeocodingSource(
                     pass.sources[s],
                     queries[i],
@@ -1629,18 +1621,6 @@ async function tryNominatim(query, aiConfidence, aiCountryCode) {
     }
 
     const results = await response.json();
-
-    console.warn("Nominatim raw results for:", query, results.map(function (r) {
-        return {
-            name: r.display_name,
-            class: r.class,
-            type: r.type,
-            addresstype: r.addresstype,
-            importance: r.importance,
-            lat: r.lat,
-            lon: r.lon
-        };
-    }));
 
     if (results.length > 0) {
         const result = pickBestNominatimResult(results, query, aiConfidence);
