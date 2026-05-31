@@ -2140,6 +2140,9 @@ async function placeMarkerFromAI(image, photoHtml) {
             locationPolygon = null;
         }
 
+        currentLat = null;
+        currentLng = null;
+
         currentSentence = "<strong>" + translate("unknownLocation") + "</strong>";
 
         if (aiConfidence === "space") currentSentence = aiResult.displaySentence;

@@ -74,8 +74,9 @@ function updateLocateUserButton() {
 
     const panelOpen = isPanelOpen();
     const stripOpen = isStripOpen();
-
-    const shouldShow = (panelOpen || stripOpen) && !isSearching;
+    const hasMappableResult = currentLat != null && currentLng != null;
+    
+    const shouldShow = (panelOpen || stripOpen) && !isSearching &&hasMappableResult;
 
     clearTimeout(locateButtonTimeout);
 
