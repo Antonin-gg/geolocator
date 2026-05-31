@@ -341,7 +341,13 @@ async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
 
         buildCoordinatesItem(lat, lng);
 
-        const weatherData = await getWeatherData(lat, lng);
+        const weatherData = await getWeatherData(lat, lng) || {
+            elevation: null,
+            timezone: null,
+            temperature: null,
+            weatherCode: null,
+            isDay: null
+        };
 
         geoInfoCache.altitudeMeters = weatherData.elevation;
         geoInfoCache.weatherTempC = weatherData.temperature;

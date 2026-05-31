@@ -1340,7 +1340,7 @@ async function aiLocator(image) {
                             properties: {
                                 place: { type: "string" },
                                 countryCode: { type: "string" },
-                                confidence: { type: "string", enum: ["landmark", "city", "region", "country", "unknown"] },
+                                confidence: { type: "string", enum: ["landmark", "city", "region", "country", "unknown", "space"] },
                                 method: { type: "string" },
                                 displaySentence: { type: "string" }
                             },
@@ -1375,16 +1375,17 @@ async function aiLocator(image) {
     }
 
     const data = await aiResponse.json();
-    const raw = data.choices[0].message.content;
     // Structured Outputs guarantees a valid JSON object; the try/catch stays as a
     // defensive net for a model refusal or a length-truncated (max_tokens) response.
     try {
+        const raw = data.choices[0].message.content;
         return JSON.parse(raw);
     } catch (e) {
         return {
             place: "unknown",
+            countryCode: "",
             confidence: "unknown",
-            method: "Could not parse the AI response.",
+            method: error("network"),
             displaySentence: ""
         };
     }
@@ -2159,7 +2160,20 @@ async function placeMarkerFromAI(image, photoHtml) {
     const location = await getLocationData(queryLocation, aiConfidence, aiResult.countryCode);
 
     if (!location) {
-        openPanel("Unknown location", photoHtml, aiResult.method, "Unknown location", true);
+        hideSearching();
+        elements.placeName.classList.remove("loading");
+        elements.panelGlobe.classList.remove("globe-active");
+
+        currentSentence = "<strong>" + translate("unknownLocation") + "</strong>";
+
+        openPanel(
+            translate("unknownLocationShort"),
+            photoHtml,
+            aiResult.method,
+            translate("unknownLocationShort"),
+            true
+        );
+
         elements.placeName.innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
         return;
     }
