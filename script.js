@@ -852,48 +852,55 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, 
 
 async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
     /*
-    Wikipedia fallback logic
-    1. Search English Wikipedia with the current query.
-    2. If the query builder added a blacklisted/simplified query, it is handled as
-       part of this same loop. `wikiBlacklisted` marks the index where local/geosearch
-       fallbacks are allowed.
-    3. If an English result is found and the UI language is not English:
-       a. Try to find the translated article title in the current UI language.
-       b. On the first query or the blacklisted/simplified query, also try searching
-          the local-language Wikipedia using the geocoded shortName.
-       c. If that fails, try local-language coordinate geosearch.
-       d. If those local fallbacks fail, keep the original English result.
-    4. If no English result is found:
-       a. Only on the first query or the blacklisted/simplified query, try searching
-          the local-language Wikipedia using the geocoded shortName.
-       b. Then try local-language coordinate geosearch.
-       c. If the UI language is not English, also try English coordinate geosearch,
-          then translate that result if possible.
-    5. If nothing works, continue to the next generated query.
-    */
+   Wikipedia fallback logic
+   1. Search English Wikipedia with the current generated query.
+   2. If an English result is found and the UI language is not English:
+      a. Try to find the translated article title in the current UI language.
+      b. If translation fails, keep the English result as a fallback.
+      c. Only at the local-fallback index, also try local-language fallbacks before
+       keeping the English result. This index is usually the first generated query,
+       but shifts when buildWikiFallbackQueries() adds a blacklisted/simplified
+       query or when geocoding itself had to fall back. This gives the cascade a
+       chance to try those safer generated queries before switching to local
+       title search or coordinate geosearch.
+      d. First try searching the local-language Wikipedia using the geocoded shortName.
+      e. If that fails, try local-language coordinate geosearch.
+      f. If those local fallbacks fail, keep the original English result.
+   3. If no English result is found:
+      a. Only at the local-fallback index, try local-language fallbacks. This waits
+       until any blacklisted/simplified wiki query and/or geocoder fallback query
+       has had a chance to run first.
+      b. First try searching the local-language Wikipedia using the geocoded shortName.
+      c. Then try local-language coordinate geosearch.
+      d. If the UI language is not English, also try English coordinate geosearch,
+       then translate that result if possible.
+   4. If nothing works, continue to the next generated query.
+   */
     wikiBlacklisted = 0;
 
     const queries = buildWikiFallbackQueries(aiPlace);
 
+    const localFallbackIndex = wikiBlacklisted + geocodingFellback;
+
     let result = null;
 
     for (let i = 0; i < queries.length; i++) {
+        //Step 1
         result = await getWikiData(queries[i], "en", lat, lng, aiConfidence);
 
+        //Step 2
         if (result && currentLang != "en") {
-            
-            const translatedTitle = getWikiTitleTranslation(result);
 
-            if (translatedTitle) {
-                const translatedResult = await getWikiPageByTitle(translatedTitle, currentLang) || result;
+            //Step 2a
+            const translatedResult = await translateWikiResultToCurrentLang(result);
 
-                if (translatedResult != result) {
-                    result = translatedResult;
-                    break;
-                }
+            if (translatedResult) {
+                result = translatedResult;
+                break;
             }
 
-            if (i === wikiBlacklisted + geocodingFellback) {
+            //Step 2c
+            if (i === localFallbackIndex) {
                 const enResult = result;
 
                 result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
@@ -905,34 +912,50 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
                 result = enResult;
             }
 
+            //Step 2b : result from step 1 is kept
         }
 
         if (result) break;
 
-        if (i === wikiBlacklisted + geocodingFellback) {
+        //Step 3a
+        if (i === localFallbackIndex) {
+            //Step 3b
             result = await getWikiData(geocodedPlace, currentLang, lat, lng, aiConfidence);
             if (result) break;
 
+            //Step 3c
             result = await wikiGeoSearch(geocodedPlace, currentLang, lat, lng, aiConfidence);
             if (result) break;
 
+
+            //Step 3d
             if (currentLang != "en") {
                 result = await wikiGeoSearch(geocodedPlace, "en", lat, lng, aiConfidence);
                 if (result) {
-                    const geoTranslatedTitle = getWikiTitleTranslation(result);
-                    if (geoTranslatedTitle) {
+                    const geoTranslatedResult = await translateWikiResultToCurrentLang(result);
 
-                        result = await getWikiPageByTitle(geoTranslatedTitle, currentLang) || result;
-
+                    if (geoTranslatedResult) {
+                        result = geoTranslatedResult;
+                        break;
                     }
                 }
                 if (result) break;
             }
         }
 
+        //Step 4 : if no result, continue to next iteration
     }
 
     return result;
+}
+
+async function translateWikiResultToCurrentLang(result) {
+    if (!result || currentLang === "en") return null;
+
+    const translatedTitle = getWikiTitleTranslation(result);
+    if (!translatedTitle) return null;
+
+    return await getWikiPageByTitle(translatedTitle, currentLang);
 }
 
 // Builds a Wikipedia API query URL: the fixed base plus the shared extract/
