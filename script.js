@@ -1545,7 +1545,7 @@ async function getWikiTitleTranslation(page) {
             return link.lang === uiLang;
         });
 
-        if (match) return match;
+        if (match) return match["*"];
     }
     return await getWikiTitleTranslationFromApi(page.title);
 }
