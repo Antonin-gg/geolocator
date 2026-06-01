@@ -1216,7 +1216,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
 async function translateWikiResultToCurrentLang(result) {
     if (!result || uiLang === "en") return null;
 
-    const translatedTitle = getWikiTitleTranslation(result);
+    const translatedTitle = await getWikiTitleTranslation(result);
     if (!translatedTitle) return null;
 
     return await getWikiPageByTitle(translatedTitle, uiLang);
@@ -1530,14 +1530,50 @@ function buildWikiFallbackQueries(query) {
     return queries;
 }
 
-function getWikiTitleTranslation(page) {
+async function getWikiTitleTranslation(page) {
     if (!page || !page.langlinks) return null;
 
     const match = page.langlinks.find(function (link) {
         return link.lang === uiLang;
     });
 
-    return match ? match["*"] : null;
+    return match ? match["*"] : await getWikiTitleTranslationFromApi(page.title);
+}
+
+async function getWikiTitleTranslationFromApi(title) {
+    if (!title) {
+        return null;
+    }
+
+    const url = "https://en.wikipedia.org/w/api.php?action=query" +
+        "&titles=" + encodeURIComponent(title) +
+        "&redirects=1" +
+        "&prop=langlinks" +
+        "&lllang=" + encodeURIComponent(uiLang) +
+        "&lllimit=1" +
+        "&format=json" +
+        "&origin=*";
+
+    try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            console.warn("Wiki targeted translation search failed: non-OK response", response.status, response.statusText);
+            return null;
+        }
+
+        const data = await response.json();
+        const pages = Object.values((data.query && data.query.pages) || {});
+        const page = pages[0];
+
+        return page && page.langlinks && page.langlinks[0]
+            ? page.langlinks[0]["*"]
+            : null;
+
+    } catch (e) {
+        console.warn("Wiki targeted translation search failed:", e);
+        return null;
+    }
 }
 
 
@@ -1614,10 +1650,11 @@ async function aiLocator(image) {
         return null;
     }
 
-    const data = await aiResponse.json();
+    let data;
     // Structured Outputs guarantees a valid JSON object; the try/catch stays as a
     // defensive net for a model refusal or a length-truncated (max_tokens) response.
     try {
+        data = await aiResponse.json();
         const raw = data.choices[0].message.content;
         return JSON.parse(raw);
     } catch (e) {

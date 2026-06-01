@@ -72,11 +72,9 @@ function updateLocateUserButton() {
     const mobileButton = elements.locateBtnMobile;
     if (!desktopButton || !mobileButton) return;
 
-    const panelOpen = panel.isPanel;
-    const stripOpen = panel.isStrip;
     const hasMappableResult = currentResult.hasLocation();
 
-    const shouldShow = (panelOpen || stripOpen) && !isSearching && hasMappableResult;
+    const shouldShow = (panel.isVisible) && !isSearching && hasMappableResult;
 
     clearTimeout(locateButtonTimeout);
 
@@ -275,9 +273,6 @@ elements.locateBtn.addEventListener("click", async function () {
         userCoordinates = null;
         userCoordinatesPromise = null;
 
-        const panelOpen = panel.isPanel;
-        const stripOpen = panel.isStrip;
-
         const coords = await getUserCoordinates();
 
         if (!coords) {
@@ -289,7 +284,7 @@ elements.locateBtn.addEventListener("click", async function () {
 
         updateLocateUserButton();
 
-        if (!panelOpen && !stripOpen) return;
+        if (!panel.isVisible) return;
 
         if (!currentResult.hasLocation()) return;
 
