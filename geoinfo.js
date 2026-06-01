@@ -2,8 +2,16 @@
 // Source: https://codepen.io/bluebie/pen/JjdoaLG
 // License: MIT — copyright (c) 2026 Phoenix Fox
 
-let userCoordinatesPromise = null;
+let userCoordinatesRequest = null;
 let _previewToken = 0;
+let hintHideTimeout = null;
+let userMarker = null;
+let locationPreviewTimeout1 = null;
+let locationPreviewTimeout2 = null;
+let userDistanceLine = null;
+let userDistanceLabel = null;
+let locationPreviewInProgress = false;
+
 
 // ── TUNABLES ───────────────────────────────────────────────────────
 const DEFAULT_ZOOM = 13;             // default close-in zoom for a located point (also used in script.js)
@@ -27,13 +35,13 @@ function getUserCoordinates() {
         return Promise.resolve(userCoordinates);
     }
 
-    if (userCoordinatesPromise) {
-        return userCoordinatesPromise;
+    if (userCoordinatesRequest) {
+        return userCoordinatesRequest;
     }
 
-    userCoordinatesPromise = new Promise(function (resolve) {
+    userCoordinatesRequest = new Promise(function (resolve) {
         if (!("geolocation" in navigator)) {
-            userCoordinatesPromise = null;
+            userCoordinatesRequest = null;
             resolve(null);
             return;
         }
@@ -46,12 +54,12 @@ function getUserCoordinates() {
                 ];
 
 
-                userCoordinatesPromise = null;
+                userCoordinatesRequest = null;
                 resolve(userCoordinates);
             },
             function (err) {
                 console.warn("Geolocation failed:", err);
-                userCoordinatesPromise = null;
+                userCoordinatesRequest = null;
                 resolve(null);
             },
             {
@@ -62,7 +70,7 @@ function getUserCoordinates() {
         );
     });
 
-    return userCoordinatesPromise;
+    return userCoordinatesRequest;
 }
 
 let locateButtonTimeout = null;
@@ -271,7 +279,7 @@ elements.locateBtn.addEventListener("click", async function () {
 
     if (!hasAcceptedLocationOnce) {
         userCoordinates = null;
-        userCoordinatesPromise = null;
+        userCoordinatesRequest = null;
 
         const coords = await getUserCoordinates();
 
@@ -298,8 +306,6 @@ elements.locateBtn.addEventListener("click", async function () {
 elements.locateBtnMobile.addEventListener("click", async function () {
     elements.locateBtn.click();
 });
-
-let hintHideTimeout = null;
 
 function showLocateUserHint() {
     const hint = elements.locateHint;

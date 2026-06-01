@@ -45,20 +45,15 @@ const ERROR_DISPLAY_MS = 3000;       // how long the error banner stays up
 // ── STATE ──────────────────────────────────────────────────────────
 let isSatellite = false;
 let isDark = true;
-let uiLang = "en";   // UI language preference (persisted) — not result state, so not in currentResult
+let uiLang = "en";
 let isSearching = false;
-let geocodingFellback = 0;
-let wikiBlacklisted = 0;
+let currentSearchId = 0;
+let didGeocodingFallBack = 0;
+let wikiQueryWasBlacklisted = 0;
 let isImperial = false;
 let userCoordinates = null;
 let locateHintShown = false;
 let hasAcceptedLocationOnce = false;
-let userMarker = null;
-let locationPreviewTimeout1 = null;
-let locationPreviewTimeout2 = null;
-let userDistanceLine = null;
-let userDistanceLabel = null;
-let locationPreviewInProgress = false;
 
 const currentResult = {
     marker: null,
@@ -190,18 +185,10 @@ map.attributionControl.setPrefix('<a href="https://github.com/antonin-gg" target
 
 elements.welcome.textContent = translate("welcome");
 
-const fileInput = elements.imageInput;
-if (/Android/i.test(navigator.userAgent)) {
-    fileInput.accept = 'image/*,model/gltf+json';
-} else {
-    fileInput.accept = 'image/*';
-}
-
-
 
 // ── THEME, LAYER & LANGUAGE TOGGLERS───────────────────────────────
-// changeTheme, eventListeners
-function changeTheme() {
+// applyTheme, eventListeners
+function applyTheme() {
     document.body.classList.toggle("dark", isDark);
     if (currentResult.marker && !isSatellite) currentResult.marker.setIcon(isDark ? cameraIconDark : cameraIconLight);
     if (currentResult.polygon) currentResult.polygon.setStyle({ color: getPolygonColor() });
@@ -253,7 +240,7 @@ function toggleTheme() {
         }
     }
 
-    changeTheme();
+    applyTheme();
     updateToggles();
 
     localStorage.setItem("isDark", isDark);
@@ -404,7 +391,7 @@ elements.wrapperToggles.addEventListener("click", function (e) {
 
 // ── UI HELPERS ─────────────────────────────────────────────────────
 // showSearching, hideSearching, showError, onCloseClick
-function startLoading() {
+function startWelcomeLoading() {
     isSearching = true;
 
     elements.welcome.style.display = "none";
@@ -999,6 +986,8 @@ class Panel {
 
     startLoading(photoHtml) {
         currentResult.clearLayers();
+        stopUserLocationPreview();
+        map.stop();
 
         this.closeMoreContent();
 
@@ -1095,8 +1084,8 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, 
     if (!aiPlace) {
         const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
         const countryName = aiCountryCode ? regionNames.of(aiCountryCode.toUpperCase()) : "";
-        const EnGeocodedPlace = geocodedPlace.split(",")[0].trim() + ", " + countryName;
-        result = await getWikiResult(EnGeocodedPlace, geocodedPlace, lat, lng, "exif");
+        const enGeocodedPlace = geocodedPlace.split(",")[0].trim() + ", " + countryName;
+        result = await getWikiResult(enGeocodedPlace, geocodedPlace, lat, lng, "exif");
 
     } else {
         result = await getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence);
@@ -1142,11 +1131,11 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
        then translate that result if possible.
    4. If nothing works, continue to the next generated query.
    */
-    wikiBlacklisted = 0;
+    wikiQueryWasBlacklisted = 0;
 
     const queries = buildWikiFallbackQueries(aiPlace);
 
-    const localFallbackIndex = wikiBlacklisted + geocodingFellback;
+    const localFallbackIndex = wikiQueryWasBlacklisted + didGeocodingFallBack;
 
     let result = null;
 
@@ -1326,7 +1315,7 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
                             aiConfidence === "city" ? 50 :
                                 aiConfidence === "landmark" ? 30 :
                                     1;
-            if (geocodingFellback) maxDist = 800;
+            if (didGeocodingFallBack) maxDist = 800;
 
             isClose = dist < maxDist;
             if (isClose) score += 20;
@@ -1525,7 +1514,7 @@ function buildWikiFallbackQueries(query) {
         blacklistedPrimary.toLowerCase() !== primary.toLowerCase()
     ) {
         queries.push(blacklistedPrimary);
-        wikiBlacklisted++;
+        wikiQueryWasBlacklisted++;
     }
 
     if (country) {
@@ -1593,10 +1582,16 @@ async function getWikiTitleTranslationFromApi(title) {
 
 // ── LOGICAL CORE ───────────────────────────────────────────────────
 // aiLocator, placeMarkerFromEXIF, placeMarkerFromAI, getZoomLevel, locateImage
+function startNewSearch() {
+    currentSearchId++;
+    return currentSearchId;
+}
+
+function isCurrentSearch(searchId) {
+    return searchId === currentSearchId;
+}
+
 async function aiLocator(image) {
-    // Static prompt first, variable language block appended last — matches the
-    // prompt's own "appended to this prompt" wording and lets the large static
-    // prefix be reused by the model's automatic prompt caching across languages.
     const promptWithLang = AI_PROMPT + "\n\n" + languageInstructions[uiLang];
 
     const imageBase64 = await new Promise(function (resolve) {
@@ -1689,6 +1684,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         "&format=json&zoom=18&addressdetails=1&accept-language=" + uiLang;
 
     const response = await fetch(url);
+    if (!isCurrentSearch(searchId)) return;
 
     if (!response.ok) {
         showError(error("network"));
@@ -1696,6 +1692,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     }
 
     const result = await response.json();
+    if (!isCurrentSearch(searchId)) return;
 
     currentResult.clearLayers();
     panel.moreContentIsOpen = false;
@@ -1711,6 +1708,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     currentResult.confidence = "city";
 
     await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
+    if (!isCurrentSearch(searchId)) return;
 
     elements.welcome.style.display = "none";
     endLoading();
@@ -1825,13 +1823,13 @@ async function getLocationData(aiPlace, aiConfidence, aiCountryCode) {
 }
 
 async function runGeocodingCascade(queries, passes, aiCountryCode) {
-    geocodingFellback = 0;
+    didGeocodingFallBack = 0;
 
     for (let p = 0; p < passes.length; p++) {
         const pass = passes[p];
 
         for (let i = 0; i < queries.length; i++) {
-            if (i === 2) geocodingFellback = 1;
+            if (i === 2) didGeocodingFallBack = 1;
 
             for (let s = 0; s < pass.sources.length; s++) {
                 const result = await tryGeocodingSource(
@@ -1842,7 +1840,7 @@ async function runGeocodingCascade(queries, passes, aiCountryCode) {
                 );
 
                 if (result === "error") {
-                    geocodingFellback = 0;
+                    didGeocodingFallBack = 0;
                     return null;
                 }
 
@@ -1851,7 +1849,7 @@ async function runGeocodingCascade(queries, passes, aiCountryCode) {
                 }
             }
         }
-        geocodingFellback = 0;
+        didGeocodingFallBack = 0;
     }
     return null;
 }
@@ -1938,7 +1936,7 @@ async function tryOpenCage(query, aiConfidence, aiCountryCode) {
         const result = pickBestOpenCageResult(results, query, aiConfidence);
 
         if (result) {
-            const extraDataFromNominatim = (await getExtraDataFromNominatim(result, aiConfidence, aiCountryCode)) || {};
+            const extraDataFromNominatim = (await enrichOpenCageWithNominatim(result, aiConfidence, aiCountryCode)) || {};
             return {
                 lat: extraDataFromNominatim.lat ? parseFloat(extraDataFromNominatim.lat) : result.geometry.lat,
                 lng: extraDataFromNominatim.lng ? parseFloat(extraDataFromNominatim.lng) : result.geometry.lng,
@@ -1962,7 +1960,7 @@ async function tryOpenCage(query, aiConfidence, aiCountryCode) {
     return null;
 }
 
-async function getExtraDataFromNominatim(openCageResult, aiConfidence, aiCountryCode) {
+async function enrichOpenCageWithNominatim(openCageResult, aiConfidence, aiCountryCode) {
     let query = openCageResult.formatted;
     if (!query) return null;
 
@@ -2417,7 +2415,7 @@ function getPreferredTypes(confidence) {
 
 async function placeMarkerFromAI(image, photoHtml) {
 
-    geocodingFellback = 0;
+    didGeocodingFallBack = 0;
 
     panel.moreContentIsOpen = false;
 
@@ -2427,9 +2425,11 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         const aiResult = await aiLocator(image);
 
+        if (!isCurrentSearch(searchId)) return;
+
         if (!aiResult) return;
 
-        const aiLocation = aiResult.place || "";
+        const aiPlace = aiResult.place || "";
 
         const aiConfidence = aiResult.confidence || "";
         currentResult.confidence = aiConfidence;
@@ -2437,18 +2437,20 @@ async function placeMarkerFromAI(image, photoHtml) {
         currentResult.photoHtml = photoHtml;
         currentResult.sentence = aiResult.displaySentence;
 
-        if (aiLocation.toLowerCase().trim() === "unknown" ||
-            aiLocation === "" ||
+        if (aiPlace.toLowerCase().trim() === "unknown" ||
+            aiPlace === "" ||
             aiConfidence.toLowerCase().trim() === "unknown" ||
             aiConfidence === "") {
 
+            if (!isCurrentSearch(searchId)) return;
             showUnknownResult();
             return;
         }
 
-        const queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
+        const queryLocation = aiPlace.replace(/\bcity\b,?\s*/i, "");
 
         const location = await getLocationData(queryLocation, aiConfidence, aiResult.countryCode);
+        if (!isCurrentSearch(searchId)) return;
 
         if (!location) {
             showUnknownResult(true);
@@ -2459,6 +2461,8 @@ async function placeMarkerFromAI(image, photoHtml) {
         currentResult.setFromAI(aiResult, location, photoHtml);
 
         await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode);
+
+        if (!isCurrentSearch(searchId)) return;
 
         if (location.showPolygon && location.polygon) {
             currentResult.polygon = L.geoJSON(location.polygon, {
@@ -2482,6 +2486,7 @@ async function placeMarkerFromAI(image, photoHtml) {
         if (currentResult.polygon && aiConfidence !== "country") {
             const polygonToShow = currentResult.polygon;
             map.once("moveend", function () {
+                if (!isCurrentSearch(searchId)) return;
                 if (currentResult.polygon === polygonToShow && !locationPreviewInProgress) {
                     polygonToShow.addTo(map);
                 }
@@ -2489,6 +2494,8 @@ async function placeMarkerFromAI(image, photoHtml) {
         }
 
     } catch (e) {
+        if (!isCurrentSearch(searchId)) return;
+
         console.warn("placeMarkerFromAI failed:", e);
 
         currentResult.confidence = "unknown";
@@ -2497,6 +2504,8 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         showUnknownResult(true);
     } finally {
+        if (!isCurrentSearch(searchId)) return;
+
         elements.welcome.style.display = "none";
         endLoading();
     }
@@ -2570,11 +2579,18 @@ async function locateImage(input) {
 
     const image = input.files[0];
 
-    const allowedTypes = ["image/jpeg", "image/png"];
+    const allowedImageTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/heic",
+        "image/heif",
+        "image/avif"
+    ];
 
     if (!image) return;
 
-    if (!allowedTypes.includes(image.type)) {
+    if (!allowedImageTypes.includes(image.type)) {
         showError(error("file"));
         input.value = "";
         return;
@@ -2582,8 +2598,8 @@ async function locateImage(input) {
 
     panel.scrollHintShown = false;
 
-    // Fully tear down the previous result (revokes its photo URL, clears layers
-    // and metadata) before building the new one.
+    const searchId = startNewSearch();
+
     currentResult.reset();
 
     currentResult.imageFile = image;
@@ -2594,7 +2610,7 @@ async function locateImage(input) {
     if (panel.isVisible) {
         isSearching = true;
         panel.startLoading(photoImgHtml);
-    } else startLoading();
+    } else startWelcomeLoading();
 
     let photoLatLng = null;
     try {
@@ -2603,22 +2619,24 @@ async function locateImage(input) {
         console.warn("EXIF GPS read failed:", e);
     }
 
+    if (!isCurrentSearch(searchId)) return;
+
     if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
 
-        await placeMarkerFromEXIF(photoLatLng, photoImgHtml);
+        await placeMarkerFromEXIF(photoLatLng, photoImgHtml, searchId);
 
     }
 
     else {
 
-        await placeMarkerFromAI(image, photoImgHtml);
+        await placeMarkerFromAI(image, photoImgHtml, searchId);
 
     }
     input.value = "";
 }
 
 if (isDark) {
-    changeTheme();
+    applyTheme();
     if (!isSatellite) {
         map.removeLayer(mapLayerLight);
         mapLayerDark.addTo(map);
@@ -2636,4 +2654,7 @@ updateToggles();
 
 // ── FINAL EVENT LISTENER ───────────────────────────────────────────
 // Triggers the search
+elements.imageInput.accept = /Android/i.test(navigator.userAgent)
+    ? "image/*,model/gltf+json"
+    : "image/*";
 elements.imageInput.addEventListener("change", function (e) { locateImage(e.target) });
