@@ -1538,13 +1538,16 @@ function buildWikiFallbackQueries(query) {
 }
 
 async function getWikiTitleTranslation(page) {
-    if (!page || !page.langlinks) return null;
+    if (!page) return null;
 
-    const match = page.langlinks.find(function (link) {
-        return link.lang === uiLang;
-    });
+    if (page.langlinks) {
+        const match = page.langlinks.find(function (link) {
+            return link.lang === uiLang;
+        });
 
-    return match ? match["*"] : await getWikiTitleTranslationFromApi(page.title);
+        if (match) return match;
+    }
+    return await getWikiTitleTranslationFromApi(page.title);
 }
 
 async function getWikiTitleTranslationFromApi(title) {
