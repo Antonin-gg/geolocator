@@ -113,25 +113,26 @@ const currentResult = {
     },
 
     setFromAI(aiResult, location, photoHtml) {
-        this.placeName = location.shortName;
-        this.shortName = location.shortName;
-        this.method = aiResult.method;
-        this.sentence = aiResult.displaySentence;
-        this.lat = location.lat;
-        this.lng = location.lng;
-        this.isAI = true;
-        this.photoHtml = photoHtml;
+        Object.assign(this, {
+            placeName: location.shortName,
+            shortName: location.shortName,
+            method: aiResult.method,
+            sentence: aiResult.displaySentence,
+            lat: location.lat,
+            lng: location.lng,
+            isAI: true,
+            photoHtml,
+        });
     },
 
     setFromExif(placeName, shortName, method, sentence, photoCoordinates, photoHtml) {
-        this.placeName = placeName;
-        this.shortName = shortName;
-        this.method = method;
-        this.sentence = sentence;
-        this.lat = photoCoordinates.latitude;
-        this.lng = photoCoordinates.longitude;
-        this.isAI = false;
-        this.photoHtml = photoHtml;
+        Object.assign(this, {
+            placeName, shortName, method, sentence,
+            lat: photoCoordinates.latitude,
+            lng: photoCoordinates.longitude,
+            isAI: false,
+            photoHtml,
+        });
     }
 };
 
@@ -323,10 +324,7 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
         localStorage.setItem("uiLang", uiLang);
 
-        const panelOpen = panel.isPanel;
-        const stripOpen = panel.isStrip;
-
-        if ((panelOpen || stripOpen) && currentResult.imageFile) {
+        if (panel.isVisible && currentResult.imageFile) {
             rerunSearch();
         }
     });
@@ -406,7 +404,7 @@ elements.wrapperToggles.addEventListener("click", function (e) {
 
 // ── UI HELPERS ─────────────────────────────────────────────────────
 // showSearching, hideSearching, showError, onCloseClick
-function showSearching() {
+function startLoading() {
     isSearching = true;
 
     elements.welcome.style.display = "none";
@@ -420,30 +418,29 @@ function showSearching() {
         .classList.add("globe-active");
 }
 
-function hideSearching() {
+function endLoading() {
     isSearching = false;
 
-    elements.searching.style.display = "none";
+    elements.searching
+        .style.display = "none";
 
     elements.searchingText
         .classList.remove("searching-active");
 
     elements.searchingGlobe
         .classList.remove("globe-active");
+
+    elements.placeName
+        .classList.remove("loading");
+
+    elements.panelGlobe
+        .classList.remove("globe-active");
 }
 
 function showError(message) {
-    const panelOpen = panel.isPanel;
-    const stripOpen = panel.isStrip;
-    if (panelOpen || stripOpen) {
-        if (isSearching) {
-            elements.placeName.classList.remove("loading");
-            elements.panelGlobe.classList.remove("globe-active");
-            isSearching = false;
-        }
-    } else if (isSearching) hideSearching();
-    if (panelOpen) panel.close();
-    else if (stripOpen) panel.closeStrip();
+    endLoading();
+    if (panel.isOpen || panel.isUltra) panel.close();
+    else if (panel.isStrip) panel.closeStrip();
 
     elements.welcome.style.display = "none";
     elements.noData.style.display = "block";
@@ -505,10 +502,8 @@ function updateToggles() {
 
 function updateUploadButtons() {
     const isMobile = isMobileMode();
-    const panelOpen = panel.isPanel;
-    const stripOpen = panel.isStrip;
 
-    const showMobileUpload = isMobile && (panelOpen || stripOpen);
+    const showMobileUpload = isMobile && panel.isVisible;
 
     elements.uploadLabel.classList.toggle("mobile-hidden", showMobileUpload);
     elements.uploadLabelPanel.classList.toggle("visible", showMobileUpload);
@@ -524,7 +519,7 @@ window.addEventListener("resize", function () {
 
         updateMobileMode();
 
-        if (panel.isPanel) {
+        if (panel.isOpen) {
 
             panel.open();
 
@@ -1654,11 +1649,34 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     const result = await response.json();
 
+    currentResult.clearLayers();
     panel.moreContentIsOpen = false;
 
-    let placeName = "Unknown location";
-    let shortName = "Unknown location";
+    const exifPlace = buildExifPlaceName(result);
 
+    const placeName = exifPlace.placeName;
+    const shortName = exifPlace.shortName;
+    const countryCode = exifPlace.countryCode;
+    const sentence = exifPlace.sentence;
+
+    currentResult.setFromExif(placeName, shortName, translate("methodGPS"), sentence, photoCoordinates, photoHtml);
+    currentResult.confidence = "city";
+
+    await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
+
+    elements.welcome.style.display = "none";
+    endLoading();
+
+    panel.open();
+
+    currentResult.marker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+
+    flyToPoint(currentResult.lat, currentResult.lng, DEFAULT_ZOOM);
+}
+
+function buildExifPlaceName(result) {
+    let placeName = translate("unknownLocationShort");
+    let shortName = translate("unknownLocationShort");
     if (result && result.address) {
         const address = result.address;
         const city = address.city || address.town || address.village || address.municipality || address.county || "";
@@ -1683,30 +1701,18 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
         shortName = result.display_name;
     }
 
-    currentResult.clearLayers();
-
-    const countryCode = (result.address && result.address.country_code)
+    const countryCode = (result && result.address && result.address.country_code)
         ? result.address.country_code.toUpperCase()
         : null;
 
     const sentence = translate("photoTakenIn").replace("{place}", placeName);
-    currentResult.setFromExif(placeName, shortName, translate("methodGPS"), sentence, photoCoordinates, photoHtml);
-    currentResult.confidence = "city";
 
-    await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
-
-    hideSearching();
-    elements.placeName.classList.remove("loading");
-    elements.panelGlobe.classList.remove("globe-active");
-
-    panel.open();
-
-    currentResult.marker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
-
-    map.flyTo(offsetCenterForPanel(L.latLng(currentResult.lat, currentResult.lng), DEFAULT_ZOOM), DEFAULT_ZOOM)
-
-    elements.welcome.style.display = "none";
-
+    return {
+        "placeName": placeName,
+        "shortName": shortName,
+        "countryCode": countryCode,
+        "sentence": sentence
+    };
 }
 
 // Geocoding cascade strategy:
@@ -2376,33 +2382,17 @@ async function placeMarkerFromAI(image, photoHtml) {
     const aiLocation = aiResult.place || "";
 
     const aiConfidence = aiResult.confidence || "";
+    currentResult.confidence = aiConfidence;
+    currentResult.method = aiResult.method;
+    currentResult.photoHtml = photoHtml;
+    currentResult.sentence = aiResult.displaySentence;
 
     if (aiLocation.toLowerCase().trim() === "unknown" ||
         aiLocation === "" ||
         aiConfidence.toLowerCase().trim() === "unknown" ||
         aiConfidence === "") {
 
-        hideSearching();
-
-        elements.placeName.classList.remove("loading");
-        elements.panelGlobe.classList.remove("globe-active");
-
-        currentResult.clearLayers();
-
-        currentResult.lat = null;
-        currentResult.lng = null;
-
-        currentResult.sentence = "<strong>" + translate("unknownLocation") + "</strong>";
-        currentResult.placeName = translate("unknownLocationShort");
-        currentResult.photoHtml = photoHtml;
-        currentResult.method = aiResult.method;
-        currentResult.shortName = translate("unknownLocationShort");
-        currentResult.isAI = true;
-
-        if (aiConfidence === "space") currentResult.sentence = aiResult.displaySentence;
-
-        panel.open();
-
+        showUnknownResult();
         return;
     }
 
@@ -2411,33 +2401,17 @@ async function placeMarkerFromAI(image, photoHtml) {
     const location = await getLocationData(queryLocation, aiConfidence, aiResult.countryCode);
 
     if (!location) {
-        hideSearching();
-        elements.placeName.classList.remove("loading");
-        elements.panelGlobe.classList.remove("globe-active");
-
-        currentResult.sentence = "<strong>" + translate("unknownLocation") + "</strong>";
-        currentResult.placeName = translate("unknownLocationShort");
-        currentResult.photoHtml = photoHtml;
-        currentResult.method = aiResult.method;
-        currentResult.shortName = translate("unknownLocationShort");
-        currentResult.isAI = true;
-
-        panel.open();
-
-        elements.placeName.innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
+        showUnknownResult(true);
         return;
     }
 
     currentResult.clearLayers();
     currentResult.setFromAI(aiResult, location, photoHtml);
-    currentResult.confidence = aiConfidence;
 
     await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode);
 
-    hideSearching();
-
-    elements.placeName.classList.remove("loading");
-    elements.panelGlobe.classList.remove("globe-active");
+    elements.welcome.style.display = "none";
+    endLoading();
 
     if (location.showPolygon && location.polygon) {
         currentResult.polygon = L.geoJSON(location.polygon, {
@@ -2453,14 +2427,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     currentResult.marker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
-    if (location.bounds) {
-        map.flyToBounds([[location.bounds[0], location.bounds[2]], [location.bounds[1], location.bounds[3]]],
-            visiblePadding()
-        );
-    } else {
-        const z = getZoomLevel(aiConfidence);
-        map.flyTo(offsetCenterForPanel(L.latLng(location.lat, location.lng), z), z);
-    }
+    flyToLocation(location, aiConfidence);
 
     // Reveal a non-country polygon only once the fly settles. Guarded so a
     // closed/replaced result, or an in-flight locate preview, never gets a
@@ -2473,27 +2440,70 @@ async function placeMarkerFromAI(image, photoHtml) {
             }
         });
     }
-
-    elements.welcome.style.display = "none";
 }
 
+function flyToLocation(location, confidence) {
+    if (location.bounds) {
+        map.flyToBounds(
+            [
+                [location.bounds[0], location.bounds[2]],
+                [location.bounds[1], location.bounds[3]]
+            ],
+            visiblePadding()
+        );
+        return;
+    }
+
+    const z = getZoomLevel(confidence);
+    flyToPoint(location.lat, location.lng, z);
+}
+
+function flyToPoint(lat, lng, zoom) {
+    map.flyTo(
+        offsetCenterForPanel(L.latLng(lat, lng), zoom),
+        zoom
+    );
+}
+
+function showUnknownResult(isGeocodingFailure) {
+
+    endLoading();
+
+    currentResult.clearLayers();
+
+    currentResult.lat = null;
+    currentResult.lng = null;
+
+    if (currentResult.confidence !== "space") currentResult.sentence = "<strong>" + translate("unknownLocation") + "</strong>";
+    currentResult.placeName = translate("unknownLocationShort");
+    currentResult.shortName = translate("unknownLocationShort");
+    currentResult.isAI = true;
+
+    if (isGeocodingFailure) currentResult.method = "";
+
+    panel.open();
+}
 
 async function rerunSearch() {
     if (!currentResult.imageFile) return;
-
+    endLoading();
     panel.startLoading(currentResult.photoHtml);
     isSearching = true;
     panel.scrollHintShown = false;
 
-    const photoLatLng = await exifr.gps(currentResult.imageFile);
+    let photoLatLng = null;
+
+    try {
+        photoLatLng = await exifr.gps(currentResult.imageFile);
+    } catch (e) {
+        console.warn("EXIF GPS read failed:", e);
+    }
 
     if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
         await placeMarkerFromEXIF(photoLatLng, currentResult.photoHtml);
     } else {
         await placeMarkerFromAI(currentResult.imageFile, currentResult.photoHtml);
     }
-
-    hideSearching();
 }
 
 async function locateImage(input) {
@@ -2521,12 +2531,10 @@ async function locateImage(input) {
     const photoImgHtml = '<img src="' + currentResult.photoObjectUrl + '" style="border-radius:4px;margin-top:6px;">';
     currentResult.photoHtml = photoImgHtml;
 
-    const panelOpen = panel.isPanel;
-    const stripOpen = panel.isStrip;
-    if (panelOpen || stripOpen) {
+    if (panel.isVisible) {
         isSearching = true;
         panel.startLoading(photoImgHtml);
-    } else showSearching();
+    } else startLoading();
 
     let photoLatLng = null;
     try {

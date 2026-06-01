@@ -49,16 +49,13 @@ const CLOSE_FADE_OPACITY = 0.6;      // max opacity reduction during the close-f
 // function never touches history itself.
 
 function attachStripGestures() {
-    const strip = elements.strip;
-    const panel = elements.panel;
-
     // Per-gesture scratch state. Reset on every touchstart.
     let startX, startY, startTime;
     let axis = null;        // "h" once we lock horizontal, "v" once vertical
     let isDragging = false;
     let panelH = 0;
 
-    strip.addEventListener("touchstart", function (e) {
+    elements.strip.addEventListener("touchstart", function (e) {
         // Record where and when the finger landed.
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
@@ -66,13 +63,13 @@ function attachStripGestures() {
         axis = null;
         isDragging = true;
         panelH = isLandscape()
-            ? panel.getBoundingClientRect().width
-            : panel.getBoundingClientRect().height;
-        strip.style.transition = "none";
-        panel.style.transition = "none";
+            ? elements.panel.getBoundingClientRect().width
+            : elements.panel.getBoundingClientRect().height;
+        elements.strip.style.transition = "none";
+        elements.panel.style.transition = "none";
     }, { passive: true });
 
-    strip.addEventListener("touchmove", function (e) {
+    elements.strip.addEventListener("touchmove", function (e) {
         if (!isDragging) return;
 
         const dx = e.touches[0].clientX - startX;
@@ -95,15 +92,15 @@ function attachStripGestures() {
             if (axis === "h") {
                 if (dx > 0) {
                     // rightward = open panel preview
-                    strip.style.opacity = 1 - Math.min(dx / panelH, 1);
-                    panel.style.transform = "translateX(" + Math.min(0, -panelH + dx) + "px)";
+                    elements.strip.style.opacity = 1 - Math.min(dx / panelH, 1);
+                    elements.panel.style.transform = "translateX(" + Math.min(0, -panelH + dx) + "px)";
                 } else {
-                    strip.style.transform = "translateX(" + dx * DOWN_DRAG_RESISTANCE + "px)";
+                    elements.strip.style.transform = "translateX(" + dx * DOWN_DRAG_RESISTANCE + "px)";
                 }
             } else {
                 // vertical axis = close gesture (same as portrait horizontal)
-                strip.style.transform = "translateY(" + dy + "px)";
-                strip.style.opacity = 1 - Math.min(Math.abs(dy) / CLOSE_FADE_DISTANCE, 1) * CLOSE_FADE_OPACITY;
+                elements.strip.style.transform = "translateY(" + dy + "px)";
+                elements.strip.style.opacity = 1 - Math.min(Math.abs(dy) / CLOSE_FADE_DISTANCE, 1) * CLOSE_FADE_OPACITY;
             }
             return;
         }
@@ -115,37 +112,37 @@ function attachStripGestures() {
             if (dy < 0) {
                 // Upward: strip fades out, panel slides in from bottom
                 const progress = Math.min(Math.abs(dy) / panelH, 1);
-                strip.style.opacity = 1 - progress;
-                strip.style.transform = "";
-                panel.style.transform = "translateY(" + Math.max(0, panelH + dy) + "px)";
+                elements.strip.style.opacity = 1 - progress;
+                elements.strip.style.transform = "";
+                elements.panel.style.transform = "translateY(" + Math.max(0, panelH + dy) + "px)";
             } else {
                 // Downward: light resistance on strip only, no panel movement
-                strip.style.transform = "translateY(" + dy * DOWN_DRAG_RESISTANCE + "px)";
-                strip.style.opacity = "";
+                elements.strip.style.transform = "translateY(" + dy * DOWN_DRAG_RESISTANCE + "px)";
+                elements.strip.style.opacity = "";
             }
         } else {
             // Horizontal: the strip slides with the finger and fades out,
             // previewing the "close" action visually before release.
-            strip.style.transform = "translateX(" + dx + "px)";
-            strip.style.opacity = 1 - Math.min(Math.abs(dx) / CLOSE_FADE_DISTANCE, 1) * CLOSE_FADE_OPACITY;
+            elements.strip.style.transform = "translateX(" + dx + "px)";
+            elements.strip.style.opacity = 1 - Math.min(Math.abs(dx) / CLOSE_FADE_DISTANCE, 1) * CLOSE_FADE_OPACITY;
         }
     }, { passive: false });
 
-    strip.addEventListener("touchend", function (e) {
+    elements.strip.addEventListener("touchend", function (e) {
         if (!isDragging) return;
         isDragging = false;
 
         // Restore the CSS transition and clear the inline drag styles.
         // Whatever happens next (commit or snap-back) now animates smoothly.
-        strip.style.transition = "";
-        panel.style.transition = "";
+        elements.strip.style.transition = "";
+        elements.panel.style.transition = "";
 
         // No axis means the finger never moved past AXIS_LOCK — treat as a
         // tap, not a swipe, and do nothing.
         if (!axis) {
-            strip.style.transform = "";
-            strip.style.opacity = "";
-            panel.style.transform = "";
+            elements.strip.style.transform = "";
+            elements.strip.style.opacity = "";
+            elements.panel.style.transform = "";
             return;
         }
         const dx = e.changedTouches[0].clientX - startX;
@@ -159,10 +156,10 @@ function attachStripGestures() {
             if (axis === "h") {
                 if (dx > SWIPE_DISTANCE || vx > SWIPE_VELOCITY) {
                     panel.open();
-                    panel.style.transform = "";
+                    elements.panel.style.transform = "";
                     recenterForPanelState();
                 } else {
-                    strip.style.opacity = ""; panel.style.transform = "";
+                    elements.strip.style.opacity = ""; elements.panel.style.transform = "";
                 }
             } else {
                 if (Math.abs(dy) > CLOSE_SWIPE_DISTANCE || vy > SWIPE_VELOCITY) panel.closeStrip();
@@ -172,21 +169,21 @@ function attachStripGestures() {
         }
 
         if (axis === "v") {
-            strip.style.transform = "";
-            strip.style.opacity = "";
+            elements.strip.style.transform = "";
+            elements.strip.style.opacity = "";
             // Commit to opening the panel if the drag was far enough OR
             // fast enough (a quick flick shouldn't need full distance).
             if (dy < -SWIPE_DISTANCE || vy > SWIPE_VELOCITY) {
                 panel.open();
-                panel.style.transform = "";
+                elements.panel.style.transform = "";
                 recenterForPanelState();
             }
             // Otherwise the cleared transform + restored transition let the
             // strip ease back to its resting position — a natural snap-back.
         } else {
-            strip.style.transform = "";
-            strip.style.opacity = "";
-            panel.style.transform = "";
+            elements.strip.style.transform = "";
+            elements.strip.style.opacity = "";
+            elements.panel.style.transform = "";
             // Horizontal swipe past distance or velocity closes the result.
             if (Math.abs(dx) > CLOSE_SWIPE_DISTANCE || vx > SWIPE_VELOCITY) {
                 panel.closeStrip();
@@ -196,15 +193,15 @@ function attachStripGestures() {
         axis = null;
     }, { passive: true });
 
-    strip.addEventListener("touchcancel", function () {
+    elements.strip.addEventListener("touchcancel", function () {
         if (!isDragging) return;
         isDragging = false;
         axis = null;
-        strip.style.transition = "";
-        strip.style.transform = "";
-        strip.style.opacity = "";
-        panel.style.transition = "";
-        panel.style.transform = "";
+        elements.strip.style.transition = "";
+        elements.strip.style.transform = "";
+        elements.strip.style.opacity = "";
+        elements.panel.style.transition = "";
+        elements.panel.style.transform = "";
     }, { passive: true });
 }
 
@@ -228,9 +225,6 @@ function attachStripGestures() {
 // minimizePanel, so this function never touches history itself.
 
 function attachPanelGestures() {
-    const panel = elements.panel;
-    const content = elements.content;
-
     let startX, startY, startTime;
     let isDragging = false;
     let deferring = false;   // body touch on scrollable content: wait for direction
@@ -241,16 +235,16 @@ function attachPanelGestures() {
     // commit threshold and rubber-band bound are both derived from it.
     function getUltraExtraHeight() {
         if (isLandscape()) {
-            const panelW = panel.getBoundingClientRect().width;
+            const panelW = elements.panel.getBoundingClientRect().width;
             return (window.innerWidth - ULTRA_MAP_PEEK_PX) - panelW;
         }
-        const panelH = panel.getBoundingClientRect().height;
+        const panelH = elements.panel.getBoundingClientRect().height;
         return (window.innerHeight - ULTRA_MAP_PEEK_PX) - panelH;
     }
 
     function onDragStart(e) {
         const isHandle = e.target.closest("#panelHandle");
-        const isScrollable = content.classList.contains("scrollable");
+        const isScrollable = elements.content.classList.contains("scrollable");
 
         startY = e.touches[0].clientY;
         startX = e.touches[0].clientX;
@@ -275,7 +269,7 @@ function attachPanelGestures() {
         const dy = e.touches[0].clientY - startY;
         const dx = e.touches[0].clientX - startX;
         const delta = landscape ? dx : dy;  // +right or +down = "minimize direction" in portrait, "expand" in landscape
-        const isUltra = document.body.classList.contains("ultra-open");
+        const isUltra = panel.isUltra;
 
         if (deferring) {
             if (Math.abs(delta) < AXIS_LOCK) return;
@@ -293,8 +287,8 @@ function attachPanelGestures() {
                 }
             } else {
                 const goingDown = dy > 0;
-                const atTop = content.scrollTop < 1;
-                const atBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 1;
+                const atTop = elements.content.scrollTop < 1;
+                const atBottom = elements.content.scrollHeight - elements.content.scrollTop - elements.content.clientHeight < 1;
                 if ((goingDown && atTop) || (!goingDown && atBottom)) {
                     isDragging = true; deferring = false; lockAxis();
                 } else { deferring = false; return; }
@@ -313,8 +307,8 @@ function attachPanelGestures() {
         } else {
             const extraSize = getUltraExtraHeight();
             const panelSize = landscape
-                ? panel.getBoundingClientRect().width
-                : panel.getBoundingClientRect().height;
+                ? elements.panel.getBoundingClientRect().width
+                : elements.panel.getBoundingClientRect().height;
 
             if (landscape) {
                 // +dx = right = EXPAND  (opposite sign to portrait's -dy = up = expand)
@@ -327,8 +321,8 @@ function attachPanelGestures() {
                     if (delta < -panelSize) offset = -panelSize + (delta + panelSize) * SNAP_RESISTANCE;
                     if (!isUltra) document.body.classList.remove("dragging-panel-up");
                 }
-                panel.style.transition = "none";
-                panel.style.transform = "translateX(" + offset + "px)";
+                elements.panel.style.transition = "none";
+                elements.panel.style.transform = "translateX(" + offset + "px)";
             } else {
                 // portrait (unchanged)
                 if (isUltra && delta < 0) {
@@ -340,8 +334,8 @@ function attachPanelGestures() {
                     if (delta > panelSize) offset = panelSize + (delta - panelSize) * SNAP_RESISTANCE;
                     if (!isUltra) document.body.classList.remove("dragging-panel-up");
                 }
-                panel.style.transition = "none";
-                panel.style.transform = "translateY(" + offset + "px)";
+                elements.panel.style.transition = "none";
+                elements.panel.style.transform = "translateY(" + offset + "px)";
             }
         }
     }
@@ -350,8 +344,8 @@ function attachPanelGestures() {
         if (!isDragging && !deferring) return;
         const wasActive = isDragging;
         isDragging = false; deferring = false;
-        panel.style.transition = "";
-        panel.style.transform = "";
+        elements.panel.style.transition = "";
+        elements.panel.style.transform = "";
         if (!wasActive || !axis) return;
 
         const landscape = isLandscape();
@@ -364,8 +358,8 @@ function attachPanelGestures() {
         const isUltra = document.body.classList.contains("ultra-open");
         const extraSize = getUltraExtraHeight();
         const panelSize = landscape
-            ? panel.getBoundingClientRect().width
-            : panel.getBoundingClientRect().height;
+            ? elements.panel.getBoundingClientRect().width
+            : elements.panel.getBoundingClientRect().height;
 
         if (landscape) {
             const flickExpand = v > SWIPE_VELOCITY;
@@ -416,16 +410,16 @@ function attachPanelGestures() {
         isDragging = false;
         deferring = false;
         axis = null;
-        panel.style.transition = "";
-        panel.style.transform = "";
+        elements.panel.style.transition = "";
+        elements.panel.style.transform = "";
     }
 
     // Attach to the panel itself. touchmove must be non-passive because we
     // call preventDefault() inside it to block native scroll during a drag.
-    panel.addEventListener("touchstart", onDragStart, { passive: true });
-    panel.addEventListener("touchmove", onDragMove, { passive: false });
-    panel.addEventListener("touchend", onDragEnd, { passive: true });
-    panel.addEventListener("touchcancel", cancelPanelDrag, { passive: true });
+    elements.panel.addEventListener("touchstart", onDragStart, { passive: true });
+    elements.panel.addEventListener("touchmove", onDragMove, { passive: false });
+    elements.panel.addEventListener("touchend", onDragEnd, { passive: true });
+    elements.panel.addEventListener("touchcancel", cancelPanelDrag, { passive: true });
 }
 
 function clearPanelDragPreviewAfterTransition() {
@@ -447,11 +441,11 @@ function offsetCenterForPanel(targetLatLng, zoom) {
         return targetLatLng;
     }
     const pt = map.project(targetLatLng, zoom);
-    const panel = elements.panel.getBoundingClientRect();
+    const panelSize = elements.panel.getBoundingClientRect();
     if (isLandscape()) {
-        pt.x -= panel.width / 2;    // center left of target → target shifts right into the visible right half
+        pt.x -= panelSize.width / 2;    // center left of target → target shifts right into the visible right half
     } else {
-        pt.y += panel.height / 2;   // center below target → target shifts up into the visible top half
+        pt.y += panelSize.height / 2;   // center below target → target shifts up into the visible top half
     }
     return map.unproject(pt, zoom);
 }
@@ -461,11 +455,11 @@ function visiblePadding() {
     if (!isTouchDevice || !document.body.classList.contains("panel-open")) {
         return { paddingTopLeft: [pad, pad], paddingBottomRight: [pad, pad] };
     }
-    const panel = elements.panel.getBoundingClientRect();
+    const panelSize = elements.panel.getBoundingClientRect();
     if (isLandscape()) {
-        return { paddingTopLeft: [panel.width + pad, pad], paddingBottomRight: [pad, pad] };
+        return { paddingTopLeft: [panelSize.width + pad, pad], paddingBottomRight: [pad, pad] };
     }
-    return { paddingTopLeft: [pad, pad], paddingBottomRight: [pad, panel.height + pad] };
+    return { paddingTopLeft: [pad, pad], paddingBottomRight: [pad, panelSize.height + pad] };
 }
 
 // Re-frames the current result for the panel state we just transitioned INTO.
@@ -481,12 +475,12 @@ function recenterForPanelState() {
         return;
     }
 
-    const panel = elements.panel.getBoundingClientRect();
+    const panelSize = elements.panel.getBoundingClientRect();
     const sign = document.body.classList.contains("panel-open") ? 1 : -1;  // opening vs minimizing
     if (isLandscape()) {
-        map.panBy([-sign * panel.width / 2, 0], { animate: true });
+        map.panBy([-sign * panelSize.width / 2, 0], { animate: true });
     } else {
-        map.panBy([0, sign * panel.height / 2], { animate: true });
+        map.panBy([0, sign * panelSize.height / 2], { animate: true });
     }
 }
 
