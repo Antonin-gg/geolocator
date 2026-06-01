@@ -1216,7 +1216,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
 async function translateWikiResultToCurrentLang(result) {
     if (!result || uiLang === "en") return null;
 
-    const translatedTitle = await getWikiTitleTranslation(result);
+    const translatedTitle = getWikiTitleTranslation(result);
     if (!translatedTitle) return null;
 
     return await getWikiPageByTitle(translatedTitle, uiLang);
@@ -1225,16 +1225,21 @@ async function translateWikiResultToCurrentLang(result) {
 // Builds a Wikipedia API query URL: the fixed base plus the shared extract/
 // coordinate props, with the generator-specific params passed in.
 function buildWikiApiUrl(language, params) {
-    return "https://" + language + ".wikipedia.org/w/api.php?action=query" +
+    let url = "https://" + language + ".wikipedia.org/w/api.php?action=query" +
         params +
         "&redirects=1" +
         "&prop=extracts|coordinates|info|langlinks|pageprops" +
         "&exintro=1" +
         "&explaintext=1" +
         "&inprop=url" +
-        "&lllimit=max" +
         "&format=json" +
         "&origin=*";
+
+    if (language === "en" && uiLang !== "en") {
+        url += "&lllang=" + encodeURIComponent(uiLang) + "&lllimit=1";
+    }
+
+    return url;
 }
 
 async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
@@ -1530,56 +1535,10 @@ function buildWikiFallbackQueries(query) {
     return queries;
 }
 
-async function getWikiTitleTranslation(page) {
-    if (!page) return null;
-
-    if (page.langlinks) {
-        const match = page.langlinks.find(function (link) {
-            return link.lang === uiLang;
-        });
-
-        if (match) return match["*"];
-    }
-    return await getWikiTitleTranslationFromApi(page.title);
+function getWikiTitleTranslation(page) {
+    if (!page || !page.langlinks || !page.langlinks[0]) return null;
+    return page.langlinks[0]["*"];
 }
-
-async function getWikiTitleTranslationFromApi(title) {
-    if (!title) {
-        return null;
-    }
-
-    const url = "https://en.wikipedia.org/w/api.php?action=query" +
-        "&titles=" + encodeURIComponent(title) +
-        "&redirects=1" +
-        "&prop=langlinks" +
-        "&lllang=" + encodeURIComponent(uiLang) +
-        "&lllimit=1" +
-        "&format=json" +
-        "&origin=*";
-
-    try {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            console.warn("Wiki targeted translation search failed: non-OK response", response.status, response.statusText);
-            return null;
-        }
-
-        const data = await response.json();
-        const pages = Object.values((data.query && data.query.pages) || {});
-        const page = pages[0];
-
-        return page && page.langlinks && page.langlinks[0]
-            ? page.langlinks[0]["*"]
-            : null;
-
-    } catch (e) {
-        console.warn("Wiki targeted translation search failed:", e);
-        return null;
-    }
-}
-
-
 
 
 
