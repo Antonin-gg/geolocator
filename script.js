@@ -1120,13 +1120,13 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
    1. Search English Wikipedia with the current generated query.
    2. If an English result is found and the UI language is not English:
       a. Try to find the translated article title in the current UI language.
-      b. If translation fails, keep the English result as a fallback.
-      c. Only at the local-fallback index, also try local-language fallbacks before
+      b. Only at the local-fallback index, also try local-language fallbacks before
        keeping the English result. This index is usually the first generated query,
        but shifts when buildWikiFallbackQueries() adds a blacklisted/simplified
        query or when geocoding itself had to fall back. This gives the cascade a
        chance to try those safer generated queries before switching to local
        title search or coordinate geosearch.
+      c. If translation or step 2b fail, keep the English result as a fallback.
       d. First try searching the local-language Wikipedia using the geocoded shortName.
       e. If that fails, try local-language coordinate geosearch.
       f. If those local fallbacks fail, keep the original English result.
@@ -1163,7 +1163,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
                 break;
             }
 
-            //Step 2c
+            //Step 2b
             if (i === localFallbackIndex) {
                 const enResult = result;
 
@@ -1175,11 +1175,20 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
 
                 result = enResult;
             }
-
-            //Step 2b : result from step 1 is kept
         }
 
-        if (result) break;
+        //Step 2c : English result from step 1 is kept but only after 2b
+        if (result) {
+            if (uiLang === "en") break;
+
+            const shouldWaitForLocalFallback =
+                i < localFallbackIndex &&
+                localFallbackIndex < queries.length;
+
+            if (!shouldWaitForLocalFallback) break;
+
+            result = null;
+        }
 
         //Step 3a
         if (i === localFallbackIndex) {
@@ -1216,7 +1225,7 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
 async function translateWikiResultToCurrentLang(result) {
     if (!result || uiLang === "en") return null;
 
-    const translatedTitle = getWikiTitleTranslation(result);
+    const translatedTitle = await getWikiTitleTranslation(result);
     if (!translatedTitle) return null;
 
     return await getWikiPageByTitle(translatedTitle, uiLang);
@@ -1237,6 +1246,8 @@ function buildWikiApiUrl(language, params) {
 
     if (language === "en" && uiLang !== "en") {
         url += "&lllang=" + encodeURIComponent(uiLang) + "&lllimit=1";
+    } else {
+        url += "&lllimit=max";
     }
 
     return url;
@@ -1535,9 +1546,48 @@ function buildWikiFallbackQueries(query) {
     return queries;
 }
 
-function getWikiTitleTranslation(page) {
-    if (!page || !page.langlinks || !page.langlinks[0]) return null;
-    return page.langlinks[0]["*"];
+async function getWikiTitleTranslation(page) {
+    if (!page || uiLang === "en") return null;
+
+    if (page.langlinks && page.langlinks[0] && page.langlinks[0]["*"]) {
+        return page.langlinks[0]["*"];
+    }
+
+    return await getWikiTitleTranslationFromApi(page.title);
+}
+
+async function getWikiTitleTranslationFromApi(title) {
+    if (!title || uiLang === "en") return null;
+
+    const url = "https://en.wikipedia.org/w/api.php?action=query" +
+        "&titles=" + encodeURIComponent(title) +
+        "&redirects=1" +
+        "&prop=langlinks" +
+        "&lllang=" + encodeURIComponent(uiLang) +
+        "&lllimit=1" +
+        "&format=json" +
+        "&origin=*";
+
+    try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            console.warn("Wiki targeted translation search failed:", response.status, response.statusText);
+            return null;
+        }
+
+        const data = await response.json();
+        const pages = Object.values((data.query && data.query.pages) || {});
+        const page = pages[0];
+
+        return page && page.langlinks && page.langlinks[0]
+            ? page.langlinks[0]["*"]
+            : null;
+
+    } catch (e) {
+        console.warn("Wiki targeted translation search failed:", e);
+        return null;
+    }
 }
 
 
