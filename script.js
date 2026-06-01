@@ -1163,13 +1163,6 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
                 break;
             }
 
-            console.warn("Wiki local fallback check:", {
-                i,
-                localFallbackIndex,
-                geocodedPlace,
-                uiLang
-            });
-
             //Step 2c
             if (i === localFallbackIndex) {
                 const enResult = result;
