@@ -72,8 +72,8 @@ function updateLocateUserButton() {
     const mobileButton = elements.locateBtnMobile;
     if (!desktopButton || !mobileButton) return;
 
-    const panelOpen = isPanelOpen();
-    const stripOpen = isStripOpen();
+    const panelOpen = panel.isPanel;
+    const stripOpen = panel.isStrip;
     const hasMappableResult = currentResult.hasLocation();
 
     const shouldShow = (panelOpen || stripOpen) && !isSearching && hasMappableResult;
@@ -275,8 +275,8 @@ elements.locateBtn.addEventListener("click", async function () {
         userCoordinates = null;
         userCoordinatesPromise = null;
 
-        const panelOpen = isPanelOpen();
-        const stripOpen = isStripOpen();
+        const panelOpen = panel.isPanel;
+        const stripOpen = panel.isStrip;
 
         const coords = await getUserCoordinates();
 
@@ -294,7 +294,7 @@ elements.locateBtn.addEventListener("click", async function () {
         if (!currentResult.hasLocation()) return;
 
         await buildDistanceItem(currentResult.lat, currentResult.lng);
-        balanceGeoInfoLayout();
+        panel.balanceGeoInfoLayout();
     }
 
     showUserLocationPreview();
@@ -373,7 +373,7 @@ async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
     const hasConvertible = hasAltitude || hasDistance || hasWeather;
     elements.toggleUnits.classList.toggle("active", hasConvertible);
 
-    balanceGeoInfoLayout();
+    panel.balanceGeoInfoLayout();
 }
 
 function buildCoordinatesItem(lat, lng) {
@@ -460,7 +460,7 @@ function buildWeatherItem(temp, weatherCode, isDay) {
         return;
     }
 
-    const icon = getWeatherEmoji(weatherCode, isDay);
+    const icon = getWeatherIcon(weatherCode, isDay);
     weather.innerHTML =
         '<div class="icon">' + icon + '</div>' +
         '<div class="value">' +
@@ -669,29 +669,6 @@ elements.toggleUnits.addEventListener("click", function () {
     convertUnits();
 });
 
-function balanceGeoInfoLayout() {
-    const container = elements.geoInfo;
-    const activeItems = container.querySelectorAll(":scope > div.active");
-    const total = activeItems.length;
-    if (total === 0) return;
-
-    container.style.removeProperty("--geo-cols");
-
-    const firstTop = activeItems[0].offsetTop;
-    let perRow = 0;
-    for (let i = 0; i < activeItems.length; i++) {
-        if (activeItems[i].offsetTop === firstTop) perRow++;
-        else break;
-    }
-
-    let forcedCols = null;
-    if (perRow === 3 && total === 4) forcedCols = 2;
-    if ((perRow === 4 && total >= 5) || (perRow === 5 && total === 6)) forcedCols = 3;
-
-    if (forcedCols !== null) {
-        container.style.setProperty("--geo-cols", forcedCols);
-    }
-}
 
 function convertUnits() {
     const spans = document.querySelectorAll(".convertible");
@@ -748,7 +725,7 @@ function getContinentName(countryCode) {
     return langTable[continentCode] || CONTINENT_TRANSLATIONS.en[continentCode] || null;
 }
 
-function getWeatherEmoji(code, isDay) {
+function getWeatherIcon(code, isDay) {
     const entry = WEATHER_ICONS[code];
     if (!entry) return WEATHER_SVGS.thermometer;
     return isDay ? entry.day : entry.night;

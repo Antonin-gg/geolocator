@@ -47,11 +47,8 @@ let isSatellite = false;
 let isDark = true;
 let uiLang = "en";   // UI language preference (persisted) — not result state, so not in currentResult
 let isSearching = false;
-let scrollHintShown = false;
-let moreContentIsOpen = false;
 let geocodingFellback = 0;
 let wikiBlacklisted = 0;
-let lockedPhotoHeight = null;
 let isImperial = false;
 let userCoordinates = null;
 let locateHintShown = false;
@@ -126,7 +123,7 @@ const currentResult = {
         this.photoHtml = photoHtml;
     },
 
-    setFromExif(placeName, shortName, method, sentence, photoCoordinates,photoHtml) {
+    setFromExif(placeName, shortName, method, sentence, photoCoordinates, photoHtml) {
         this.placeName = placeName;
         this.shortName = shortName;
         this.method = method;
@@ -326,8 +323,8 @@ document.querySelectorAll(".lang-option").forEach(function (button) {
 
         localStorage.setItem("uiLang", uiLang);
 
-        const panelOpen = isPanelOpen();
-        const stripOpen = isStripOpen();
+        const panelOpen = panel.isPanel;
+        const stripOpen = panel.isStrip;
 
         if ((panelOpen || stripOpen) && currentResult.imageFile) {
             rerunSearch();
@@ -353,8 +350,8 @@ function openDropdown(which) {
             if (isTouchDevice) {
                 history.pushState({}, "");
             }
-        } else if (isTouchDevice && !handlingPopstate) {
-            handlingPopstate = true;
+        } else if (isTouchDevice && !panel.handlingPopstate) {
+            panel.handlingPopstate = true;
             history.back();
         }
     }
@@ -376,8 +373,8 @@ function closeDropdown(which) {
     config.content.classList.add(config.hiddenClass);
     config.trigger.classList.remove("dropdown-open");
 
-    if (config.usesHistory && isTouchDevice && !handlingPopstate) {
-        handlingPopstate = true;
+    if (config.usesHistory && isTouchDevice && !panel.handlingPopstate) {
+        panel.handlingPopstate = true;
         history.back();
     }
 }
@@ -436,8 +433,8 @@ function hideSearching() {
 }
 
 function showError(message) {
-    const panelOpen = isPanelOpen();
-    const stripOpen = isStripOpen();
+    const panelOpen = panel.isPanel;
+    const stripOpen = panel.isStrip;
     if (panelOpen || stripOpen) {
         if (isSearching) {
             elements.placeName.classList.remove("loading");
@@ -445,8 +442,8 @@ function showError(message) {
             isSearching = false;
         }
     } else if (isSearching) hideSearching();
-    if (panelOpen) closePanel();
-    else if (stripOpen) closeStrip();
+    if (panelOpen) panel.close();
+    else if (stripOpen) panel.closeStrip();
 
     elements.welcome.style.display = "none";
     elements.noData.style.display = "block";
@@ -462,71 +459,6 @@ function getPolygonColor() {
     if (isSatellite) return "#ffdd00";
     if (isDark) return "#7ab8ff";
     return "#4a90d9";
-}
-
-function lockPanelPhotoSize(force) {
-    if (moreContentIsOpen && !force) return;
-
-    const panelContent = elements.content;
-    const panelPhoto = elements.photo;
-    const img = panelPhoto.querySelector("img");
-
-    if (!img) return;
-
-    panelContent.classList.remove("scrollable");
-    panelPhoto.classList.remove("locked");
-    img.style.removeProperty("max-height");
-
-    requestAnimationFrame(function () {
-        const minPhotoHeight = 160;
-
-        const contentHeight = panelContent.clientHeight;
-        let usedHeight = 0;
-
-        const gap = 14;
-        const visibleChildren = Array.from(panelContent.children).filter(function (child) {
-            return child !== panelPhoto &&
-                child.id !== "moreContent" &&
-                getComputedStyle(child).display !== "none";
-        });
-
-        visibleChildren.forEach(function (child) {
-            usedHeight += child.offsetHeight;
-        });
-
-        usedHeight += Math.max(0, visibleChildren.length) * gap;
-
-        let reservedResultHeight = 0;
-
-        if (isSearching) {
-            reservedResultHeight += 30; // panelMethod likely one line
-            reservedResultHeight += 30; // learnMore button
-            reservedResultHeight += 28; // two gaps, roughly 14px each
-            if (isMobileMode()) {
-                reservedResultHeight += 140; //panelMethod likely at least one more line on mobile
-            }
-        }
-
-        let availablePhotoHeight = contentHeight - usedHeight - reservedResultHeight - 20;
-
-        let hitMinPhotoHeight = false;
-
-        if (availablePhotoHeight < minPhotoHeight) {
-            availablePhotoHeight = minPhotoHeight;
-            hitMinPhotoHeight = true;
-        }
-
-        lockedPhotoHeight = availablePhotoHeight;
-        panelPhoto.style.setProperty("--locked-photo-height", lockedPhotoHeight + "px");
-
-        panelPhoto.classList.add("locked");
-
-        if (moreContentIsOpen || hitMinPhotoHeight) {
-            panelContent.classList.add("scrollable");
-        } else {
-            panelContent.classList.remove("scrollable");
-        }
-    });
 }
 
 function alignToggleChevrons() {
@@ -573,8 +505,8 @@ function updateToggles() {
 
 function updateUploadButtons() {
     const isMobile = isMobileMode();
-    const panelOpen = isPanelOpen();
-    const stripOpen = isStripOpen();
+    const panelOpen = panel.isPanel;
+    const stripOpen = panel.isStrip;
 
     const showMobileUpload = isMobile && (panelOpen || stripOpen);
 
@@ -592,15 +524,15 @@ window.addEventListener("resize", function () {
 
         updateMobileMode();
 
-        if (isPanelOpen()) {
+        if (panel.isPanel) {
 
-            openPanel();
+            panel.open();
 
             setTimeout(function () {
-                lockPanelPhotoSize(true);
-                balanceGeoInfoLayout();
+                panel.lockPhotoSize(true);
+                panel.balanceGeoInfoLayout();
 
-                if (moreContentIsOpen) {
+                if (panel.moreContentIsOpen) {
                     elements.content.classList.add("scrollable");
                 }
             }, 80);
@@ -620,241 +552,533 @@ window.addEventListener("resize", function () {
 
 
 // ── PANEL CONTROLS ─────────────────────────────────────────────────
-function openPanel() {
-    pushPanelHistory();
+class Panel {
+    constructor(map) {
+        this.map = map;
 
-    resetPanel();
+        this.panel = elements.panel;
+        this.strip = elements.strip;
+        this.content = elements.content;
+        this.photo = elements.photo;
+        this.method = elements.panelMethod;
+        this.placeName = elements.placeName;
+        this.moreContent = elements.moreContent;
+        this.learnMore = elements.learnMore;
+        this.mapEl = elements.mapEl;
+        this.wrapper = elements.wrapper;
+        this.welcome = elements.welcome;
+        this.wiki = elements.wiki;
+        this.geoInfo = elements.geoInfo;
+        this.panelGlobe = elements.panelGlobe;
+        this.closeBtn = elements.panelClose;
+        this.stripCloseBtn = elements.stripClose;
+        this.toggleBtn = elements.panelToggle;
+        this.stripToggleBtn = elements.stripToggle;
+        this.stripPlaceName = elements.stripPlaceName;
+        this.locateHint = elements.locateHint;
 
-    renderPanelContent();
+        this.moreContentIsOpen = false;
+        this.lockedPhotoHeight = null;
+        this.handlingPopstate = false;
+        this.scrollHintShown = false;
 
-    setPanelOpenClasses();
-
-    syncMoreContentState();
-
-    updateUiAfterOpen();
-}
-
-function pushPanelHistory() {
-    if (!isTouchDevice) return;
-
-    if (isStripOpen()) {
-        history.pushState({}, "");
-        return;
+        this.wireEvents();
     }
 
-    if (!isPanelOpen()) {
-        history.pushState({}, "");
-        history.pushState({}, "");
-    }
-}
-
-function resetPanel() {
-    elements.content.scrollTop = 0;
-
-    if (currentResult.marker) {
-        currentResult.marker.closePopup();
-    }
-}
-
-function renderPanelContent() {
-    elements.photo.innerHTML = currentResult.photoHtml;
-
-    if (moreContentIsOpen && lockedPhotoHeight) {
-        const img = document.querySelector("#panelPhoto img");
-        if (img) {
-            img.style.maxHeight = lockedPhotoHeight + "px";
-            img.style.width = "100%";
-            img.style.height = "auto";
-            img.style.maxWidth = "100%";
-            img.style.objectFit = "contain";
-            img.style.display = "block";
+    wireEvents() {
+        this.closeBtn.addEventListener("click", () => this.close());
+        this.stripCloseBtn.addEventListener("click", () => this.closeStrip());
+        this.toggleBtn.addEventListener("click", () => this.minimize());
+        this.stripToggleBtn.addEventListener("click", () => this.open());
+        this.learnMore.addEventListener("click", () => this.toggleMoreContent());
+        if (isTouchDevice) {
+            window.addEventListener("popstate", () => this.handlePopstate());
+            attachPanelGestures();
+            attachStripGestures();
         }
     }
 
-    const boldedSentence = currentResult.sentence.replace(
-        currentResult.shortName,
-        "<strong>" + currentResult.shortName + "</strong>"
-    );
-
-    if (boldedSentence === currentResult.sentence) {
-        elements.placeName.innerHTML = "<strong>" + currentResult.sentence + "</strong>";
-    } else {
-        elements.placeName.innerHTML = boldedSentence;
+    get state() {
+        if (document.body.classList.contains("ultra-open")) return "ultra";
+        if (document.body.classList.contains("panel-open")) return "panel";
+        if (document.body.classList.contains("strip-open")) return "strip";
+        return "closed";
     }
 
-    elements.panelMethod.textContent = currentResult.method;
-}
+    get isVisible() { return this.state !== "closed"; }
+    get isUltra() { return this.state === "ultra"; }
+    get isOpen() { return this.state === "panel"; }
+    get isStrip() { return this.state === "strip"; }
 
-function setPanelOpenClasses() {
-    elements.panel.classList.add("open");
-    elements.mapEl.classList.add("panel-open");
-    elements.wrapper.classList.add("panel-open");
-    document.body.classList.add("panel-open");
-
-    document.body.classList.remove("strip-open");
-
-    elements.strip.style.display = "none";
-    elements.welcome.style.display = "none";
-}
-
-function syncMoreContentState() {
-    if (moreContentIsOpen) {
-        elements.moreContent.classList.remove("collapsed");
-        elements.content.classList.add("scrollable");
-        elements.learnMore.classList.add("expanded");
-        return;
+    open() {
+        this.pushPanelHistory();
+        this.resetPanel();
+        this.renderPanelContent();
+        this.setPanelOpenState();
+        this.syncMoreContentState();
+        this.updateUiAfterOpen();
     }
 
-    elements.moreContent.classList.add("collapsed");
-    elements.content.classList.remove("scrollable");
-    elements.learnMore.classList.remove("expanded");
+    pushPanelHistory() {
+        if (!isTouchDevice) return;
 
-    setTimeout(lockPanelPhotoSize(true), 50);
-}
+        if (this.isStrip) {
+            history.pushState({}, "");
+            return;
+        }
 
-function updateUiAfterOpen() {
-    updateUploadButtons();
-    updateLocateUserButton();
+        if (!this.isVisible) {
+            history.pushState({}, "");
+            history.pushState({}, "");
+        }
+    }
 
-    if (!isTouchDevice) {
-        setTimeout(function () {
-            map.invalidateSize();
+    resetPanel() {
+        this.content.scrollTop = 0;
+
+        if (currentResult.marker) {
+            currentResult.marker.closePopup();
+        }
+    }
+
+    renderPanelContent() {
+        this.photo.innerHTML = currentResult.photoHtml;
+
+        if (this.moreContentIsOpen && this.lockedPhotoHeight) {
+            const img = this.photo.querySelector("img");
+
+            if (img) {
+                img.style.maxHeight = this.lockedPhotoHeight + "px";
+                img.style.width = "100%";
+                img.style.height = "auto";
+                img.style.maxWidth = "100%";
+                img.style.objectFit = "contain";
+                img.style.display = "block";
+            }
+        }
+
+        const sentence = currentResult.sentence || "";
+        const shortName = currentResult.shortName || currentResult.placeName || "";
+
+        const boldedSentence = shortName
+            ? sentence.replace(shortName, "<strong>" + shortName + "</strong>")
+            : sentence;
+
+        if (boldedSentence === sentence) {
+            this.placeName.innerHTML = "<strong>" + sentence + "</strong>";
+        } else {
+            this.placeName.innerHTML = boldedSentence;
+        }
+
+        this.method.textContent = currentResult.method;
+    }
+
+    setPanelOpenState() {
+        this.panel.classList.add("open");
+        this.mapEl.classList.add("panel-open");
+        this.wrapper.classList.add("panel-open");
+        document.body.classList.add("panel-open");
+
+        document.body.classList.remove("strip-open");
+
+        this.strip.style.display = "none";
+        this.welcome.style.display = "none";
+    }
+
+    syncMoreContentState() {
+        if (this.moreContentIsOpen) {
+            this.moreContent.classList.remove("collapsed");
+            this.content.classList.add("scrollable");
+            this.learnMore.classList.add("expanded");
+            return;
+        }
+
+        this.moreContent.classList.add("collapsed");
+        this.content.classList.remove("scrollable");
+        this.learnMore.classList.remove("expanded");
+
+        setTimeout(() => {
+            this.lockPhotoSize(true);
+        }, 50);
+    }
+
+    lockPhotoSize(force) {
+        if (this.moreContentIsOpen && !force) return;
+
+        const img = this.photo.querySelector("img");
+
+        if (!img) return;
+
+        this.content.classList.remove("scrollable");
+        this.photo.classList.remove("locked");
+        img.style.removeProperty("max-height");
+
+        requestAnimationFrame(() => {
+            const minPhotoHeight = 160;
+
+            const contentHeight = this.content.clientHeight;
+            let usedHeight = 0;
+
+            const gap = 14;
+            const visibleChildren = Array.from(this.content.children).filter((child) => {
+                return child !== this.photo &&
+                    child.id !== "moreContent" &&
+                    getComputedStyle(child).display !== "none";
+            });
+
+            visibleChildren.forEach(function (child) {
+                usedHeight += child.offsetHeight;
+            });
+
+            usedHeight += Math.max(0, visibleChildren.length) * gap;
+
+            let reservedResultHeight = 0;
+
+            if (isSearching) {
+                reservedResultHeight += 30;
+                reservedResultHeight += 30;
+                reservedResultHeight += 28;
+                if (isMobileMode()) {
+                    reservedResultHeight += 140;
+                }
+            }
+
+            let availablePhotoHeight = contentHeight - usedHeight - reservedResultHeight - 20;
+
+            let hitMinPhotoHeight = false;
+
+            if (availablePhotoHeight < minPhotoHeight) {
+                availablePhotoHeight = minPhotoHeight;
+                hitMinPhotoHeight = true;
+            }
+
+            this.lockedPhotoHeight = availablePhotoHeight;
+            this.photo.style.setProperty("--locked-photo-height", this.lockedPhotoHeight + "px");
+
+            this.photo.classList.add("locked");
+
+            if (this.moreContentIsOpen || hitMinPhotoHeight) {
+                this.content.classList.add("scrollable");
+            } else {
+                this.content.classList.remove("scrollable");
+            }
+        });
+    }
+
+    updateUiAfterOpen() {
+        updateUploadButtons();
+        updateLocateUserButton();
+
+        if (!isTouchDevice) {
+            setTimeout(() => {
+                this.map.invalidateSize();
+            }, PANEL_TRANSITION_MS);
+        }
+
+        this.showScrollHint();
+    }
+
+    close() {
+        stopUserLocationPreview();
+
+        this.popPanelHistory(true);
+
+        this.setPanelClosedState();
+
+        this.updateUiAfterClose();
+
+        this.closeMoreContent();
+    }
+
+    setPanelClosedState() {
+        this.panel.classList.remove("open");
+        this.mapEl.classList.remove("panel-open");
+        this.wrapper.classList.remove("panel-open");
+        document.body.classList.remove("panel-open");
+
+        currentResult.reset();
+        this.locateHint.classList.remove("visible");
+    }
+
+    popPanelHistory(closingPanel) {
+        if (isTouchDevice && !this.handlingPopstate) {
+            this.handlingPopstate = true;
+            history.back();
+            if (closingPanel) history.back();
+        }
+    }
+
+    updateUiAfterClose() {
+        updateUploadButtons();
+
+        updateLocateUserButton();
+
+        setTimeout(() => {
+            if (!isTouchDevice) this.map.invalidateSize();
+            this.welcome.style.display = "block";
         }, PANEL_TRANSITION_MS);
     }
 
-    showScrollHint();
-}
-
-function closePanel() {
-    map.stop();
-    stopUserLocationPreview();
-
-    if (isTouchDevice && !handlingPopstate) {
-        handlingPopstate = true;
-        history.back();
-        history.back();
+    getPopupPhotoHtml() {
+        return currentResult.photoHtml.replace(
+            "<img ",
+            '<img style="max-width:100%;height:auto;border-radius:4px;" '
+        );
     }
 
-    elements.panel.classList.remove('open');
-    elements.mapEl.classList.remove('panel-open');
-    elements.wrapper.classList.remove('panel-open');
-    document.body.classList.remove("panel-open");
+    minimize() {
+        this.popPanelHistory();
 
-    currentResult.reset();
-    elements.locateHint.classList.remove("visible");
+        this.setStripOpenState();
 
-    updateUploadButtons();
+        this.renderStripContent();
 
-    updateLocateUserButton();
-
-    setTimeout(function () {
-        if (!isTouchDevice) map.invalidateSize();
-        elements.welcome.style.display = "block";
-    }, PANEL_TRANSITION_MS);
-
-    closeMoreContent();
-}
-
-function getPopupPhotoHtml() {
-    return currentResult.photoHtml.replace(
-        "<img ",
-        '<img style="max-width:100%;height:auto;border-radius:4px;" '
-    );
-}
-
-function minimizePanel() {
-    if (isTouchDevice && !handlingPopstate) {
-        handlingPopstate = true;
-        history.back();
+        this.updateUiAfterStripOpen();
     }
 
-    elements.panel.classList.remove('open');
-    elements.mapEl.classList.remove('panel-open');
-    elements.wrapper.classList.remove('panel-open');
-    document.body.classList.remove("panel-open");
+    setStripOpenState() {
+        this.panel.classList.remove("open");
+        this.mapEl.classList.remove("panel-open");
+        this.wrapper.classList.remove("panel-open");
+        document.body.classList.remove("panel-open");
 
-    const strip = elements.strip;
-    strip.style.display = "flex";
-    strip.style.opacity = "";
-    strip.style.transform = "";
+        this.strip.style.display = "flex";
+        this.strip.style.opacity = "";
+        this.strip.style.transform = "";
 
-    document.body.classList.add("strip-open");
-
-    if (isSearching) {
-        elements.stripPlaceName.textContent = translate("searching");
-    } else {
-        elements.stripPlaceName.textContent = currentResult.shortName;
+        document.body.classList.add("strip-open");
     }
 
-    setTimeout(function () {
-        if (!isTouchDevice) map.invalidateSize();
-        if (currentResult.marker) {
-            const popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
-            const miniPopup = L.popup({
-                closeButton: false,
-                maxWidth: popupWidth,
-                closeOnClick: false,
-                autoClose: false,
-                autoPan: false
-            })
-                .setContent(getPopupPhotoHtml());
-            currentResult.marker.bindPopup(miniPopup).openPopup();
+    renderStripContent() {
+        if (isSearching) {
+            this.stripPlaceName.textContent = translate("searching");
+        } else {
+            this.stripPlaceName.textContent = currentResult.shortName;
         }
-    }, PANEL_TRANSITION_MS);
-}
-
-function closeStrip() {
-    if (isTouchDevice && !handlingPopstate) {
-        handlingPopstate = true;
-        history.back();
     }
 
-    map.stop();
-    stopUserLocationPreview();
+    updateUiAfterStripOpen() {
+        setTimeout(() => {
+            if (!isTouchDevice) this.map.invalidateSize();
 
-    elements.strip.style.display = "none";
-    document.body.classList.remove("strip-open");
+            if (currentResult.marker) {
+                const popupWidth = Math.min(550, Math.round(window.innerWidth * 0.55));
+                const miniPopup = L.popup({
+                    closeButton: false,
+                    maxWidth: popupWidth,
+                    closeOnClick: false,
+                    autoClose: false,
+                    autoPan: false
+                })
+                    .setContent(this.getPopupPhotoHtml());
 
-    currentResult.reset();
-    elements.locateHint.classList.remove("visible");
+                currentResult.marker.bindPopup(miniPopup).openPopup();
+            }
+        }, PANEL_TRANSITION_MS);
+    }
 
-    updateUploadButtons();
+    closeStrip() {
+        this.popPanelHistory();
 
-    elements.welcome.style.display = "block";
+        stopUserLocationPreview();
 
-    closeMoreContent();
+        this.setStripClosedState();
 
-    updateLocateUserButton();
-}
+        this.updateUiAfterStripClose();
 
-function isPanelOpen() { return document.body.classList.contains("panel-open"); }
+        this.closeMoreContent();
+    }
 
-function isStripOpen() { return document.body.classList.contains("strip-open"); }
+    setStripClosedState() {
+        this.strip.style.display = "none";
+        document.body.classList.remove("strip-open");
 
-function closeMoreContent() {
+        currentResult.reset();
+        this.locateHint.classList.remove("visible");
+    }
 
-    closeGeoInfo();
-    closePanelWiki();
+    updateUiAfterStripClose() {
+        updateUploadButtons();
 
-}
+        this.welcome.style.display = "block";
 
-function closePanelWiki() {
-    moreContentIsOpen = false;
+        updateLocateUserButton();
+    }
 
-    if (elements.learnMore.style.display === "inline-block" ||
-        elements.learnMore.style.display === "block" ||
-        elements.learnMore.style.display === "flex") {
-        if (!elements.moreContent.classList.contains("collapsed")) {
-            elements.moreContent.classList.add("collapsed");
-            elements.learnMore.classList.remove("expanded");
+    maximize() {
+        document.body.classList.add("ultra-open");
+        history.pushState({}, "");
+        setTimeout(() => {
+            this.lockPhotoSize(true);
+            this.balanceGeoInfoLayout();
+        }, PANEL_TRANSITION_MS);
+    }
+
+    unmaximize() {
+        document.body.classList.add("ultra-collapsing");
+        document.body.classList.remove("ultra-open");
+        if (!this.handlingPopstate) {
+            this.handlingPopstate = true;
+            history.back();
         }
-        elements.wiki.innerHTML = "";
-
-        elements.learnMore.style.display = "none";
-        elements.content.classList.remove("scrollable");
+        setTimeout(() => {
+            this.lockPhotoSize(true);
+            this.balanceGeoInfoLayout();
+            document.body.classList.remove("ultra-collapsing");
+        }, PANEL_TRANSITION_MS);
     }
 
+    closeMoreContent() {
+        closeGeoInfo();
+        this.closeWiki();
+    }
+
+    toggleMoreContent() {
+        this.moreContent.classList.toggle("collapsed");
+        this.learnMore.classList.toggle("expanded");
+
+        this.moreContentIsOpen = !this.moreContent.classList.contains("collapsed");
+
+        setTimeout(() => {
+            if (this.moreContentIsOpen || this.content.scrollHeight > this.content.clientHeight) {
+                this.content.classList.add("scrollable");
+            } else {
+                this.content.scrollTo({ top: 0, behavior: "smooth" });
+                setTimeout(() => {
+                    this.content.classList.remove("scrollable");
+                }, PANEL_TRANSITION_MS);
+            }
+        }, 250);
+
+        if (this.moreContentIsOpen) {
+            setTimeout(() => {
+                this.geoInfo.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 50);
+        }
+    }
+
+    showScrollHint() {
+        if (this.scrollHintShown) return;
+        if (window.innerWidth > 768 && window.innerHeight > 500) return;
+
+        if (this.content.scrollHeight <= this.content.clientHeight) return;
+
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        setTimeout(() => {
+            this.content.scrollTo({ top: 40, behavior: "smooth" });
+        }, 400);
+
+        setTimeout(() => {
+            this.content.scrollTo({ top: 0, behavior: "smooth" });
+        }, 1000);
+
+        this.scrollHintShown = true;
+    }
+
+    balanceGeoInfoLayout() {
+        const container = this.geoInfo;
+        const activeItems = container.querySelectorAll(":scope > div.active");
+        const total = activeItems.length;
+        if (total === 0) return;
+
+        container.style.removeProperty("--geo-cols");
+
+        const firstTop = activeItems[0].offsetTop;
+        let perRow = 0;
+        for (let i = 0; i < activeItems.length; i++) {
+            if (activeItems[i].offsetTop === firstTop) perRow++;
+            else break;
+        }
+
+        let forcedCols = null;
+        if (perRow === 3 && total === 4) forcedCols = 2;
+        if ((perRow === 4 && total >= 5) || (perRow === 5 && total === 6)) forcedCols = 3;
+
+        if (forcedCols !== null) {
+            container.style.setProperty("--geo-cols", forcedCols);
+        }
+    }
+
+    startLoading(photoHtml) {
+        currentResult.clearLayers();
+
+        this.closeMoreContent();
+
+        this.locateHint.classList.remove("visible");
+        clearTimeout(locateButtonTimeout);
+
+        this.photo.innerHTML = photoHtml;
+        this.placeName.innerHTML = "<strong> " + translate("searching") + "</strong>";
+        this.placeName.classList.add("loading");
+        this.panelGlobe.classList.add("globe-active");
+        this.method.textContent = "";
+
+        setTimeout(() => {
+            this.lockPhotoSize(true);
+        }, 50);
+
+        if (this.isStrip) {
+            this.strip.style.display = "none";
+            document.body.classList.remove("strip-open");
+            this.panel.classList.add("open");
+            this.mapEl.classList.add("panel-open");
+            this.wrapper.classList.add("panel-open");
+            document.body.classList.add("panel-open");
+        }
+
+        this.welcome.style.display = "none";
+
+        updateUploadButtons();
+        updateLocateUserButton();
+
+        if (!isTouchDevice) {
+            setTimeout(() => {
+                this.map.invalidateSize();
+            }, PANEL_TRANSITION_MS);
+        }
+    }
+
+    handlePopstate() {
+        if (this.handlingPopstate) {
+            this.handlingPopstate = false;
+            return;
+        }
+        this.handlingPopstate = true;
+        if (!elements.langOptions.classList.contains("hidden-language")) {
+            elements.langOptions.classList.add("hidden-language");
+            elements.showLang.classList.remove("dropdown-open");
+        } else if (this.isUltra) {
+            this.unmaximize();
+        } else if (this.isOpen) {
+            this.minimize();
+            recenterForPanelState();
+        } else if (this.isStrip) {
+            this.closeStrip();
+        }
+        this.handlingPopstate = false;
+    }
+
+    closeWiki() {
+        this.moreContentIsOpen = false;
+
+        if (this.learnMore.style.display === "inline-block" ||
+            this.learnMore.style.display === "block" ||
+            this.learnMore.style.display === "flex") {
+            if (!this.moreContent.classList.contains("collapsed")) {
+                this.moreContent.classList.add("collapsed");
+                this.learnMore.classList.remove("expanded");
+            }
+            this.wiki.innerHTML = "";
+
+            this.learnMore.style.display = "none";
+            this.content.classList.remove("scrollable");
+        }
+
+    }
 }
+
+const panel = new Panel(map);
 
 async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode) {
 
@@ -1321,56 +1545,7 @@ function getWikiTitleTranslation(page) {
     return match ? match["*"] : null;
 }
 
-function showScrollHint() {
-    if (scrollHintShown) return;
-    if (window.innerWidth > 768 && window.innerHeight > 500) return;
 
-    const panelContent = elements.content;
-    if (panelContent.scrollHeight <= panelContent.clientHeight) return;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    setTimeout(function () {
-        panelContent.scrollTo({ top: 40, behavior: "smooth" });
-    }, 400);
-
-    setTimeout(function () {
-        panelContent.scrollTo({ top: 0, behavior: "smooth" });
-    }, 1000);
-
-    scrollHintShown = true;
-}
-
-elements.panelClose.addEventListener("click", closePanel);
-elements.stripClose.addEventListener("click", closeStrip);
-elements.panelToggle.addEventListener("click", minimizePanel);
-elements.stripToggle.addEventListener("click", function () {
-    openPanel();
-});
-elements.learnMore.addEventListener("click", function () {
-    elements.moreContent.classList.toggle("collapsed");
-    this.classList.toggle("expanded");
-
-    moreContentIsOpen = !elements.moreContent.classList.contains("collapsed");
-    const panelContent = elements.content;
-
-    setTimeout(function () {
-        if (moreContentIsOpen || panelContent.scrollHeight > panelContent.clientHeight) {
-            panelContent.classList.add("scrollable");
-        } else {
-            panelContent.scrollTo({ top: 0, behavior: "smooth" });
-            setTimeout(function () {
-                panelContent.classList.remove("scrollable");
-            }, PANEL_TRANSITION_MS);
-        }
-    }, 250);
-
-    if (moreContentIsOpen) {
-        setTimeout(function () {
-            elements.geoInfo.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 50);
-    }
-});
 
 
 
@@ -1479,7 +1654,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
 
     const result = await response.json();
 
-    moreContentIsOpen = false;
+    panel.moreContentIsOpen = false;
 
     let placeName = "Unknown location";
     let shortName = "Unknown location";
@@ -1524,7 +1699,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml) {
     elements.placeName.classList.remove("loading");
     elements.panelGlobe.classList.remove("globe-active");
 
-    openPanel();
+    panel.open();
 
     currentResult.marker = L.marker([photoCoordinates.latitude, photoCoordinates.longitude], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
@@ -2190,7 +2365,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     geocodingFellback = 0;
 
-    moreContentIsOpen = false;
+    panel.moreContentIsOpen = false;
 
     elements.welcome.style.display = "none";
 
@@ -2226,7 +2401,7 @@ async function placeMarkerFromAI(image, photoHtml) {
 
         if (aiConfidence === "space") currentResult.sentence = aiResult.displaySentence;
 
-        openPanel();
+        panel.open();
 
         return;
     }
@@ -2247,7 +2422,7 @@ async function placeMarkerFromAI(image, photoHtml) {
         currentResult.shortName = translate("unknownLocationShort");
         currentResult.isAI = true;
 
-        openPanel();
+        panel.open();
 
         elements.placeName.innerHTML = "<strong>" + translate("unknownLocation") + ".</strong>";
         return;
@@ -2274,7 +2449,7 @@ async function placeMarkerFromAI(image, photoHtml) {
         if (aiConfidence === "country") currentResult.polygon.addTo(map);
     }
 
-    openPanel();
+    panel.open();
 
     currentResult.marker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
 
@@ -2302,50 +2477,13 @@ async function placeMarkerFromAI(image, photoHtml) {
     elements.welcome.style.display = "none";
 }
 
-function showPanelLoading(photoHtml) {
-    currentResult.clearLayers();
-
-    closeMoreContent();
-
-    elements.locateHint.classList.remove("visible");
-    clearTimeout(locateButtonTimeout);
-
-    elements.photo.innerHTML = photoHtml;
-    elements.placeName.innerHTML = "<strong> " + translate("searching") + "</strong>";
-    elements.placeName.classList.add("loading");
-    elements.panelGlobe.classList.add("globe-active");
-    elements.panelMethod.textContent = "";
-
-    setTimeout(function () {
-        lockPanelPhotoSize(true);
-    }, 50);
-
-    const strip = elements.strip;
-    if (isStripOpen()) {
-        strip.style.display = "none";
-        document.body.classList.remove("strip-open");
-        elements.panel.classList.add('open');
-        elements.mapEl.classList.add('panel-open');
-        elements.wrapper.classList.add('panel-open');
-        document.body.classList.add("panel-open");
-    }
-
-    elements.welcome.style.display = "none";
-
-    updateUploadButtons();
-    updateLocateUserButton();
-
-    if (!isTouchDevice) {
-        setTimeout(function () { map.invalidateSize(); }, PANEL_TRANSITION_MS);
-    }
-}
 
 async function rerunSearch() {
     if (!currentResult.imageFile) return;
 
-    showPanelLoading(currentResult.photoHtml);
+    panel.startLoading(currentResult.photoHtml);
     isSearching = true;
-    scrollHintShown = false;
+    panel.scrollHintShown = false;
 
     const photoLatLng = await exifr.gps(currentResult.imageFile);
 
@@ -2372,7 +2510,7 @@ async function locateImage(input) {
         return;
     }
 
-    scrollHintShown = false;
+    panel.scrollHintShown = false;
 
     // Fully tear down the previous result (revokes its photo URL, clears layers
     // and metadata) before building the new one.
@@ -2383,11 +2521,11 @@ async function locateImage(input) {
     const photoImgHtml = '<img src="' + currentResult.photoObjectUrl + '" style="border-radius:4px;margin-top:6px;">';
     currentResult.photoHtml = photoImgHtml;
 
-    const panelOpen = isPanelOpen();
-    const stripOpen = isStripOpen();
+    const panelOpen = panel.isPanel;
+    const stripOpen = panel.isStrip;
     if (panelOpen || stripOpen) {
         isSearching = true;
-        showPanelLoading(photoImgHtml);
+        panel.startLoading(photoImgHtml);
     } else showSearching();
 
     let photoLatLng = null;
@@ -2425,10 +2563,6 @@ if (isSatellite) {
 }
 updateToggles();
 
-if (isTouchDevice) {
-    attachStripGestures();
-    attachPanelGestures();
-}
 
 
 

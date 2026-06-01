@@ -25,50 +25,6 @@ const PANEL_TRANSITION_MS = 300;   // wait for the panel CSS transition; must ma
 const ULTRA_MAP_PEEK_PX = 30;      // map sliver left visible behind ultra; must match CSS calc(... - 30px)
 const MAP_FIT_PADDING_PX = 15;     // px padding around fitted bounds in flyToBounds
 
-let handlingPopstate = false;
-
-function maximizePanel() {
-    document.body.classList.add("ultra-open");
-    history.pushState({}, "");
-    setTimeout(function () {
-        lockPanelPhotoSize(true);
-        balanceGeoInfoLayout();
-    }, PANEL_TRANSITION_MS);
-}
-
-function unmaximizePanel() {
-    document.body.classList.add("ultra-collapsing");
-    document.body.classList.remove("ultra-open");
-    if (!handlingPopstate) {
-        handlingPopstate = true;
-        history.back();
-    }
-    setTimeout(function () {
-        lockPanelPhotoSize(true);
-        balanceGeoInfoLayout();
-        document.body.classList.remove("ultra-collapsing");
-    }, PANEL_TRANSITION_MS);
-}
-
-window.addEventListener("popstate", function () {
-    if (handlingPopstate) {
-        handlingPopstate = false;
-        return;
-    }
-    handlingPopstate = true;
-    if (!elements.langOptions.classList.contains("hidden-language")) {
-        elements.langOptions.classList.add("hidden-language");
-        elements.showLang.classList.remove("dropdown-open");
-    } else if (document.body.classList.contains("ultra-open")) {
-        unmaximizePanel();
-    } else if (document.body.classList.contains("panel-open")) {
-        minimizePanel();
-        recenterForPanelState();
-    } else if (document.body.classList.contains("strip-open")) {
-        closeStrip();
-    }
-    handlingPopstate = false;
-});
 
 // ── TOUCH GESTURE CONSTANTS ────────────────────────────────────────
 // These thresholds decide when a drag counts as an intentional swipe
@@ -89,7 +45,7 @@ const CLOSE_FADE_OPACITY = 0.6;      // max opacity reduction during the close-f
 // The strip (minimized bar) responds to two gestures:
 //   • swipe UP   → open the full panel
 //   • swipe LEFT or RIGHT → close the result entirely
-// History is handled inside openPanel() and closeStrip(), so this
+// History is handled inside panel.open() and panel.closeStrip(), so this
 // function never touches history itself.
 
 function attachStripGestures() {
@@ -202,14 +158,14 @@ function attachStripGestures() {
             // primary = horizontal, secondary = vertical
             if (axis === "h") {
                 if (dx > SWIPE_DISTANCE || vx > SWIPE_VELOCITY) {
-                    openPanel();
+                    panel.open();
                     panel.style.transform = "";
                     recenterForPanelState();
                 } else {
                     strip.style.opacity = ""; panel.style.transform = "";
                 }
             } else {
-                if (Math.abs(dy) > CLOSE_SWIPE_DISTANCE || vy > SWIPE_VELOCITY) closeStrip();
+                if (Math.abs(dy) > CLOSE_SWIPE_DISTANCE || vy > SWIPE_VELOCITY) panel.closeStrip();
             }
             axis = null;
             return;
@@ -221,7 +177,7 @@ function attachStripGestures() {
             // Commit to opening the panel if the drag was far enough OR
             // fast enough (a quick flick shouldn't need full distance).
             if (dy < -SWIPE_DISTANCE || vy > SWIPE_VELOCITY) {
-                openPanel();
+                panel.open();
                 panel.style.transform = "";
                 recenterForPanelState();
             }
@@ -233,7 +189,7 @@ function attachStripGestures() {
             panel.style.transform = "";
             // Horizontal swipe past distance or velocity closes the result.
             if (Math.abs(dx) > CLOSE_SWIPE_DISTANCE || vx > SWIPE_VELOCITY) {
-                closeStrip();
+                panel.closeStrip();
             }
             // Otherwise: snap back, same as above.
         }
@@ -418,14 +374,14 @@ function attachPanelGestures() {
             const minimizeThresh = -panelSize * COMMIT_THRESHOLD_RATIO;
 
             if (isUltra) {
-                if (flickMinimize || delta < minimizeThresh) unmaximizePanel();
+                if (flickMinimize || delta < minimizeThresh) panel.unmaximize();
             } else {
                 if (flickExpand || delta > expandThresh) {
                     clearPanelDragPreviewAfterTransition();
-                    maximizePanel();
+                    panel.maximize();
                 } else if (flickMinimize || delta < minimizeThresh) {
                     clearPanelDragPreviewAfterTransition();
-                    minimizePanel();
+                    panel.minimize();
                     recenterForPanelState();
                 } else {
                     clearPanelDragPreviewAfterTransition();
@@ -439,14 +395,14 @@ function attachPanelGestures() {
             const downThresh = panelSize * COMMIT_THRESHOLD_RATIO;
 
             if (isUltra) {
-                if (flickDown || delta > downThresh) unmaximizePanel();
+                if (flickDown || delta > downThresh) panel.unmaximize();
             } else {
                 if (flickUp || delta < upThresh) {
                     clearPanelDragPreviewAfterTransition();
-                    maximizePanel();
+                    panel.maximize();
                 } else if (flickDown || delta > downThresh) {
                     clearPanelDragPreviewAfterTransition();
-                    minimizePanel();
+                    panel.minimize();
                     recenterForPanelState();
                 } else {
                     clearPanelDragPreviewAfterTransition();
@@ -513,7 +469,7 @@ function visiblePadding() {
 }
 
 // Re-frames the current result for the panel state we just transitioned INTO.
-// Call AFTER openPanel()/minimizePanel() so body.panel-open reflects the target.
+// Call AFTER panel.open()/panel.minimize() so body.panel-open reflects the target.
 // Point  → panBy half the panel extent (into visible region when opening,
 //          back to center when minimizing).
 // Bounds → flyToBounds with panel-aware padding (absolute, state-driven).
