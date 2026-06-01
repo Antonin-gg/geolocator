@@ -790,6 +790,8 @@ class Panel {
         this.mapEl.classList.remove("panel-open");
         this.wrapper.classList.remove("panel-open");
         document.body.classList.remove("panel-open");
+        document.body.classList.remove("ultra-open");
+        document.body.classList.remove("ultra-collapsing");
 
         currentResult.reset();
         this.locateHint.classList.remove("visible");
@@ -1234,23 +1236,16 @@ async function translateWikiResultToCurrentLang(result) {
 // Builds a Wikipedia API query URL: the fixed base plus the shared extract/
 // coordinate props, with the generator-specific params passed in.
 function buildWikiApiUrl(language, params) {
-    let url = "https://" + language + ".wikipedia.org/w/api.php?action=query" +
+    return "https://" + language + ".wikipedia.org/w/api.php?action=query" +
         params +
         "&redirects=1" +
         "&prop=extracts|coordinates|info|langlinks|pageprops" +
         "&exintro=1" +
         "&explaintext=1" +
         "&inprop=url" +
+        "&lllimit=max" +
         "&format=json" +
         "&origin=*";
-
-    if (language === "en" && uiLang !== "en") {
-        url += "&lllang=" + encodeURIComponent(uiLang) + "&lllimit=1";
-    } else {
-        url += "&lllimit=max";
-    }
-
-    return url;
 }
 
 async function wikiGeoSearch(query, language, lat, lng, aiConfidence) {
@@ -1549,8 +1544,12 @@ function buildWikiFallbackQueries(query) {
 async function getWikiTitleTranslation(page) {
     if (!page || uiLang === "en") return null;
 
-    if (page.langlinks && page.langlinks[0] && page.langlinks[0]["*"]) {
-        return page.langlinks[0]["*"];
+    if (page.langlinks) {
+        const match = page.langlinks.find(function (link) {
+            return link.lang === uiLang;
+        });
+
+        if (match) return match["*"];
     }
 
     return await getWikiTitleTranslationFromApi(page.title);
@@ -2424,70 +2423,82 @@ async function placeMarkerFromAI(image, photoHtml) {
 
     elements.welcome.style.display = "none";
 
-    const aiResult = await aiLocator(image);
+    try {
 
-    if (!aiResult) return;
+        const aiResult = await aiLocator(image);
 
-    const aiLocation = aiResult.place || "";
+        if (!aiResult) return;
 
-    const aiConfidence = aiResult.confidence || "";
-    currentResult.confidence = aiConfidence;
-    currentResult.method = aiResult.method;
-    currentResult.photoHtml = photoHtml;
-    currentResult.sentence = aiResult.displaySentence;
+        const aiLocation = aiResult.place || "";
 
-    if (aiLocation.toLowerCase().trim() === "unknown" ||
-        aiLocation === "" ||
-        aiConfidence.toLowerCase().trim() === "unknown" ||
-        aiConfidence === "") {
+        const aiConfidence = aiResult.confidence || "";
+        currentResult.confidence = aiConfidence;
+        currentResult.method = aiResult.method;
+        currentResult.photoHtml = photoHtml;
+        currentResult.sentence = aiResult.displaySentence;
 
-        showUnknownResult();
-        return;
-    }
+        if (aiLocation.toLowerCase().trim() === "unknown" ||
+            aiLocation === "" ||
+            aiConfidence.toLowerCase().trim() === "unknown" ||
+            aiConfidence === "") {
 
-    const queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
+            showUnknownResult();
+            return;
+        }
 
-    const location = await getLocationData(queryLocation, aiConfidence, aiResult.countryCode);
+        const queryLocation = aiLocation.replace(/\bcity\b,?\s*/i, "");
 
-    if (!location) {
+        const location = await getLocationData(queryLocation, aiConfidence, aiResult.countryCode);
+
+        if (!location) {
+            showUnknownResult(true);
+            return;
+        }
+
+        currentResult.clearLayers();
+        currentResult.setFromAI(aiResult, location, photoHtml);
+
+        await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode);
+
+        if (location.showPolygon && location.polygon) {
+            currentResult.polygon = L.geoJSON(location.polygon, {
+                style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
+            });
+            // Country polygons are useful context during the fly. Smaller ones are
+            // re-projected every animation frame (lag/colour-splotch), so they're
+            // added only once the fly settles (moveend, below).
+            if (aiConfidence === "country") currentResult.polygon.addTo(map);
+        }
+
+        panel.open();
+
+        currentResult.marker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
+
+        flyToLocation(location, aiConfidence);
+
+        // Reveal a non-country polygon only once the fly settles. Guarded so a
+        // closed/replaced result, or an in-flight locate preview, never gets a
+        // stale polygon dropped onto the map.
+        if (currentResult.polygon && aiConfidence !== "country") {
+            const polygonToShow = currentResult.polygon;
+            map.once("moveend", function () {
+                if (currentResult.polygon === polygonToShow && !locationPreviewInProgress) {
+                    polygonToShow.addTo(map);
+                }
+            });
+        }
+
+    } catch (e) {
+        console.warn("placeMarkerFromAI failed:", e);
+
+        currentResult.confidence = "unknown";
+        currentResult.method = error("network");
+        currentResult.photoHtml = photoHtml;
+
         showUnknownResult(true);
-        return;
-    }
-
-    currentResult.clearLayers();
-    currentResult.setFromAI(aiResult, location, photoHtml);
-
-    await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode);
-
-    elements.welcome.style.display = "none";
-    endLoading();
-
-    if (location.showPolygon && location.polygon) {
-        currentResult.polygon = L.geoJSON(location.polygon, {
-            style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
-        });
-        // Country polygons are useful context during the fly. Smaller ones are
-        // re-projected every animation frame (lag/colour-splotch), so they're
-        // added only once the fly settles (moveend, below).
-        if (aiConfidence === "country") currentResult.polygon.addTo(map);
-    }
-
-    panel.open();
-
-    currentResult.marker = L.marker([location.lat, location.lng], { icon: isDark && !isSatellite ? cameraIconDark : cameraIconLight }).addTo(map);
-
-    flyToLocation(location, aiConfidence);
-
-    // Reveal a non-country polygon only once the fly settles. Guarded so a
-    // closed/replaced result, or an in-flight locate preview, never gets a
-    // stale polygon dropped onto the map.
-    if (currentResult.polygon && aiConfidence !== "country") {
-        const polygonToShow = currentResult.polygon;
-        map.once("moveend", function () {
-            if (currentResult.polygon === polygonToShow && !locationPreviewInProgress) {
-                polygonToShow.addTo(map);
-            }
-        });
+    } finally {
+        elements.welcome.style.display = "none";
+        endLoading();
     }
 }
 
