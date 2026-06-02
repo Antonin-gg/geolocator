@@ -708,6 +708,10 @@ class Panel {
         this.handlingPopstate = false;
     }
 
+    setHandlingPopstate() {
+        this.handlePopstate = true;
+    }
+
     /**
      * Clears the wiki section and collapses the learn-more area when needed.
      * The geo info reset happens separately in closeGeoInfo(), but the button and

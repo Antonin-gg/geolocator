@@ -119,7 +119,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml, searchId) {
 
     if (!response.ok) {
         showError(error("network"));
-        return null;
+        return;
     }
 
     const result = await response.json();
@@ -144,7 +144,7 @@ async function placeMarkerFromEXIF(photoCoordinates, photoHtml, searchId) {
      * Build optional wiki and geo cards before opening the panel so the panel can
      * measure its final content correctly.
      */
-    await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode);
+    await buildMoreInfo(null, shortName, photoCoordinates.latitude, photoCoordinates.longitude, "city", countryCode, searchId);
     // Wiki, weather, and altitude requests may have taken long enough for a newer search to start.
     if (!isCurrentSearch(searchId)) return;
 
@@ -282,7 +282,7 @@ async function placeMarkerFromAI(image, photoHtml, searchId) {
          * Build optional info before opening the panel so photo sizing and learn-more
          * visibility are based on the final content.
          */
-        await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode);
+        await buildMoreInfo(aiResult.place, location.shortName, location.lat, location.lng, aiConfidence, aiResult.countryCode, searchId);
 
         if (!isCurrentSearch(searchId)) return;
 

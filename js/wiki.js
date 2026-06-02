@@ -29,12 +29,13 @@
  * @param {number} lng Result longitude.
  * @param {string} aiConfidence Result confidence level.
  * @param {string} aiCountryCode ISO country code when available.
+ * @param {number} searchId Search token captured when this upload started.
  */
-async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode) {
+async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode, searchId) {
 
-    await buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode);
+    await buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode, searchId);
 
-    await buildGeoInfo(lat, lng, aiConfidence, aiCountryCode);
+    await buildGeoInfo(lat, lng, aiConfidence, aiCountryCode, searchId);
 
     const hasGeo = document.querySelectorAll("#panelGeoInfo .active").length > 0;
     const hasWiki = elements.wiki.innerHTML.trim().length > 0;
@@ -47,7 +48,7 @@ async function buildMoreInfo(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiC
  * query from the reverse-geocoded place and country before entering the same
  * wiki cascade.
  */
-async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode) {
+async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, aiCountryCode, searchId) {
 
     let result = null;
 
@@ -64,6 +65,8 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, 
     } else {
         result = await getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence);
     }
+
+    if (!isCurrentSearch(searchId)) return;
 
     if (!result) {
         elements.wiki.innerHTML = "";

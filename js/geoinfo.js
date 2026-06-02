@@ -20,8 +20,9 @@
  * @param {number} lng Result longitude.
  * @param {string} aiConfidence Result confidence level.
  * @param {string} aiCountryCode ISO country code when available.
+ * @param {number} searchId Search token captured when this upload started.
  */
-async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
+async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode, searchId) {
     if (aiConfidence !== "country") {
 
         buildCoordinatesItem(lat, lng);
@@ -32,6 +33,7 @@ async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
          * provide it.
          */
         const weatherData = await getWeatherData(lat, lng);
+        if (!isCurrentSearch(searchId)) return;
 
         geoInfoCache.altitudeMeters = weatherData.elevation;
         geoInfoCache.weatherTempC = weatherData.temperature;
@@ -40,6 +42,7 @@ async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
         geoInfoCache.timeZone = weatherData.timezone;
 
         await buildAltitudeItem(lat, lng, geoInfoCache.altitudeMeters);
+        if (!isCurrentSearch(searchId)) return;
 
         buildWeatherItem(geoInfoCache.weatherTempC, geoInfoCache.weatherCode, geoInfoCache.isDay);
 
@@ -55,6 +58,7 @@ async function buildGeoInfo(lat, lng, aiConfidence, aiCountryCode) {
     buildCountryItem(aiCountryCode);
 
     await buildDistanceItem(lat, lng);
+    if (!isCurrentSearch(searchId)) return;
 
     // Show the unit toggle only when at least one visible card can actually convert.
     const hasAltitude = elements.altitude.classList.contains("active");
