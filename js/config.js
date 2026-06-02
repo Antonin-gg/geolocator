@@ -12,7 +12,7 @@
 
 // External services used by geocoding and AI identification.
 const OPENCAGE_WORKER_URL = "https://geolocator-opencage.a-gg.workers.dev";
-const MAPTILER_API_KEY = "p0sSWaGV2NHhSvdpC8uI";
+const STADIA_API_KEY = "ad458a92-6631-4afe-95ca-8fc26f5498e4";
 const AI_WORKER_URL = "https://geolocator-ai.a-gg.workers.dev";
 const AI_MODEL = "gpt-5.5";
 
