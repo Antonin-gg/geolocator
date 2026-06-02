@@ -59,7 +59,7 @@ document.querySelector('[data-lang="' + uiLang + '"]').classList.add("active-lan
 const map = L.map('map').setView([0, 0], 2);
 
 const mapLayerLight = L.tileLayer(
-    'https://api.maptiler.com/maps/base-v4/{z}/{x}/{y}.png?key='+ MAPTILER_API_KEY + '&language=' + uiLang,
+    'https://api.maptiler.com/maps/base-v2/{z}/{x}/{y}.png?key='+ MAPTILER_API_KEY + '&language=' + uiLang,
     {
         tileSize: 512,
         zoomOffset: -1,
@@ -71,7 +71,7 @@ const mapLayerLight = L.tileLayer(
 );
 
 const mapLayerDark = L.tileLayer(
-    'https://api.maptiler.com/maps/base-v4-dark/{z}/{x}/{y}.png?key='+ MAPTILER_API_KEY + '&language=' + uiLang,
+    'https://api.maptiler.com/maps/base-v2-dark/{z}/{x}/{y}.png?key='+ MAPTILER_API_KEY + '&language=' + uiLang,
     {
         tileSize: 512,
         zoomOffset: -1,
