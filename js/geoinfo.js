@@ -11,6 +11,8 @@
  * the existing values without refetching anything.
  */
 
+// ── Geo info builders ──────────────────────────────────────────────
+
 /**
  * Builds the geo info cards for the current result.
  * Country-level results skip point-specific cards because one coordinate inside
@@ -240,6 +242,8 @@ function buildTimeItem(timezone) {
     time.classList.add("active");
 }
 
+// ── External data fetching ─────────────────────────────────────────
+
 /**
  * Fetches elevation from Open Elevation.
  * This is a fallback for places where the weather response did not include an
@@ -328,6 +332,8 @@ async function getWeatherData(lat, lng) {
     }
 }
 
+// ── Display helpers ────────────────────────────────────────────────
+
 /**
  * Formats the current local time for a timezone.
  * Invalid timezone names are caught because this value comes from an external
@@ -388,6 +394,8 @@ function getWeatherIcon(code, isDay) {
     if (!entry) return WEATHER_SVGS.thermometer;
     return isDay ? entry.day : entry.night;
 }
+
+// ── Formatting ─────────────────────────────────────────────────────
 
 /**
  * Formats decimal coordinates as degrees, minutes, and seconds.
@@ -468,6 +476,8 @@ function formatTemperature(celsius) {
     return Math.round(celsius) + "°C";
 }
 
+// ── Geo info reset and unit toggling ───────────────────────────────
+
 /**
  * Resets one geo info card to its inactive state.
  * Build functions always rewrite the full card structure, so clearing the HTML
@@ -520,6 +530,8 @@ elements.toggleUnits.addEventListener("click", function () {
     convertUnits();
 });
 
+// ── Distance math ──────────────────────────────────────────────────
+
 /**
  * Returns the great-circle distance between two coordinates in kilometers.
  * This is accurate enough for user-facing distance estimates without needing a
@@ -543,6 +555,8 @@ function haversineKm(lat1, lng1, lat2, lng2) {
     return R * c;
 }
 
+// ── Geo info state ─────────────────────────────────────────────────
+
 /*
  * Last fetched geo values in metric form.
  *
@@ -557,6 +571,8 @@ const geoInfoCache = {
     timeZone: null,
     isDay: null
 };
+
+// ── Country and continent lookup data ──────────────────────────────
 
 /*
  * ISO country code to UN M49 continent code.
@@ -621,6 +637,8 @@ const COUNTRY_TO_CONTINENT = {
     // Antarctica (010) usually shown as its own region
     "AQ": "010", "BV": "010", "TF": "010", "HM": "010", "GS": "010"
 };
+
+// ── Icon SVGs and weather code mapping ─────────────────────────────
 
 /*
  * Inline weather icons.

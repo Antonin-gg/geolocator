@@ -28,6 +28,8 @@
  * coordinate, and sometimes a polygon for the map outline.
  */
 
+// ── Cascade orchestration ──────────────────────────────────────────
+
 /**
  * Finds map data for an AI place result.
  * The pass order depends on the confidence level because landmarks and broad
@@ -100,6 +102,8 @@ async function runGeocodingCascade(queries, passes, aiCountryCode) {
     }
     return null;
 }
+
+// ── Geocoder calls ─────────────────────────────────────────────────
 
 /**
  * Dispatches one cascade attempt to the selected provider.
@@ -309,6 +313,8 @@ async function enrichOpenCageWithNominatim(openCageResult, aiConfidence, aiCount
     return null;
 }
 
+// ── OpenCage enrichment matching ───────────────────────────────────
+
 /**
  * Picks the closest Nominatim polygon that looks like the OpenCage result.
  * Distance limits depend on confidence because a country can be far from its
@@ -359,6 +365,8 @@ function findClosestExtraResult(results, openCageResult, aiConfidence) {
 
     return sorted[0] || null;
 }
+
+// ── Query generation ───────────────────────────────────────────────
 
 /**
  * Builds safer query variants from the AI place string.
@@ -418,6 +426,8 @@ function generateFallbackQueries(aiPlace) {
 
     return queries;
 }
+
+// ── Type filtering and map display rules ───────────────────────────
 
 /**
  * Chooses a fallback zoom level for point results.
@@ -559,6 +569,8 @@ function isPolygonLarge(geojson) {
     return area > 0.00005;
 }
 
+// ── Result picking ─────────────────────────────────────────────────
+
 /**
  * Selects the safest Nominatim result for the AI query.
  * Type filtering prevents wrong-level matches, then token matching checks that
@@ -675,6 +687,8 @@ function pickBestOpenCageResult(results, aiPlace, aiConfidence) {
     return null;
 }
 
+// ── Display name building ──────────────────────────────────────────
+
 /**
  * Builds the localized display name for a Nominatim result.
  * The panel should use a readable short label, not the full geocoder address.
@@ -734,6 +748,8 @@ function buildShortNameFromOpenCage(result) {
 
     return result.formatted || "Unknown location";
 }
+
+// ── Token matching helpers ─────────────────────────────────────────
 
 // Very short names create too many accidental token matches.
 function usefulName(name) {

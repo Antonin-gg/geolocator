@@ -10,6 +10,8 @@
  * steps stop before they can update the current result.
  */
 
+// ── Upload orchestration ───────────────────────────────────────────
+
 /**
  * Starts a new photo search from the file input.
  * The file is validated first, then the result state is reset and a fresh search
@@ -96,6 +98,42 @@ async function locateImage(input) {
     }
     input.value = "";
 }
+
+/**
+ * Rebuilds the current result after a language change.
+ * The same image is reused, but EXIF, reverse geocoding, AI text, wiki, and geo
+ * info may all need to be regenerated for the new UI language.
+ */
+async function rerunSearch() {
+    if (!currentResult.imageFile) return;
+    endLoading();
+    panel.startLoading(currentResult.photoHtml);
+    isSearching = true;
+    panel.scrollHintShown = false;
+
+    /*
+     * A language rerun is still a new async search. It needs its own search ID so
+     * older work cannot write back after the rerun starts.
+     */
+    const searchId = startNewSearch();
+
+    let photoLatLng = null;
+
+    try {
+        photoLatLng = await exifr.gps(currentResult.imageFile);
+    } catch (e) {
+        console.warn("EXIF GPS read failed:", e);
+    }
+    if (!isCurrentSearch(searchId)) return;
+
+    if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
+        await placeMarkerFromEXIF(photoLatLng, currentResult.photoHtml, searchId);
+    } else {
+        await placeMarkerFromAI(currentResult.imageFile, currentResult.photoHtml, searchId);
+    }
+}
+
+// ── EXIF result flow ───────────────────────────────────────────────
 
 /**
  * Builds a result from EXIF GPS coordinates.
@@ -209,6 +247,8 @@ function buildExifPlaceName(result) {
         "sentence": sentence
     };
 }
+
+// ── AI result flow ─────────────────────────────────────────────────
 
 /**
  * Builds a result from AI visual recognition.
@@ -448,6 +488,38 @@ async function aiLocator(image, searchId) {
 }
 
 /**
+ * Opens the panel with an unknown-location result.
+ * This is used both when the AI cannot identify the image and when geocoding
+ * fails to map an otherwise identified place.
+ *
+ * @param {boolean} isGeocodingFailure Whether the AI found a place but geocoding failed.
+ */
+function showUnknownResult(isGeocodingFailure) {
+
+    endLoading();
+
+    currentResult.clearLayers();
+
+    currentResult.lat = null;
+    currentResult.lng = null;
+
+    // Space results keep their AI sentence because they explain why the map cannot show them.
+    if (currentResult.confidence !== "space") {
+        currentResult.sentence = "<strong>" + translate("unknownLocation") + "</strong>";
+    }
+    currentResult.placeName = translate("unknownLocationShort");
+    currentResult.shortName = translate("unknownLocationShort");
+    currentResult.isAI = true;
+
+    // For geocoding failures, avoid showing visual evidence for a place we failed to map.
+    if (isGeocodingFailure) currentResult.method = "";
+
+    panel.open();
+}
+
+// ── Map movement and polygon reveal ────────────────────────────────
+
+/**
  * Checks whether the map still needs to move before a polygon can be shown.
  * A polygon can appear immediately only when its bounds are already visible and
  * the map is already at the zoom Leaflet would choose for those bounds.
@@ -503,36 +575,6 @@ function revealPolygon(location, searchId) {
 }
 
 /**
- * Opens the panel with an unknown-location result.
- * This is used both when the AI cannot identify the image and when geocoding
- * fails to map an otherwise identified place.
- *
- * @param {boolean} isGeocodingFailure Whether the AI found a place but geocoding failed.
- */
-function showUnknownResult(isGeocodingFailure) {
-
-    endLoading();
-
-    currentResult.clearLayers();
-
-    currentResult.lat = null;
-    currentResult.lng = null;
-
-    // Space results keep their AI sentence because they explain why the map cannot show them.
-    if (currentResult.confidence !== "space") {
-        currentResult.sentence = "<strong>" + translate("unknownLocation") + "</strong>";
-    }
-    currentResult.placeName = translate("unknownLocationShort");
-    currentResult.shortName = translate("unknownLocationShort");
-    currentResult.isAI = true;
-
-    // For geocoding failures, avoid showing visual evidence for a place we failed to map.
-    if (isGeocodingFailure) currentResult.method = "";
-
-    panel.open();
-}
-
-/**
  * Moves the map to a geocoded location.
  * Bounds are preferred when available because they show the full area. Point
  * results use a confidence-based zoom level instead.
@@ -563,39 +605,7 @@ function flyToPoint(lat, lng, zoom) {
     );
 }
 
-/**
- * Rebuilds the current result after a language change.
- * The same image is reused, but EXIF, reverse geocoding, AI text, wiki, and geo
- * info may all need to be regenerated for the new UI language.
- */
-async function rerunSearch() {
-    if (!currentResult.imageFile) return;
-    endLoading();
-    panel.startLoading(currentResult.photoHtml);
-    isSearching = true;
-    panel.scrollHintShown = false;
-
-    /*
-     * A language rerun is still a new async search. It needs its own search ID so
-     * older work cannot write back after the rerun starts.
-     */
-    const searchId = startNewSearch();
-
-    let photoLatLng = null;
-
-    try {
-        photoLatLng = await exifr.gps(currentResult.imageFile);
-    } catch (e) {
-        console.warn("EXIF GPS read failed:", e);
-    }
-    if (!isCurrentSearch(searchId)) return;
-
-    if (photoLatLng && photoLatLng.latitude && photoLatLng.longitude) {
-        await placeMarkerFromEXIF(photoLatLng, currentResult.photoHtml, searchId);
-    } else {
-        await placeMarkerFromAI(currentResult.imageFile, currentResult.photoHtml, searchId);
-    }
-}
+// ── Search tokens ──────────────────────────────────────────────────
 
 /**
  * Starts a new searchable flow and invalidates older async work.

@@ -18,6 +18,8 @@
  * proper noun checks before accepting an article.
  */
 
+// ── Learn-more content building ────────────────────────────────────
+
 /**
  * Builds all optional information shown behind the learn-more button.
  * Wiki and geo info are built together because the button should only appear
@@ -82,6 +84,8 @@ async function buildWikiExcerpt(aiPlace, geocodedPlace, lat, lng, aiConfidence, 
         (result.fullurl ? '<a href="' + result.fullurl + '" target="_blank">' + READ_MORE_TRANSLATIONS[uiLang] + '</a>' : "");
 
 }
+
+// ── Wikipedia cascade orchestration ────────────────────────────────
 
 /**
  * Runs the Wikipedia article matching cascade.
@@ -199,6 +203,8 @@ async function getWikiResult(aiPlace, geocodedPlace, lat, lng, aiConfidence) {
     return result;
 }
 
+// ── Wikipedia API calls ────────────────────────────────────────────
+
 /**
  * Searches Wikipedia by title text and returns the best accepted page.
  * The raw search results are noisy, so selection is delegated to
@@ -288,6 +294,8 @@ function buildWikiApiUrl(language, params) {
         "&origin=*";
 }
 
+// ── Query generation ───────────────────────────────────────────────
+
 /**
  * Builds title-search variants for Wikipedia.
  * Wikipedia articles often use shorter names than geocoders, so the cascade
@@ -345,6 +353,8 @@ function buildWikiFallbackQueries(query) {
 
     return queries;
 }
+
+// ── Article scoring and selection ──────────────────────────────────
 
 /**
  * Scores and selects the safest Wikipedia page from raw API results.
@@ -571,6 +581,8 @@ function isProperNounAcrossLanguages(page) {
     return false;
 }
 
+// ── Article filter helpers ─────────────────────────────────────────
+
 // List pages usually summarize many places and make poor result excerpts.
 function isListPage(page) {
     const title = (page.title || "").toLowerCase().trim();
@@ -591,6 +603,8 @@ function stripAccents(str) {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
 }
+
+// ── Article translation helpers ────────────────────────────────────
 
 /**
  * Converts an accepted English wiki result into the current UI language.
