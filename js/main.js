@@ -71,7 +71,7 @@ const mapLayerDark = L.tileLayer(
     {
         tileSize: 256,
         maxZoom: 20,
-        attribution: '<a href="https://www.stadiamaps.com/" target="_blank">© Stadia Maps</a> <a href="https://openmaptiles.org/" target="_blank">© OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
+        attribution: '<a href="https://www.stadiamaps.com/" target="_blank">© Stadia Maps</a> <a href="https://openmaptiles.org/" target="_blank">© OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap</a>',
         crossOrigin: true,
         errorTileUrl: ''
     }

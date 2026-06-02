@@ -4,6 +4,10 @@ Upload a photo and let AI, EXIF data, geocoding, Leaflet and Wikipedia work toge
 
 [Live demo](https://antonin-gg.github.io/geolocator/)
 
+![Geolocator on desktop](docs/screenshot-desktop.png)
+
+![Mobile demo](docs/demo-mobile.gif)
+
 ## What it does
 
 Geolocator is a small web app that tries to locate a photo on a map.
@@ -47,12 +51,13 @@ Available in 40+ languages.
 
 ## A concrete example
 
-Consider this: if the AI identifies a photo as "Köln, Germany", a simple geocoding query works fine and returns the city. But if it returns "Bogotá" and the correct interpretation is "Bogotá, Colombia", a simple query can sometimes return a small village in Mexico also named "Bogotá". The cascade rejects that result because it has the wrong administrative level. Without that extra logic, the marker can land 4,000 km away from where it should be. Wikipedia has its own version of this: if the AI returns "Cascavel, Brazil", Portuguese Wikipedia can return "Cascavel" meaning "rattlesnake", because the name match is perfect. To reject that kind of false match, the app checks how the article title behaves across languages. A real place name usually stays recognizable through many translations, while a common noun like an animal name changes completely. If the title does not behave like a stable proper noun, the article is rejected.
+If the AI identifies a photo as "Köln, Germany", a simple geocoding query works fine and returns the city. But if the AI returns "Bogotá" and the correct interpretation is "Bogotá, Colombia", a simple query can sometimes return a small village in Mexico also named "Bogotá". The cascade rejects that result because it has the wrong administrative level. Without that extra logic, the marker can land 4,000 km away from where it should be. Wikipedia has its own version of this: if the AI returns "Cascavel, Brazil", Portuguese Wikipedia can return "Cascavel" meaning "rattlesnake", because the name match is perfect. To reject that kind of false match, the app checks how the article title behaves across languages. A real place name usually stays recognizable through many translations, while a common noun like an animal name changes completely. If the title does not behave like a stable proper noun, the article is rejected.
 
 ## Built with
 
-- **JavaScript** (no framework, no build step)
+- **Vanilla JavaScript** (no framework, no build step)
 - **Leaflet** for the interactive map
+- **CARTO** (light theme) and **Stadia Maps** (dark theme) for raster map tiles
 - **OpenStreetMap** + **Nominatim** for geocoding
 - **OpenCage** as a geocoding fallback (proxied via a Cloudflare Worker)
 - **Wikipedia API** for article excerpts

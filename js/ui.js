@@ -16,7 +16,7 @@ let resizeTimeout;
  * the best contrast over imagery.
  */
 const cameraIconLight = new L.Icon({
-    iconUrl: 'https://antonin-gg.github.io/geolocator/cameraIconLight.png',
+    iconUrl: 'https://antonin-gg.github.io/geolocator/docs/cameraIconLight.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [31, 41],
     iconAnchor: [15, 41],
@@ -25,7 +25,7 @@ const cameraIconLight = new L.Icon({
 });
 
 const cameraIconDark = new L.Icon({
-    iconUrl: 'https://antonin-gg.github.io/geolocator/cameraIconDark.png',
+    iconUrl: 'https://antonin-gg.github.io/geolocator/docs/cameraIconDark.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [31, 41],
     iconAnchor: [15, 41],
