@@ -39,7 +39,7 @@ Available in 40+ languages.
 
 - **Mobile interaction layer.** Touch responsive bottom sheet panel with four states (closed / strip / panel / ultra), drag-follow gestures with axis lock, browser history handling so the Android back button closes layers in the order they opened.
 
-- **40+ language UI with grammar-aware sentence construction.** The AI writes a complete sentence in the user’s language, weaving the place name into the sentence naturally instead of relying on simple string replacement. Country names are localized via Intl.DisplayNames.
+- **40+ languages UI with grammar-aware sentence construction.** The AI writes a complete sentence in the user’s language, weaving the place name into the sentence naturally instead of relying on simple string replacement. Country names are localized via Intl.DisplayNames.
 
 - **Cancellation-safe async flows.** Every async branch carries a search ID captured at the start. If the user uploads a new photo mid-search, the older flow stops cleanly before writing back to the UI.
 
