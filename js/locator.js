@@ -286,6 +286,8 @@ async function placeMarkerFromAI(image, photoHtml, searchId) {
 
         if (!isCurrentSearch(searchId)) return;
 
+        endLoading();
+
         if (location.showPolygon && location.polygon) {
             currentResult.polygon = L.geoJSON(location.polygon, {
                 style: { color: getPolygonColor(), weight: 2, fillOpacity: 0.15 }
@@ -309,13 +311,7 @@ async function placeMarkerFromAI(image, photoHtml, searchId) {
          * polygons back onto the map.
          */
         if (currentResult.polygon && aiConfidence !== "country") {
-            const polygonToShow = currentResult.polygon;
-            map.once("moveend", function () {
-                if (!isCurrentSearch(searchId)) return;
-                if (currentResult.polygon === polygonToShow && !locationPreviewInProgress) {
-                    polygonToShow.addTo(map);
-                }
-            });
+            revealPolygon(location, aiConfidence, searchId);
         }
         /*
          * Any unexpected failure in the AI branch becomes an unknown result instead of
@@ -355,7 +351,7 @@ async function aiLocator(image, searchId) {
     // Language instructions are appended per request because the UI language can change.
     const promptWithLang = AI_PROMPT + "\n\n" + languageInstructions[uiLang];
 
-    // The Responses request uses a data URL so the worker can forward the image directly.
+    // The chat completions request uses a data URL so the worker can forward the image directly.
     const imageBase64 = await new Promise(function (resolve) {
         const reader = new FileReader();
         reader.onload = function (e) { resolve(e.target.result); };
@@ -449,6 +445,63 @@ async function aiLocator(image, searchId) {
         };
     }
 
+}
+
+/**
+ * Checks whether the map still needs to move before a polygon can be shown.
+ * A polygon can appear immediately only when its bounds are already visible and
+ * the map is already at the zoom Leaflet would choose for those bounds.
+ */
+function mapNeedsToMove(location) {
+    if (!location.bounds) return false;
+
+    if (location.bounds) {
+        const targetBounds = L.latLngBounds([
+            [location.bounds[0], location.bounds[2]],
+            [location.bounds[1], location.bounds[3]]
+        ]);
+        const zoomIsDifferent = map.getZoom() !== map.getBoundsZoom(targetBounds);
+        return !map.getBounds().contains(targetBounds) || zoomIsDifferent;
+    }
+}
+
+/**
+ * Reveals a non-country polygon when the map is ready.
+ * Smaller polygons are held back during fly animations because they can make the
+ * movement feel laggy. The delayed second check avoids catching the moveend from
+ * panel.open()'s invalidateSize(), while still revealing the polygon if the fly
+ * already finished before the listener is attached.
+ */
+function revealPolygon(location, searchId) {
+    if (!currentResult.polygon) return;
+
+    function reveal() {
+        if (!isCurrentSearch(searchId)) return;
+        if (locationPreviewInProgress) return;
+        if (!currentResult.polygon) return;
+        if (map.hasLayer(currentResult.polygon)) return;
+
+        currentResult.polygon.addTo(map);
+    }
+
+    if (!mapNeedsToMove(location)) {
+        reveal();
+        return;
+    }
+
+    setTimeout(function () {
+        if (!isCurrentSearch(searchId)) return;
+
+        /*
+         * By now panel.open()'s invalidateSize() should be out of the way.
+         * If the fly already finished, reveal immediately. If it is still moving,
+         * wait for the fly's own moveend.
+         */
+        if (!mapNeedsToMove(location)) {
+            reveal();
+        } else map.once("moveend", reveal);
+
+    }, PANEL_TRANSITION_MS + 50);
 }
 
 /**

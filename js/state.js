@@ -37,10 +37,8 @@ let didGeocodingFallBack = 0;
 let wikiQueryWasBlacklisted = 0;
 
 /*
- * The result currently displayed by the app.
- *
- * This object bundles the map layers, display text, coordinates, confidence,
- * source image, and generated object URL for the active photo.
+ * Single source of truth for the active result displayed by the app:
+ * map layers, display text, coordinates, and source image.
  */
 const currentResult = {
     marker: null,

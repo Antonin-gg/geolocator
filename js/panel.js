@@ -708,8 +708,14 @@ class Panel {
         this.handlingPopstate = false;
     }
 
+    /**
+     * Marks the next popstate as app-driven so handlePopstate ignores it.
+     * Used by ui.js dropdowns that mutate browser history (currently the language
+     * menu) and need the back navigation they trigger themselves to bypass the
+     * panel's back-button logic.
+     */
     setHandlingPopstate() {
-        this.handlePopstate = true;
+        this.handlingPopstate = true;
     }
 
     /**
