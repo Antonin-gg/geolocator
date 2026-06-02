@@ -1,0 +1,439 @@
+/*
+ * Touch panel and gesture layout.
+ *
+ * This file overrides the desktop panel layout for touch devices. On touch, the
+ * map stays full-screen and the panel overlays it, with swipe handles replacing
+ * the desktop close and toggle buttons.
+ */
+
+body.touch #panelClose,
+body.touch #panelToggle,
+body.touch #stripClose,
+body.touch #stripToggle {
+    display: none !important;
+}
+
+/*
+ * Full panel drag handle.
+ *
+ * Hidden by default, then enabled on touch devices. The handle shows different
+ * chevrons depending on whether the panel can open, minimize, or leave ultra
+ * mode.
+ */
+#panelHandle {
+    display: none;
+}
+
+body.touch #panelHandle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 44px;
+    cursor: grab;
+    z-index: 2;
+    border-radius: inherit;
+    transition: background 0.3s ease;
+}
+
+.handle-line {
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: currentColor;
+    opacity: 0.25;
+}
+
+.handle-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.35;
+}
+
+.handle-chevron svg {
+    width: 20px;
+    height: 7px;
+    display: block;
+}
+
+/*
+ * Handle chevrons by state.
+ * Strip shows an upward/open cue, normal panel shows both directions, and ultra
+ * only shows the direction back down to normal panel mode.
+ */
+body.touch.strip-open #panelHandle .handle-chevron-up {
+    display: flex;
+}
+
+body.touch.strip-open #panelHandle .handle-line {
+    display: block;
+}
+
+body.touch.strip-open #panelHandle .handle-chevron-down {
+    display: none;
+}
+
+body.touch.panel-open #panelHandle .handle-chevron-up {
+    display: flex;
+}
+
+body.touch.panel-open #panelHandle .handle-line {
+    display: block;
+}
+
+body.touch.panel-open #panelHandle .handle-chevron-down {
+    display: flex;
+}
+
+body.touch.ultra-open #panelHandle .handle-chevron-up {
+    display: none;
+}
+
+body.touch.ultra-open #panelHandle .handle-line {
+    display: block;
+}
+
+body.touch.ultra-open #panelHandle .handle-chevron-down {
+    display: flex;
+}
+
+/* Default hidden state when no touch result state is active. */
+body.touch #panelHandle .handle-chevron-up {
+    display: none;
+}
+
+body.touch #panelHandle .handle-line {
+    display: none;
+}
+
+body.touch #panelHandle .handle-chevron-down {
+    display: none;
+}
+
+/*
+ * Ultra panel mode.
+ * A small 30px map peek remains visible so the user keeps spatial context and
+ * the state does not feel like a separate page.
+ */
+body.touch.ultra-open #resultPanel {
+    height: calc(100dvh - 30px) !important;
+    transform: translateY(0);
+    z-index: 3001;
+}
+
+body.touch #resultPanel {
+    transition: transform 0.3s ease, height 0.3s ease;
+}
+
+/*
+ * Scrollable-content pulse.
+ * When panel content becomes scrollable, the handle briefly gets a stronger
+ * background so users notice that the panel can be dragged and scrolled.
+ */
+body.touch #panelHandle {
+    --handle-bg: transparent;
+    background: var(--handle-bg);
+}
+
+body.touch #resultPanel:has(#panelContent.scrollable) #panelHandle {
+    animation: handleScrollablePulse 0.6s ease-out forwards;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.dark.touch #resultPanel:has(#panelContent.scrollable) #panelHandle {
+    animation: handleScrollablePulseDark 0.6s ease-out forwards;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+
+@keyframes handleScrollablePulse {
+    0% {
+        background: rgba(0, 0, 0, 0.12);
+    }
+
+    100% {
+        background: rgba(0, 0, 0, 0.04);
+    }
+}
+
+@keyframes handleScrollablePulseDark {
+    0% {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    100% {
+        background: rgba(255, 255, 255, 0.12);
+    }
+}
+
+/*
+ * Touch strip transitions.
+ * The strip and panel use will-change because gesture code moves them with
+ * transforms during drag previews.
+ */
+body.touch #resultStrip {
+    min-height: 52px;
+    padding-top: 16px;
+    align-items: center;
+}
+
+body.touch #resultStrip {
+    will-change: transform;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+body.touch #resultPanel {
+    will-change: transform;
+}
+
+/*
+ * On touch devices the map does not shrink when the panel opens.
+ * The panel overlays the full-screen map, and JS recenters the result into the
+ * visible part of the map instead.
+ */
+body.touch #map,
+body.touch #map.panel-open {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    z-index: 0;
+    transition: none;
+}
+
+/*
+ * Drag fill for upward panel expansion.
+ * While the panel follows the finger toward ultra mode, this extends the panel
+ * background past its moving edge so no map gap appears behind it.
+ */
+body.touch.dragging-panel-up #resultPanel {
+    overflow: visible;
+    z-index: 3001;
+}
+
+body.touch.dragging-panel-up #resultPanel::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -60dvh;
+    height: 60dvh;
+    background: inherit;
+    pointer-events: none;
+}
+
+body.touch.ultra-collapsing #resultPanel {
+    z-index: 3001;
+}
+
+/*
+ * Minimized strip handle.
+ * The handle is decorative here because the strip itself receives the touch
+ * gesture, but the cue helps users discover that the strip can be dragged.
+ */
+#stripHandle {
+    display: none;
+}
+
+body.touch #stripHandle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 18px;
+    pointer-events: none;
+}
+
+body.touch #stripHandle .handle-chevron svg {
+    width: 16px;
+    height: 5px;
+}
+
+body.touch #stripHandle .handle-line {
+    width: 28px;
+    height: 3px;
+}
+
+/*
+ * Landscape touch layout.
+ *
+ * In landscape, the panel slides from the left instead of the bottom. The same
+ * three states still exist, but the gesture axis and handle orientation rotate
+ * to match the horizontal layout.
+ */
+@media (orientation: landscape) {
+
+    /*
+     * Panel slides from the left and leaves room on the right for the vertical
+     * drag handle.
+     */
+    body.touch #resultPanel {
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: auto;
+        width: 50vw;
+        height: 100dvh;
+        transform: translateX(-100%);
+        border-radius: 0;
+        padding: 60px 54px 60px 16px;
+        transition: transform 0.3s ease, width 0.3s ease;
+    }
+
+    body.touch #resultPanel.open {
+        transform: translateX(0);
+    }
+
+    /* Ultra keeps the same 30px map peek, now on the right edge. */
+    body.touch.ultra-open #resultPanel {
+        width: calc(100vw - 30px) !important;
+        height: 100dvh !important;
+        transform: translateX(0);
+    }
+
+    /* Move the panel handle to the right edge and rotate its layout. */
+    body.touch #panelHandle {
+        flex-direction: row-reverse;
+        gap: 4px;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: auto;
+        width: 44px;
+        height: auto;
+    }
+
+    /*
+     * Portrait drag fill extends downward, which is wrong in landscape. Replace
+     * it with a leftward fill behind the horizontally dragged panel.
+     */
+    body.touch.dragging-panel-up #resultPanel::after {
+        display: none;
+    }
+
+    body.touch.dragging-panel-up #resultPanel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 100%;
+        width: 60vw;
+        height: auto;
+        background: inherit;
+        pointer-events: none;
+    }
+
+    /*
+     * Landscape strip becomes a vertical left sidebar, similar to desktop, but
+     * still touch-enabled.
+     */
+    body.touch #resultStrip {
+        top: 50%;
+        left: 0;
+        bottom: auto;
+        right: auto;
+        width: auto;
+        height: auto;
+        min-height: 52px;
+        transform: translateY(-50%);
+        flex-direction: column;
+        justify-content: center;
+        border-radius: 0 10px 10px 0;
+        padding: 12px 8px;
+        writing-mode: vertical-rl;
+        padding-top: 0;
+        align-items: center;
+    }
+
+    body.touch #stripPlaceName {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        flex: 1 1 auto;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: block;
+    }
+
+    /* Move the strip handle to the right edge of the vertical strip. */
+    body.touch #stripHandle {
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: auto;
+        width: 18px;
+        height: auto;
+        writing-mode: horizontal-tb;
+        flex-direction: row-reverse;
+
+    }
+
+    /*
+     * After rotation, the SVG's visual width and height swap. Explicit boxes keep
+     * the chevrons aligned with the handle line.
+     */
+    body.touch #stripHandle .handle-chevron {
+        width: 5px;
+        height: 16px;
+        overflow: visible;
+    }
+
+    body.touch #panelHandle .handle-chevron {
+        width: 7px;
+        height: 20px;
+        overflow: visible;
+    }
+
+    /* Rotate chevrons so they point along the horizontal gesture direction. */
+    body.touch #panelHandle .handle-chevron-up svg {
+        transform: rotate(90deg);
+    }
+
+    body.touch #panelHandle .handle-chevron-down svg {
+        transform: rotate(90deg);
+    }
+
+    body.touch #stripHandle .handle-chevron-up svg {
+        transform: rotate(90deg);
+    }
+
+    /* Handle lines become vertical in landscape. */
+    body.touch #panelHandle .handle-line {
+        width: 4px;
+        height: 36px;
+    }
+
+    body.touch #stripHandle .handle-line {
+        width: 3px;
+        height: 28px;
+    }
+
+    /*
+     * Final strip override for landscape.
+     * The strip fills the height and reserves room for the handle on its right.
+     */
+    body.touch #resultStrip {
+        top: 0;
+        bottom: 0;
+        max-height: none;
+        height: 100dvh;
+        transform: none;
+        padding-top: 12px;
+        padding-right: 24px;
+    }
+}

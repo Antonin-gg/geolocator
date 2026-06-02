@@ -1,0 +1,211 @@
+/*
+ * Main controls and dropdowns.
+ *
+ * This file styles the upload area, error/welcome messages, and the top-right
+ * view, theme, and language controls. Mobile-specific control placement is
+ * handled later by mobile.css.
+ */
+
+/*
+ * Bottom upload stack.
+ * On desktop, it stays centered in the visible map area. When the panel opens,
+ * JS adds panel-open so the stack shifts with the map instead of sitting under
+ * the panel.
+ */
+#wrapper {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1002;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+    width: 250px;
+    transition: left 0.3s ease;
+}
+
+#wrapper.panel-open {
+    left: calc(50% + 15vw);
+}
+
+#welcome {
+    max-width: 250px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+/*
+ * Main upload label.
+ * The real file input is hidden in base.css, so this label is the visible upload
+ * control that opens the picker.
+ */
+#imageInputLabel {
+    font-weight: bold;
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    flex-wrap: wrap;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/*
+ * Secondary upload control used inside the compact mobile control stack.
+ * It stays hidden until JS shows it when the panel is open.
+ */
+#imageInputLabelPanel {
+    display: none;
+}
+
+#imageInputLabel.mobile-hidden {
+    display: none;
+}
+
+#imageInputLabelPanel.visible {
+    display: flex;
+}
+
+/* Temporary error message shown in the bottom stack. */
+#noData {
+    font-weight: bold;
+    text-align: center;
+    display: none;
+}
+
+/*
+ * Top-right control stack.
+ * Each control has a trigger and a hidden option below it, which lets dropdowns
+ * share the same open and close logic in ui.js.
+ */
+#wrapperToggles {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+    width: 115px;
+}
+
+#wrapperView,
+#wrapperTheme,
+#wrapperLanguage {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+}
+
+/*
+ * Language dropdown.
+ * Options keep a fixed width so the menu lines up with the trigger and does not
+ * resize when language names vary.
+ */
+.lang-option {
+    width: 113px;
+    box-sizing: border-box;
+    border-radius: 0 !important;
+}
+
+.active-lang {
+    font-weight: bold;
+    pointer-events: none;
+}
+
+#languageOptions {
+    max-height: 175px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    isolation: isolate;
+}
+
+#languageOptions::-webkit-scrollbar {
+    width: 6px;
+}
+
+#languageOptions::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+#languageOptions::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/*
+ * Open dropdown triggers lose their bottom radius so the trigger and menu read
+ * as one connected control.
+ */
+.box.dropdown-open {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* Shared chevron used by dropdown triggers. */
+.toggle-chevron {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-1px) rotate(45deg);
+    transform-origin: 70% 70%;
+    transition: transform 0.3s ease;
+}
+
+.dropdown-open .toggle-chevron {
+    transform: translateY(-2px) rotate(-135deg);
+}
+
+#showToggleView,
+#showToggleTheme,
+#showToggleLanguage {
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.toggle-text {
+    display: inline-block;
+    text-align: center;
+}
+
+/*
+ * Dropdown option buttons connect visually to the trigger above them.
+ */
+#toggleView,
+#toggleTheme {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+/*
+ * Hidden-state classes controlled by ui.js.
+ * Kept separate per dropdown so each menu can be toggled without changing the
+ * others.
+ */
+.hidden-view {
+    display: none;
+}
+
+.hidden-theme {
+    display: none;
+}
+
+.hidden-language {
+    display: none;
+}

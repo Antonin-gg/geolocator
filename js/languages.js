@@ -1,3 +1,17 @@
+/*
+ * Language tables and translation helpers.
+ *
+ * Most of this file is static copy used by the UI, geo info panel, error
+ * messages, and AI language instructions. The helpers at the bottom centralize
+ * fallback behavior so missing translations degrade to English instead of
+ * breaking the interface.
+ *
+ * Result-specific text from the AI is not translated here. The selected
+ * language is passed to the model through languageInstructions, because the
+ * model needs to write natural method and displaySentence fields directly.
+ */
+
+// Core UI labels shared across the app.
 const TRANSLATIONS = {
     "en": {
         "title": "Photo geolocator",
@@ -740,6 +754,7 @@ const TRANSLATIONS = {
     }
 }
 
+// For Wikipedia links that appear inside fetched article excerpts.
 const READ_MORE_TRANSLATIONS = {
     en: "Read more",
     ar: "اقرأ المزيد",
@@ -784,6 +799,7 @@ const READ_MORE_TRANSLATIONS = {
     zh: "继续阅读"
 };
 
+// Short unit labels used when metric and imperial values are toggled in the geo panel.
 const UNIT_TRANSLATIONS = {
     en: { m: "m", km: "km", mi: "mi", ft: "ft" },
     ar: { m: "م", km: "كم", mi: "ميل", ft: "قدم" },
@@ -828,6 +844,7 @@ const UNIT_TRANSLATIONS = {
     zh: { m: "米", km: "公里", mi: "英里", ft: "英尺" }
 };
 
+// Cardinal direction labels for DMS coordinates. These stay compact so coordinates remain readable.
 const COORDINATE_TRANSLATIONS = {
     en: { N: "N", S: "S", E: "E", W: "W" },
     ar: { N: "N", S: "S", E: "E", W: "W" },
@@ -872,6 +889,7 @@ const COORDINATE_TRANSLATIONS = {
     zh: { N: "北", S: "南", E: "东", W: "西" }
 };
 
+// Distance sentence templates. The formatted number and unit are inserted as {distance}.
 const DISTANCE_TRANSLATIONS = {
     en: "{distance} from you",
     ar: "على بُعد {distance} منك",
@@ -916,6 +934,7 @@ const DISTANCE_TRANSLATIONS = {
     zh: "距您{distance}"
 };
 
+// UN M49 continent codes mapped to display names for the country card.
 const CONTINENT_TRANSLATIONS = {
     en: { "002": "Africa", "019": "Americas", "142": "Asia", "150": "Europe", "009": "Oceania", "010": "Antarctica" },
     ar: { "002": "إفريقيا", "019": "الأمريكتان", "142": "آسيا", "150": "أوروبا", "009": "أوقيانوسيا", "010": "أنتاركتيكا" },
@@ -960,6 +979,7 @@ const CONTINENT_TRANSLATIONS = {
     zh: { "002": "非洲", "019": "美洲", "142": "亚洲", "150": "欧洲", "009": "大洋洲", "010": "南极洲" }
 };
 
+// User-facing errors
 const ERROR_TRANSLATIONS = {
     en: {
         network: "Network error. Please try again.",
@@ -1127,6 +1147,7 @@ const ERROR_TRANSLATIONS = {
     }
 };
 
+// Text for the locate-user button hint
 const LOCATE_HINT_TRANSLATIONS = {
     en: "Click to show distance from you",
     ar: "انقر لعرض المسافة منك",
@@ -1171,6 +1192,13 @@ const LOCATE_HINT_TRANSLATIONS = {
     zh: "点击显示与你的距离"
 };
 
+/*
+ * Extra prompt instructions appended to the AI request.
+ *
+ * The image may contain signs or text in a different language from the UI. These
+ * instructions tell the model to keep user-facing fields in the selected UI
+ * language anyway, while the place field remains English for geocoding.
+ */
 const languageInstructions = {
     en: "Respond with field values in English ONLY. Do not switch to any other language regardless of what text, signage, or visual context appears in the image. The user has selected English.",
 
@@ -1255,32 +1283,53 @@ const languageInstructions = {
     zh: "请仅使用中文填写字段值。无论图片中出现什么文字、标识或视觉内容，都不要切换到其他语言。用户已选择中文。",
 };
 
+/**
+ * Returns a core UI label in the active language.
+ * Falls back to English so missing keys do not leak undefined into the page.
+ */
 function translate(key) {
     return TRANSLATIONS[uiLang][key] || TRANSLATIONS.en[key] || key;
 }
 
+/**
+ * Returns a compact unit label for metric or imperial values.
+ * Unit strings are handled separately from normal UI text because they need to
+ * stay short inside the geo info cards.
+ */
 function unit(key) {
     return (UNIT_TRANSLATIONS[uiLang] && UNIT_TRANSLATIONS[uiLang][key])
         || UNIT_TRANSLATIONS.en[key]
         || key;
 }
 
+/**
+ * Returns the localized cardinal direction used in DMS coordinates.
+ * This keeps coordinate formatting language-aware without duplicating the full
+ * coordinate formatter for every language.
+ */
 function coord(key) {
     return (COORDINATE_TRANSLATIONS[uiLang] && COORDINATE_TRANSLATIONS[uiLang][key])
         || COORDINATE_TRANSLATIONS.en[key]
         || key;
 }
 
+// Returns a localized error message.
 function error(key) {
     return (ERROR_TRANSLATIONS[uiLang] && ERROR_TRANSLATIONS[uiLang][key])
         || ERROR_TRANSLATIONS.en[key]
         || key;
 }
 
+//Returns the locate-user hint in the active language.
 function locateHintText() {
     return LOCATE_HINT_TRANSLATIONS[uiLang] || LOCATE_HINT_TRANSLATIONS.en;
 }
 
+/**
+ * Applies the selected language to static UI elements.
+ * Result content is rebuilt via a new search when needed, because place names, wiki
+ * excerpts, geo info, and AI sentences depend on the current AI result.
+ */
 function changeLanguage() {
     document.title = translate("title");
 

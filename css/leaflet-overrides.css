@@ -1,0 +1,104 @@
+/*
+ * Leaflet UI overrides.
+ *
+ * Leaflet ships with its own control, popup, and attribution styles. This file
+ * makes those built-in elements match the app's glass-style controls. Some
+ * properties use !important because Leaflet's default CSS is loaded before the
+ * app but still has specific component rules.
+ */
+
+ /* Marker popup text should match the app typography, not Leaflet defaults. */
+.leaflet-popup-content {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    text-align: center;
+    margin: 6px;
+}
+
+/*
+ * Shared glass surface for app boxes and Leaflet zoom buttons.
+ * .box is also defined in base.css, but backdrop blur and padding live here so
+ * Leaflet controls can share the same treatment.
+ */
+.box,
+.leaflet-control-zoom a {
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/*
+ * Zoom buttons need tighter overrides than normal app boxes because Leaflet
+ * stacks them inside one control container.
+ */
+.leaflet-control-zoom a {
+    padding: 0 0;
+    border-radius: 0 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: none !important;
+}
+
+.leaflet-control-zoom-in {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.leaflet-control-zoom-out {
+    border-radius: 0 0 10px 10px !important;
+    border-bottom: none !important;
+}
+
+/* The zoom container gets the outer radius and shadow, while buttons stay flat inside. */
+.leaflet-control-zoom {
+    margin-top: 14px;
+    margin-left: 14px;
+    border: none !important;
+    border-radius: 10px !important;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.leaflet-popup-content-wrapper {
+    background: rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    border-radius: 10px !important;
+}
+
+.leaflet-popup-tip {
+    background: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Popup card surface used by the strip photo preview. */
+body.dark .leaflet-popup-content-wrapper {
+    background: rgba(15, 15, 25, 0.6) !important;
+    color: #f0f0f0 !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+body.dark .leaflet-popup-tip {
+    background: rgba(15, 15, 25, 0.6) !important;
+}
+
+/*
+ * Attribution is kept visible but visually softened so it does not dominate the
+ * map interface.
+ */
+.leaflet-control-attribution {
+    background: rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #000;
+    font-size: 0.7rem;
+    border-radius: 6px 0 0 0;
+}
+
+.leaflet-control-attribution a {
+    color: inherit;
+}

@@ -1,0 +1,346 @@
+/*
+ * Panel content and learn-more section.
+ *
+ * This file styles the text, photo metadata, geo info cards, Wikipedia excerpt,
+ * and loading shimmer inside the result panel. The outer panel layout lives in
+ * panel.css, while this file focuses on the content inside it.
+ */
+
+/*
+ * Place name row.
+ * The globe and title stay on one line, while the title can wrap
+ * naturally for long translated sentences.
+ */
+#panelPlaceName {
+    font-size: 1.2rem;
+    text-align: center;
+    min-width: 0;
+    flex-shrink: 1;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+#placeNameWithGlobe {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    gap: 3px;
+    flex-wrap: nowrap;
+}
+
+#panelSearchingGlobe {
+    flex-shrink: 0;
+}
+
+/* Short method sentence below the place name. */
+#panelMethod {
+    font-size: 0.85rem;
+    color: #666;
+    text-align: center;
+    flex-shrink: 0;
+    color: #666;
+}
+
+body.dark #panelMethod {
+    color: #aaa;
+}
+
+/*
+ * These blocks should keep their natural height inside the flex panel content.
+ * The photo height is managed separately by panel.lockPhotoSize().
+ */
+#panelPhoto,
+#panelMethod,
+#panelWiki {
+    flex-shrink: 0;
+    width: 100%;
+}
+
+/*
+ * Learn-more toggle.
+ * Hidden by default and shown only when wiki or geo info content exists.
+ */
+#learnMore {
+    display: none;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: 'DM Sans', sans-serif;
+    color: inherit;
+    cursor: pointer;
+    width: fit-content;
+    margin: 0 auto;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+/* CSS arrow keeps the button theme-aware through currentColor. */
+.learn-more-arrow {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 4px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-1px) rotate(45deg);
+    transform-origin: 70% 70%;
+    transition: transform 0.3s ease;
+}
+
+#learnMore.expanded .learn-more-arrow {
+    transform: translateY(-2px) rotate(-135deg);
+}
+
+/*
+ * Expandable extra content.
+ * max-height is used instead of display toggling so the section can animate open
+ * and closed without JS measuring the exact content height.
+ */
+#moreContent {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 8px;
+    max-height: 1800px;
+    opacity: 1;
+    transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease;
+
+}
+
+#moreContent.collapsed {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+}
+
+/*
+ * Geo info card grid.
+ * panel.balanceGeoInfoLayout() can set --geo-cols to avoid awkward last rows.
+ */
+#panelGeoInfo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 65px 4px;
+    justify-content: space-around;
+    margin-top: 6px;
+}
+
+#coordinates .value {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Shared icon treatment for geo and weather cards. */
+.geo-info-icon,
+.weather-icon {
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    color: rgba(40, 40, 40, 0.65);
+    margin-bottom: 4px;
+}
+
+.geo-info-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.weather-icon {
+    width: 28px;
+    height: 28px;
+}
+
+body.dark .geo-info-icon,
+body.dark .weather-icon {
+    color: rgba(240, 240, 240, 0.72);
+}
+
+/*
+ * Unit toggle.
+ * It only appears when at least one visible card can convert units.
+ */
+#toggleUnits {
+    display: none;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    color: inherit;
+    cursor: pointer;
+    width: fit-content;
+    margin: -4px auto 0 auto;
+    /* negative top margin pulls it closer to geoinfo */
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    font-family: 'DM Sans', sans-serif;
+}
+
+#toggleUnits:hover {
+    opacity: 1;
+}
+
+#toggleUnits.active {
+    display: block;
+}
+
+/*
+ * Wikipedia excerpt.
+ * A simple left border separates article text from the compact geo cards above.
+ */
+#panelWiki {
+    display: block;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    line-height: 1.5;
+    border-left: 3px solid rgba(0, 0, 0, 0.2);
+    padding-left: 12px;
+    margin-top: 12px;
+}
+
+#panelWiki:empty {
+    display: none;
+}
+
+#panelWiki a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+#panelWiki a:hover {
+    opacity: 0.7;
+}
+
+body.dark #panelWiki {
+    color: #f0f0f0;
+    border-left-color: rgba(255, 255, 255, 0.25);
+}
+
+/*
+ * Geo cards are hidden until their builder function marks them active.
+ * This lets each card fail independently without leaving empty slots.
+ */
+#panelGeoInfo>div {
+    display: none;
+    flex: 0 1 calc(33.33% - 6px);
+    max-width: 90px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+#panelGeoInfo[style*="--geo-cols"]>div {
+    flex: 0 1 calc((100% / var(--geo-cols)) - 6px);
+    max-width: calc((100% / var(--geo-cols)) - 6px);
+}
+
+#panelGeoInfo>div.active {
+    display: flex;
+}
+
+#panelGeoInfo>div .value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+}
+
+#panelGeoInfo>div .icon {
+    font-size: 1.3rem;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+/* Country card gets stronger hierarchy because it anchors the geo info section. */
+#panelGeoInfo>#country .value {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+#panelGeoInfo>#country .continent {
+    font-size: 0.65rem;
+    font-weight: 700;
+    opacity: 0.4;
+    line-height: 1.2;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/*
+ * Distance card has extra context text around the number, so it uses its own
+ * internal layout instead of the generic card value style only.
+ */
+#distance {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+#distance.active {
+    display: flex;
+}
+
+#distance .icon {
+    margin-bottom: 4px;
+}
+
+#distance .distance-context {
+    font-size: 0.65rem;
+    opacity: 0.6;
+    line-height: 1.1;
+    text-align: center;
+}
+
+#distance .distance-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+/*
+ * Loading shimmer for the panel title.
+ * The text itself becomes the clipping mask, so the shimmer works in both light
+ * and dark themes through currentColor.
+ */
+#panelPlaceName.loading {
+    background: linear-gradient(90deg,
+            currentColor 0%,
+            currentColor 40%,
+            rgba(128, 128, 128, 0.4) 50%,
+            currentColor 60%,
+            currentColor 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}

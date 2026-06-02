@@ -1,7 +1,16 @@
-// Cached DOM element references, looked up once at load.
-// This file is loaded before every other script (see index.html), so `elements`
-// is available at both load time and runtime across all files.
-// (clearGeoItem in geoinfo.js still looks up by dynamic id on purpose.)
+/*
+ * Central DOM cache.
+ *
+ * This file runs before the rest of the app, so shared UI elements are looked up
+ * once and reused everywhere. Keeping the IDs in one place makes later HTML
+ * changes safer, because most selector updates happen here instead of across
+ * many files.
+ *
+ * A few dynamic elements may still be queried locally when their ID is built at
+ * runtime. For example, clearGeoItem() in geoinfo.js intentionally looks up the
+ * target by ID.
+ */
+
 const elements = {};
 {
     const ids = {
@@ -51,3 +60,18 @@ const elements = {};
     };
     for (const k in ids) elements[k] = document.getElementById(ids[k]);
 }
+
+/*
+ * On Android, adding a second, unusual MIME type nudges Chrome toward the system
+ * file picker instead of the Android photo picker. That matters because the
+ * photo picker strips GPS metadata for privacy, while the file picker keeps the
+ * original file data that the EXIF branch needs.
+ *
+ * model/gltf+json is intentionally uncommon for normal phone photos, so it helps
+ * trigger the file picker without making it likely that users will accidentally
+ * select a non-image file. The selected file is still validated later with an
+ * image allowlist.
+ */
+elements.imageInput.accept = /Android/i.test(navigator.userAgent)
+    ? "image/*,model/gltf+json"
+    : "image/*";

@@ -1,0 +1,140 @@
+/*
+ * Loading animations and small animation helpers.
+ *
+ * This file styles the animated text shimmer, the searching globe, and a few
+ * small utility classes shared by desktop and mobile controls.
+ */
+
+/*
+ * Loading globe used in the welcome loading state and inside the panel
+ * title. They stay hidden until JS adds globe-active.
+ */
+#searchingGlobe,
+#panelSearchingGlobe {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.3em;
+    height: 1.3em;
+    margin-left: 0.35em;
+    vertical-align: -0.18em;
+}
+
+#panelSearchingGlobe {
+    width: 1.3em;
+    height: 1.3em;
+}
+
+#searchingGlobe.globe-active,
+#panelSearchingGlobe.globe-active {
+    display: inline-block;
+}
+
+/* Welcome-screen loading row. */
+#searching {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35em;
+}
+
+/*
+ * Text shimmer used while a result is being identified.
+ * It uses currentColor so it works in both light and dark themes.
+ */
+.searching-active {
+    background: linear-gradient(90deg,
+            currentColor 0%,
+            currentColor 40%,
+            rgba(128, 128, 128, 0.4) 50%,
+            currentColor 60%,
+            currentColor 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+/*
+ * Default desktop visibility for controls that mobile.css may override later.
+ */
+.hint-arrow-right {
+    display: none;
+}
+
+.hint-arrow-left {
+    display: inline-block;
+}
+
+.mobile-toggle-label {
+    display: none;
+}
+
+.mobile-control-only {
+    display: none;
+}
+
+/*
+ * Loading globe.
+ *
+ * The globe is a circular mask over a repeated world SVG sprite. Animating the
+ * SVG sideways creates a rotating-world effect without needing a video or canvas.
+ */
+.world {
+    --world-land: #2f9e44;
+    --world-border: #174a7c;
+    --world-water: #b8dcff;
+
+    width: 1.3em;
+    height: 1.3em;
+    display: inline-block;
+    border-radius: 50%;
+    overflow: hidden;
+    white-space: nowrap;
+    box-sizing: border-box;
+
+    background-color: var(--world-water);
+    border: 1.6px solid var(--world-border);
+    color: var(--world-land);
+}
+
+.world svg {
+    width: 4em;
+    height: 1em;
+    display: inline;
+    color: var(--world-land);
+    fill: currentColor;
+    margin-top: calc(-1.8px + -0.05em);
+}
+
+.world svg use {
+    color: var(--world-land);
+    fill: currentColor;
+}
+
+body.dark .world {
+    --world-land: #68d391;
+    --world-border: #7ab8ff;
+    --world-water: rgba(15, 40, 70, 0.85);
+}
+
+.world.globe-active svg {
+    animation: world-scroll 3s linear infinite;
+}
+
+@keyframes world-scroll {
+    from {
+        margin-left: -2.75em;
+    }
+
+    to {
+        margin-left: -1em;
+    }
+}
+
+/*
+ * Spinning globe SVG/CSS adapted from Phoenix Fox.
+ * Source: https://codepen.io/bluebie/pen/JjdoaLG
+ * License: MIT, copyright (c) 2026 Phoenix Fox.
+ */

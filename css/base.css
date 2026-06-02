@@ -1,0 +1,89 @@
+/*
+ * Base layout and shared surfaces.
+ *
+ * This file sets the global box model, locks the page to the viewport, defines
+ * the map's desktop panel offset, and provides the shared glass-style surface
+ * used by controls and Leaflet UI.
+ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/*
+ * The app is a full-screen map interface. Scrolling happens inside the panel,
+ * not on the document body.
+ */
+body {
+    overflow: hidden;
+}
+
+/*
+ * The map fills the viewport by default.
+ * 100dvh handles mobile browser UI better than 100vh, while 100vh remains a
+ * fallback for older browsers.
+ */
+#map {
+    height: 100vh;
+    height: 100dvh;
+    transition: margin-left 0.3s ease, width 0.3s ease, height 0.3s ease;
+}
+
+/*
+ * Desktop panel layout.
+ * When the result panel opens, the map is pushed aside instead of covered. Touch
+ * layouts override this later and keep the map full-screen behind the panel.
+ */
+#map.panel-open {
+    margin-left: 30vw;
+    width: 70vw;
+}
+
+/*
+ * Shared translucent surface used by app controls.
+ * Individual components add their own size and positioning elsewhere.
+ */
+.box {
+    background: rgba(255, 255, 255, 0.4);
+    color: #000;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark theme version of the shared surface. */
+body.dark .box {
+    background: rgba(15, 15, 25, 0.75);
+    color: #f0f0f0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * Leaflet controls use the same surface treatment as app controls so the map UI
+ * feels like part of the same interface.
+ */
+.leaflet-control-zoom a,
+.leaflet-control-attribution {
+    background: rgba(255, 255, 255, 0.4);
+    color: #000000;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .leaflet-control-zoom a,
+body.dark .leaflet-control-attribution {
+    background: rgba(15, 15, 25, 0.75);
+    color: #f0f0f0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * The real file input stays hidden. Visible labels in the UI trigger it through
+ * their for="imageInput" attribute.
+ */
+#imageInput {
+    display: none;
+}

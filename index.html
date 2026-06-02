@@ -4,19 +4,40 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- App font. Loaded before styles so text measurements are stable after startup. -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700&display=swap"
         rel="stylesheet">
+
+    <!-- Leaflet base styles must load before app overrides. -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css" />
+
+    <!-- App styles. Order matters: base layout first, touch and mobile overrides last. -->
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/panel.css" />
+    <link rel="stylesheet" href="css/content.css" />
+    <link rel="stylesheet" href="css/location.css" />
+    <link rel="stylesheet" href="css/controls.css" />
+    <link rel="stylesheet" href="css/leaflet-overrides.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+    <link rel="stylesheet" href="css/touch.css" />
+    <link rel="stylesheet" href="css/mobile.css" />
+
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <title>Photo geolocator</title>
 </head>
 
 <body>
-<script>try{if(localStorage.getItem("isDark")!=="false")document.body.classList.add("dark");}catch(e){}</script>
-    
+    <!-- Apply dark mode immediately to avoid a light-theme flash before JS startup finishes. -->
+    <script>try { if (localStorage.getItem("isDark") !== "false") document.body.classList.add("dark"); } catch (e) { }</script>
+
+    <!-- Leaflet owns this element after main.js creates the map. -->
     <div id="map"></div>
 
+    <!--
+        Inline sprite used by the searching globe animation.
+        Defining it once keeps the animated instances lightweight.
+    -->
     <svg aria-hidden="true" class="svg-sprite" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <symbol id="icon-world" viewBox="0 0 216 100">
@@ -38,6 +59,10 @@
         </defs>
     </svg>
 
+    <!--
+        Main landing UI.
+        JS swaps between welcome, loading, and error states depending on the current search.
+    -->
     <div id="wrapper">
 
         <div id="noData" class="box"></div>
@@ -56,19 +81,26 @@
 
         <div id="welcome" class="box"></div>
 
+        <!-- Hidden file input. The visible labels below trigger this same input. -->
         <input type="file" id="imageInput">
         <label for="imageInput" id="imageInputLabel" class="box">Upload photo</label>
 
     </div>
 
+    <!-- Desktop locate button. The mobile version lives with the compact controls below. -->
     <button id="locateUserButton" class="box desktop-toggle-label" aria-label="Use my location">⌖</button>
 
+    <!-- One-time hint shown when the locate-user feature first becomes available. -->
     <div id="locateUserHint" class="box">
         <span class="hint-arrow hint-arrow-left">←</span>
         <span class="hint-text"></span>
         <span class="hint-arrow hint-arrow-right">→</span>
     </div>
 
+    <!--
+        Top-right controls.
+        Each dropdown has a trigger and a hidden option panel controlled by ui.js.
+    -->
     <div id="wrapperToggles">
         <div id="wrapperView">
             <button id="showToggleView" class="box">
@@ -148,6 +180,8 @@
 
             </div>
         </div>
+
+        <!-- Compact controls shown on mobile or small viewports. -->
         <label for="imageInput" id="imageInputLabelPanel" class="box mobile-control-only">
             <svg class="upload-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -169,7 +203,13 @@
             </svg>
         </button>
     </div>
+
+    <!--
+        Full result panel.
+        panel.js controls its states: open, closed, minimized strip, and ultra on touch devices.
+    -->
     <div id="resultPanel">
+        <!-- Touch drag handle. Hidden or decorative depending on layout. -->
         <div id="panelHandle" aria-hidden="true">
             <span class="handle-chevron handle-chevron-up">
                 <svg viewBox="0 0 24 8">
@@ -186,6 +226,8 @@
             </span>
         </div>
         <button id="panelClose">✕</button>
+
+        <!-- Result content is filled dynamically after EXIF or AI search. -->
         <div id="panelContent">
             <div id="panelPhoto"></div>
             <div id="placeNameWithGlobe">
@@ -203,7 +245,10 @@
                 <span class="learn-more-text">En savoir plus</span>
                 <span class="learn-more-arrow"></span>
             </button>
+
+            <!-- Optional extra content. It stays collapsed until a wiki or geo card exists. -->
             <div id="moreContent" class="collapsed">
+                <!-- Geo cards are reused and filled individually by geoinfo.js. -->
                 <div id="panelGeoInfo">
                     <div id="country">
                         <div class="icon"></div>
@@ -235,6 +280,7 @@
                     </div>
                 </div>
                 <button id="toggleUnits">⇌</button>
+                <!-- Wikipedia excerpt inserted by wiki.js when an article is found. -->
                 <div id="panelWiki"></div>
             </div>
         </div>
@@ -244,6 +290,10 @@
         </button>
     </div>
 
+    <!--
+        Minimized result strip.
+        It keeps the current result available while giving the map most of the screen back.
+    -->
     <div id="resultStrip" class="box">
         <div id="stripHandle" aria-hidden="true">
             <span class="handle-chevron handle-chevron-up">
@@ -266,11 +316,27 @@
 
     <script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="dom.js"></script>
-    <script src="languages.js"></script>
-    <script src="geoinfo.js"></script>
-    <script src="touch-ui-helpers.js"></script>
-    <script src="script.js"></script>
+
+    <!--
+        App scripts.
+        Order matters because these are plain global scripts, not ES modules.
+        dom.js defines shared element references, main.js runs last and starts the app.
+    -->
+    <script src="js/dom.js"></script>
+    <script src="js/languages.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/state.js"></script>
+
+    <script src="js/touch.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/panel.js"></script>
+    <script src="js/geocoding.js"></script>
+    <script src="js/wiki.js"></script>
+    <script src="js/geoinfo.js"></script>
+    <script src="js/location.js"></script>
+    <script src="js/locator.js"></script>
+
+    <script src="js/main.js"></script>
 
 </body>
 

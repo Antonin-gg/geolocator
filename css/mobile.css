@@ -1,0 +1,393 @@
+/*
+ * Mobile and compact layout overrides.
+ *
+ * This file applies when JS adds .mobile-display to the body. That includes all
+ * touch devices, plus small non-touch windows. Touch-specific gesture behavior
+ * still lives in touch.css.
+ */
+
+/*
+ * Compact control chrome.
+ *
+ * :where() keeps specificity low, so touch.css and component-specific rules can
+ * still override these styles without needing heavier selectors.
+ */
+:where(body.mobile-display) .leaflet-control-zoom {
+    display: none;
+}
+
+/*
+ * Mobile photo sizing.
+ * The panel can be much shorter on compact layouts, so the image must stay
+ * contained instead of forcing the content to overflow immediately.
+ */
+:where(body.mobile-display) #panelPhoto {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    min-height: 0;
+}
+
+:where(body.mobile-display) #panelPhoto img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/*
+ * Compact upload and locate controls.
+ * They start hidden and are shown by JS only when the current panel state needs
+ * them.
+ */
+:where(body.mobile-display) #imageInputLabelPanel {
+    display: none;
+    cursor: pointer;
+}
+
+:where(body.mobile-display) .upload-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+:where(body.mobile-display) #locateUserButton.visible {
+    display: none;
+}
+
+:where(body.mobile-display) #locateUserButtonMobile.visible {
+    display: flex;
+}
+
+:where(body.mobile-display) #locateUserButtonMobile {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px !important;
+    color: #1f5f9f !important;
+}
+
+:where(body.dark.mobile-display) #locateUserButtonMobile {
+    color: #7ab8ff !important;
+}
+
+:where(body.mobile-display) .locate-mobile-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/*
+ * Compact control stack.
+ * Text labels are hidden and replaced with icons so the controls fit on narrow
+ * screens without covering too much of the map.
+ */
+:where(body.mobile-display) #wrapperToggles {
+    top: 10px;
+    right: 10px;
+    width: 38px;
+    z-index: 1003;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+:where(body.mobile-display) .desktop-toggle-label,
+:where(body.mobile-display) .toggle-chevron,
+:where(body.mobile-display) #showToggleView,
+:where(body.mobile-display) #showToggleTheme {
+    display: none;
+}
+
+:where(body.mobile-display) .mobile-control-only {
+    display: none;
+}
+
+:where(body.mobile-display) .mobile-toggle-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+:where(body.mobile-display) #toggleView,
+:where(body.mobile-display) #toggleTheme,
+:where(body.mobile-display) #showToggleLanguage,
+:where(body.mobile-display) #imageInputLabelPanel {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+:where(body.mobile-display) #showToggleLanguage,
+:where(body.mobile-display) #toggleView,
+:where(body.mobile-display) #toggleTheme {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px !important;
+}
+
+/*
+ * Language menu becomes a centered overlay on compact layouts.
+ * This is easier to use than a narrow dropdown when the language list is long.
+ */
+:where(body.mobile-display) #languageOptions {
+    position: fixed;
+    top: 75px;
+    left: 75px;
+    right: 75px;
+    bottom: 75px;
+
+    width: auto;
+    max-height: none;
+    overflow-y: auto;
+
+    border-radius: 14px !important;
+    z-index: 3000;
+}
+
+:where(body.mobile-display) .lang-option {
+    width: 100%;
+    border-radius: 0 !important;
+    padding: 10px 14px;
+}
+
+:where(body.mobile-display) .lang-option:first-child {
+    border-top-left-radius: 14px !important;
+    border-top-right-radius: 14px !important;
+}
+
+:where(body.mobile-display) .lang-option:last-child {
+    border-bottom-left-radius: 14px !important;
+    border-bottom-right-radius: 14px !important;
+}
+
+:where(body.mobile-display) .mobile-toggle-icon {
+    width: 24px;
+    height: 24px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/*
+ * Locate hint placement for compact controls.
+ * It points toward the right-side control stack instead of the desktop button.
+ */
+body.panel-open:where(.mobile-display) #locateUserHint,
+body.strip-open:where(.mobile-display) #locateUserHint,
+:where(body.mobile-display) #locateUserHint {
+    right: 56px;
+    left: auto;
+    top: 206px;
+    transform: translateY(-50%);
+}
+
+:where(body.mobile-display) #locateUserHint .hint-text {
+    text-align: center;
+}
+
+:where(body.mobile-display) .hint-arrow-left {
+    display: none;
+}
+
+:where(body.mobile-display) .hint-arrow-right {
+    display: inline-block;
+}
+
+ /*
+ * Portrait compact layout.
+ *
+ * The result panel slides up from the bottom and uses half the viewport. This
+ * keeps the photo/result visible while leaving the top half of the map available.
+ */
+@media (orientation: portrait) {
+
+    :where(body.mobile-display) #resultPanel {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 50dvh;
+        transform: translateY(100%);
+        border-radius: 0;
+        padding: 60px 16px max(5px, env(safe-area-inset-bottom)) 16px;
+    }
+
+    :where(body.mobile-display) #resultPanel.open {
+        transform: translateY(0);
+    }
+
+    :where(body.mobile-display) #panelToggle {
+        top: 16px;
+        bottom: auto;
+        left: 16px;
+        right: auto;
+    }
+    
+    /*
+     * Desktop chevrons point left and right. In portrait mobile, panel movement is
+     * vertical, so only up and down chevrons are shown.
+     */
+    :where(body.mobile-display) .chevron-left,
+    :where(body.mobile-display) .chevron-right {
+        display: none;
+    }
+
+    :where(body.mobile-display) .chevron-down,
+    :where(body.mobile-display) .chevron-up {
+        display: block;
+    }
+
+    /*
+     * Portrait strip becomes a bottom bar.
+     * The result name sits between the close and reopen controls.
+     */
+    :where(body.mobile-display) #resultStrip {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 52px;
+        transform: none;
+        flex-direction: row-reverse;
+        justify-content: space-between;
+        border-radius: 10px 10px 0 0;
+        padding: 0 16px;
+        writing-mode: horizontal-tb;
+    }
+
+    :where(body.mobile-display) #stripPlaceName {
+        writing-mode: horizontal-tb;
+        transform: none;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+        /* takes up remaining space between buttons */
+        text-align: center;
+    }
+
+    /*
+     * Non-touch compact layouts still shrink the map in portrait. Touch layouts
+     * override this in touch.css and keep the map full-screen behind the panel.
+     */
+    :where(body.mobile-display) #map.panel-open {
+        height: 50dvh;
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/*
+ * Landscape compact photo behavior.
+ * The panel is wider but shorter, so the photo uses available height first.
+ */
+@media (orientation: landscape) {
+    :where(body.mobile-display) #panelPhoto {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    :where(body.mobile-display) #panelPhoto img {
+        width: auto;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    /*
+     * In mobile landscape, the strip keeps only controls. Long vertical text would
+     * take too much space and wrap awkwardly.
+     */
+    :where(body.mobile-display) #stripPlaceName {
+        display: none;
+    }
+}
+
+/*
+ * Hover feedback for mouse/trackpad users.
+ * This avoids sticky hover effects on touch screens.
+ */
+@media (hover: hover) and (pointer: fine) {
+
+    #toggleView:hover,
+    #toggleTheme:hover,
+    :where(body.mobile-display) #showToggleLanguage:hover,
+    #locateUserButton:hover,
+    #locateUserButtonMobile:hover,
+    #imageInputLabel:hover,
+    #imageInputLabelPanel:hover,
+    #learnMore:hover,
+    .lang-option:hover {
+        background: rgba(0, 0, 0, 0.08) !important;
+        cursor: pointer;
+    }
+
+    body.dark #toggleView:hover,
+    body.dark #toggleTheme:hover,
+    body.dark:where(.mobile-display) #showToggleLanguage:hover,
+    body.dark #locateUserButton:hover,
+    body.dark #locateUserButtonMobile:hover,
+    body.dark #imageInputLabel:hover,
+    body.dark #imageInputLabelPanel:hover,
+    body.dark #learnMore:hover,
+    body.dark .lang-option:hover {
+        background: rgba(255, 255, 255, 0.30) !important;
+    }
+}
+
+/*
+ * Active feedback for touch and coarse pointers.
+ * :active gives immediate tap feedback without relying on hover support.
+ */
+@media (hover: none),
+(pointer: coarse) {
+
+    #toggleView:active,
+    #toggleTheme:active,
+    #showToggleLanguage:active,
+    #locateUserButton:active,
+    #locateUserButtonMobile:active,
+    #imageInputLabel:active,
+    #imageInputLabelPanel:active,
+    #learnMore:active,
+    .lang-option:active {
+        background: rgba(0, 0, 0, 0.08) !important;
+    }
+
+    body.dark #toggleView:active,
+    body.dark #toggleTheme:active,
+    body.dark #showToggleLanguage:active,
+    body.dark #locateUserButton:active,
+    body.dark #locateUserButtonMobile:active,
+    body.dark #imageInputLabel:active,
+    body.dark #imageInputLabelPanel:active,
+    body.dark #learnMore:active,
+    body.dark .lang-option:active {
+        background: rgba(255, 255, 255, 0.30) !important;
+    }
+}
