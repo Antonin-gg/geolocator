@@ -6,7 +6,7 @@ Upload a photo and let AI, EXIF data, geocoding, Leaflet and Wikipedia work toge
 
 ![Geolocator on desktop](docs/screenshot-desktop.png)
 
-![Mobile demo](docs/demo-mobile.gif)
+<img src="docs/demo-mobile.gif" alt="Mobile demo" width="300">
 
 ## What it does
 
