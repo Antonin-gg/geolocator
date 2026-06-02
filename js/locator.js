@@ -311,7 +311,7 @@ async function placeMarkerFromAI(image, photoHtml, searchId) {
          * polygons back onto the map.
          */
         if (currentResult.polygon && aiConfidence !== "country") {
-            revealPolygon(location, aiConfidence, searchId);
+            revealPolygon(location, searchId);
         }
         /*
          * Any unexpected failure in the AI branch becomes an unknown result instead of
@@ -455,14 +455,12 @@ async function aiLocator(image, searchId) {
 function mapNeedsToMove(location) {
     if (!location.bounds) return false;
 
-    if (location.bounds) {
-        const targetBounds = L.latLngBounds([
-            [location.bounds[0], location.bounds[2]],
-            [location.bounds[1], location.bounds[3]]
-        ]);
-        const zoomIsDifferent = map.getZoom() !== map.getBoundsZoom(targetBounds);
-        return !map.getBounds().contains(targetBounds) || zoomIsDifferent;
-    }
+    const targetBounds = L.latLngBounds([
+        [location.bounds[0], location.bounds[2]],
+        [location.bounds[1], location.bounds[3]]
+    ]);
+    const zoomIsDifferent = map.getZoom() !== map.getBoundsZoom(targetBounds);
+    return !map.getBounds().contains(targetBounds) || zoomIsDifferent;
 }
 
 /**
