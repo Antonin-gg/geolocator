@@ -53,44 +53,40 @@ document.querySelector('[data-lang="' + uiLang + '"]').classList.add("active-lan
 /*
  * Base map setup.
  *
- * Stadia Maps serves the styled raster tiles. Labels appear in each location's
- * native script, which fits a photo geolocator: the map mirrors how each place
- * actually labels itself in the world.
+ * Light mode uses CARTO directly (no key needed, no rate limits to worry about).
+ * Dark mode uses Stadia for a more polished look, with CARTO's dark_all as a
+ * fallback if Stadia tile requests fail.
  *
- * A CARTO fallback handles tile failures (rate limit, outage, blocked region):
- * if a Stadia tile request fails, the same z/x/y tile is fetched from CARTO so
- * the map keeps rendering.
+ * Satellite uses Esri imagery
  */
-function fallbackToCarto(e, cartoStyle) {
-    const subdomain = ['a', 'b', 'c'][Math.floor(Math.random() * 3)];
-    e.tile.src = 'https://' + subdomain + '.basemaps.cartocdn.com/' + cartoStyle +
-        '/' + e.coords.z + '/' + e.coords.x + '/' + e.coords.y + '.png';
-}
 
-const stadiaOptions = {
-    tileSize: 256,
-    maxZoom: 20,
-    attribution: '<a href="https://www.stadiamaps.com/" target="_blank">© Stadia Maps</a> <a href="https://openmaptiles.org/" target="_blank">© OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
-    crossOrigin: true,
-    errorTileUrl: ''
-};
-
-const map = L.map('map').setView([0, 0], 2);
-
-const mapLayerLight = L.tileLayer(
-    'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png?api_key=' + STADIA_API_KEY,
-    stadiaOptions
-).on('tileerror', function (e) { fallbackToCarto(e, 'rastertiles/voyager'); });
+const mapLayerLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    subdomains: 'abcd',
+    attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> © <a href="https://carto.com/attributions" target="_blank">CARTO</a>'
+});
 
 const mapLayerDark = L.tileLayer(
     'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=' + STADIA_API_KEY,
-    stadiaOptions
-).on('tileerror', function (e) { fallbackToCarto(e, 'dark_all'); });
+    {
+        tileSize: 256,
+        maxZoom: 20,
+        attribution: '<a href="https://www.stadiamaps.com/" target="_blank">© Stadia Maps</a> <a href="https://openmaptiles.org/" target="_blank">© OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
+        crossOrigin: true,
+        errorTileUrl: ''
+    }
+).on('tileerror', function (e) {
+    const subdomain = ['a', 'b', 'c'][Math.floor(Math.random() * 3)];
+    e.tile.src = 'https://' + subdomain + '.basemaps.cartocdn.com/dark_all/' +
+        e.coords.z + '/' + e.coords.x + '/' + e.coords.y + '.png';
+});
 
 const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 18,
     attribution: '© Esri'
 });
+
+const map = L.map('map').setView([0, 0], 2);
 
 mapLayerLight.addTo(map);
 
