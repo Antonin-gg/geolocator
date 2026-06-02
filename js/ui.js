@@ -195,7 +195,7 @@ function openDropdown(which) {
                 history.pushState({}, "");
             }
         } else if (isTouchDevice && !panel.handlingPopstate) {
-            panel.setHandlingPopsate();
+            panel.setHandlingPopstate();
             history.back();
         }
     }
@@ -218,7 +218,7 @@ function closeDropdown(which) {
     config.trigger.classList.remove("dropdown-open");
 
     if (config.usesHistory && isTouchDevice && !panel.handlingPopstate) {
-        panel.setHandlingPopsate();
+        panel.setHandlingPopstate();
         history.back();
     }
 }
