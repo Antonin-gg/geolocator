@@ -14,7 +14,7 @@ Geolocator is a small web app that tries to locate a photo on a map.
 
 The result is shown with:
 
-- A map marker
+- A map pin
 - Optional area outlines for cities, regions, countries, or large landmarks
 - A short explanation of how the place was identified
 - A geo information panel with country, coordinates, altitude, current weather and local time
@@ -33,7 +33,7 @@ Available in 40+ languages.
 
 4. Once the location is found, the app fetches a matching Wikipedia article using a multi-step search flow with a scoring system. Title token matching, coordinate distance, cross-language proper-noun detection, and list/disambiguation filters are all involved. Local language fallbacks run when the English match is uncertain.
 
-5. The result is rendered on the map with a polygon for areas and a marker for landmarks. Optional geo info such as altitude, weather, time and distance from the user comes from Open-Meteo, Open Elevation and the browser's geolocation API.
+5. The result is rendered on the map with a polygon for areas and a pin for landmarks. Optional geo info such as altitude, weather, time and distance from the user comes from Open-Meteo, Open Elevation and the browser's geolocation API.
 
 ## Technical highlights
 
@@ -51,7 +51,7 @@ Available in 40+ languages.
 
 ## A concrete example
 
-If the AI identifies a photo as "Köln, Germany", a simple geocoding query works fine and returns the city. But if the AI returns "Bogotá" and the correct interpretation is "Bogotá, Colombia", a simple query can sometimes return a small village in Mexico also named "Bogotá". The cascade rejects that result because it has the wrong administrative level. Without that extra logic, the marker can land 4,000 km away from where it should be. Wikipedia has its own version of this: if the AI returns "Cascavel, Brazil", Portuguese Wikipedia can return "Cascavel" meaning "rattlesnake", because the name match is perfect. To reject that kind of false match, the app checks how the article title behaves across languages. A real place name usually stays recognizable through many translations, while a common noun like an animal name changes completely. If the title does not behave like a stable proper noun, the article is rejected.
+If the AI identifies a photo as "Köln, Germany", a simple geocoding query works fine and returns the city. But if the AI returns "Bogotá" and the correct interpretation is "Bogotá, Colombia", a simple query can sometimes return a small village in Mexico also named "Bogotá". The cascade rejects that result because it has the wrong administrative level. Without that extra logic, the map pin can land 4,000 km away from where it should be. Wikipedia has its own version of this: if the AI returns "Cascavel, Brazil", Portuguese Wikipedia can return "Cascavel" meaning "rattlesnake", because the name match is perfect. To reject that kind of false match, the app checks how the article title behaves across languages. A real place name usually stays recognizable through many translations, while a common noun like an animal name changes completely. If the title does not behave like a stable proper noun, the article is rejected.
 
 ## Built with
 
