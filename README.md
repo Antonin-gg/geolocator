@@ -43,11 +43,11 @@ Available in 40+ languages.
 
 - **Mobile interaction layer.** Touch responsive bottom sheet panel with four states (closed / strip / panel / ultra), drag-follow gestures with axis lock, browser history handling so the Android back button closes layers in the order they opened.
 
-- **40+ languages UI with grammar-aware sentence construction.** The AI writes a complete sentence in the user’s language, weaving the place name into the sentence naturally instead of relying on simple string replacement. Country names are localized via Intl.DisplayNames.
-
 - **Cancellation-safe async flows.** Every async branch carries a search ID captured at the start. If the user uploads a new photo mid-search, the older flow stops cleanly before writing back to the UI.
 
-- **No frontend framework, no build step.** Just plain JS, Leaflet, and CSS. The whole app is about 6000 lines across 13 files.
+- **No frontend framework and no build step.** Just plain JS, Leaflet, and CSS. The whole app is about 6000 lines across 13 files.
+
+- **40+ languages UI with grammar-aware sentence construction.** The AI writes a complete sentence in the user’s language, weaving the place name into the sentence naturally instead of relying on simple string replacement. Country names are localized via Intl.DisplayNames.
 
 ## A concrete example
 
@@ -137,7 +137,7 @@ This project started as a little "locate a photo on a map" experiment, but it en
 
 The project taught me how much engineering can hide behind a seemingly simple feature. The AI integration was actually the easy part. The geocoding cascade and Wikipedia matching cascade were much harder, because they required actual algorithmic thinking: fallback order, scoring, confidence levels, ambiguity handling, and deciding when a broader answer is safer than a specific but possibly wrong one. But that was also the interesting part, it made the project feel much more like problem solving rather than just connecting APIs together.
 
-I also learned that mobile browser behavior is complex and full of small details, from file pickers stripping EXIF GPS data to touch gestures fighting scroll behavior.
+I also learned that mobile browser behavior is complex and full of small details, like file pickers stripping EXIF GPS data or touch gestures fighting scrolling.
 
 ## Credits
 
