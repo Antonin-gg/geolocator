@@ -55,7 +55,7 @@ If the AI identifies a photo as "Köln, Germany", a simple geocoding query works
 
 ## Built with
 
-- **Vanilla JavaScript** (no framework, no build step)
+- **Vanilla JavaScript** (no framework and no build step)
 - **Leaflet** for the interactive map
 - **CARTO** (light theme) and **Stadia Maps** (dark theme) for raster map tiles
 - **OpenStreetMap** + **Nominatim** for geocoding
@@ -133,9 +133,9 @@ User uploads photo
 
 ## What I learned
 
-This project started as a simple "locate a photo on a map" experiment, but it ended up becoming a deeper exercise in frontend architecture, problem-solving, geospatial UX and async safety. 
+This project started as a little "locate a photo on a map" experiment, but it ended up becoming a deeper exercise in frontend architecture, problem-solving, geospatial UX and async safety. 
 
-The project taught me how much engineering can hide behind a seemingly simple feature. The AI integration was the easy part. The geocoding cascade and Wikipedia matching cascade were much harder, because they required actual algorithmic thinking: fallback order, scoring, confidence levels, ambiguity handling, and deciding when a broader answer is safer than a specific but possibly wrong one. But that was also the interesting part, it made the project feel much more like problem solving rather than just wiring APIs together.
+The project taught me how much engineering can hide behind a seemingly simple feature. The AI integration was actually the easy part. The geocoding cascade and Wikipedia matching cascade were much harder, because they required actual algorithmic thinking: fallback order, scoring, confidence levels, ambiguity handling, and deciding when a broader answer is safer than a specific but possibly wrong one. But that was also the interesting part, it made the project feel much more like problem solving rather than just connecting APIs together.
 
 I also learned that mobile browser behavior is complex and full of small details, from file pickers stripping EXIF GPS data to touch gestures fighting scroll behavior.
 
