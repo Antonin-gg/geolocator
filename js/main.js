@@ -53,11 +53,11 @@ document.querySelector('[data-lang="' + uiLang + '"]').classList.add("active-lan
 /*
  * Base map setup.
  *
- * Light mode uses CARTO directly (no key needed, no rate limits to worry about).
+ * Light mode uses CARTO directly (no key needed, no rate limits).
  * Dark mode uses Stadia for a more polished look, with CARTO's dark_all as a
  * fallback if Stadia tile requests fail.
  *
- * Satellite uses Esri imagery
+ * Satellite uses MapTiler imagery with Esri as a fallback.
  */
 
 const mapLayerLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -81,9 +81,20 @@ const mapLayerDark = L.tileLayer(
         e.coords.z + '/' + e.coords.x + '/' + e.coords.y + '.png';
 });
 
-const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 18,
-    attribution: '© Esri'
+const satelliteLayer = L.tileLayer(
+    'https://api.maptiler.com/maps/019e8c9b-1039-7975-8634-e7145694a9be/{z}/{x}/{y}.jpg?key=' + MAPTILER_API_KEY,
+    {
+        tileSize: 512,
+        zoomOffset: -1,
+        minZoom: 1,
+        maxZoom: 19,
+        attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap</a>',
+        crossOrigin: true,
+        errorTileUrl: ''
+    }
+).on('tileerror', function (e) {
+    e.tile.src = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/' +
+        e.coords.z + '/' + e.coords.y + '/' + e.coords.x;
 });
 
 const map = L.map('map').setView([0, 0], 2);

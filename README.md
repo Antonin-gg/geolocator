@@ -57,7 +57,7 @@ If the AI identifies a photo as "Köln, Germany", a simple geocoding query works
 
 - **Vanilla JavaScript** (no framework, no build step)
 - **Leaflet** for the interactive map
-- **CARTO** (light theme) and **Stadia Maps** (dark theme) for raster map tiles
+- **CARTO** (light theme), **Stadia Maps** (dark theme) and **MapTiler** (satellite) for raster map tiles
 - **OpenStreetMap** + **Nominatim** for geocoding
 - **OpenCage** as a geocoding fallback (proxied via a Cloudflare Worker)
 - **Wikipedia API** for article excerpts
