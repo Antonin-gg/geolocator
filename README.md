@@ -117,7 +117,7 @@ User uploads photo
   Geocoding cascade (Nominatim → OpenCage, strict → loose)
        │
        ▼
-  Wikipedia matching (title scoring + langlinks fallback)
+  Wikipedia matching (scoring system + tuned filtering)
        │
        ▼
   Map render + geo info panel
@@ -133,9 +133,9 @@ User uploads photo
 
 ## What I learned
 
-This project started as a simple photo-to-map experiment, but it ended up becoming a deeper exercise in frontend architecture, async safety, geospatial UX and algorithmic thinking. 
+This project started as a simple "locate a photo on a map" experiment, but it ended up becoming a deeper exercise in frontend architecture, problem-solving, geospatial UX and async safety. 
 
-The project taught me how much thinking and engineering can hide behind a seemingly simple feature. The AI integration was the easy part. The geocoding cascade and Wikipedia matching cascade were much harder, because they required actual algorithmic thinking: fallback order, scoring, confidence levels, ambiguity handling, and deciding when a broader answer is safer than a specific but possibly wrong one. But that was also the interesting part, it made the project feel much more like problem solving rather than just wiring APIs together.
+The project taught me how much engineering can hide behind a seemingly simple feature. The AI integration was the easy part. The geocoding cascade and Wikipedia matching cascade were much harder, because they required actual algorithmic thinking: fallback order, scoring, confidence levels, ambiguity handling, and deciding when a broader answer is safer than a specific but possibly wrong one. But that was also the interesting part, it made the project feel much more like problem solving rather than just wiring APIs together.
 
 I also learned that mobile browser behavior is complex and full of small details, from file pickers stripping EXIF GPS data to touch gestures fighting scroll behavior.
 
