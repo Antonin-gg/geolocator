@@ -454,6 +454,22 @@ function wikiTitleScore(title, query) {
 
     if (primaryTokens.length === 0 || titleTokens.length === 0) return -100;
 
+    /* 
+     * Raw words preserve short tokens that tokenizePlaceName drops (F.C., U.K.,
+     * A.C.), so we can detect them as extras when comparing title to query.
+     */
+    const titleRawWords = title.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .match(/[\p{L}\p{N}]+/gu) || [];
+    const queryRawWords = primaryQuery.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .match(/[\p{L}\p{N}]+/gu) || [];
+    const extraRawWordsInTitle = titleRawWords.filter(function (w) {
+        return !queryRawWords.includes(w);
+    });
+
     /*
      * Extra words before the first query token often mean the title is a different
      * concept that merely contains the place name.
@@ -492,7 +508,8 @@ function wikiTitleScore(title, query) {
     if (
         containsTokens(primaryQuery, title) &&
         containsTokens(title, primaryQuery) &&
-        !hasForeignPrefix
+        !hasForeignPrefix &&
+        extraRawWordsInTitle.length === 0
     ) {
         if (badAccentDirection) return -100;
 
@@ -505,11 +522,12 @@ function wikiTitleScore(title, query) {
     });
 
     if (containsPrimaryTokens) {
-        const extraTitleTokens = titleTokens.filter(function (token) {
-            return !primaryTokens.includes(token);
-        });
 
-        let score = 80 - extraTitleTokens.length * 15;
+        const isPlaceLike = isPlacelikeTitle(title, primaryTokens);
+
+        const extraPenalty = isPlaceLike ? 5 : 15;
+
+        let score = 80 - extraRawWordsInTitle.length * extraPenalty;
 
         if (hasForeignPrefix) score -= 35;
 
@@ -528,7 +546,7 @@ function wikiTitleScore(title, query) {
             return !titleTokens.includes(token);
         });
 
-        const score = 85 - missingQueryTokens.length * 15;
+        const score = 85 - missingQueryTokens.length * 15 - extraRawWordsInTitle.length * 15;
 
         return score;
     }
@@ -579,6 +597,27 @@ function isProperNounAcrossLanguages(page) {
     }
 
     return false;
+}
+
+/**
+ * True when the title is structurally a place title: the first comma-segment
+ * consists of exactly the query's primary tokens, with admin context allowed
+ * only after a comma. Differentiates "Tokyo, Japan" (a place) from
+ * "Tokyo Tower" (an entity at the place).
+ */
+function isPlacelikeTitle(title, primaryTokens) {
+    if (!title || primaryTokens.length === 0) return false;
+
+    const firstSegment = title.split(",")[0].trim();
+    const firstRawWords = firstSegment.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .match(/[\p{L}\p{N}]+/gu) || [];
+
+    if (firstRawWords.length !== primaryTokens.length) return false;
+
+    const firstSet = new Set(firstRawWords);
+    return primaryTokens.every(function (t) { return firstSet.has(t); });
 }
 
 // ── Article filter helpers ─────────────────────────────────────────
