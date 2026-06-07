@@ -413,7 +413,7 @@ async function aiLocator(image, searchId) {
             },
             body: JSON.stringify({
                 model: AI_MODEL,
-                max_completion_tokens: 800,
+                max_completion_tokens: 4000,
                 response_format: {
                     type: "json_schema",
                     json_schema: {
