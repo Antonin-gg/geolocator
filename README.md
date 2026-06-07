@@ -49,11 +49,11 @@ Both cascades work as small heuristic algorithms: they generate candidates, test
 
 - **40+ language UI with grammar-aware sentence construction.** Place names are woven into sentences naturally in each language, not via string replacement. Country names are localized via `Intl.DisplayNames`.
 
-## A concrete example
+## Why the cascades matter
 
-If the AI identifies a photo as "Köln, Germany", a simple geocoding query works fine and returns the city. But if the AI returns "Bogotá" and the correct interpretation is "Bogotá, Colombia", a simple query can sometimes return a small village in Mexico also named "Bogotá". The cascade rejects that result because it has the wrong administrative level. Without that extra logic, the map pin can land 4,000 km away from where it should be. 
+If the AI model identifies a photo as "Köln, Germany", a simple geocoding query works fine and returns the city. But if the model returns "Bogotá" and the correct interpretation is "Bogotá, Colombia", a simple query can sometimes return a small village in Mexico also named "Bogotá". The cascade catches that false match first with country-code filtering, then with type and token checks if needed. Without that extra logic, the map pin can land 4,000 km away from where it should be. Administrative level matters too. "Rio de Janeiro" can mean the city or the state, and those are different results. If the model's confidence level is "city", the cascade should reject a state-level result. Type filtering catches that kind of false match: it has the wrong administrative level, so it gets rejected.
 
-The Wikipedia search has its own version of this: if the AI returns "Cascavel, Brazil", Portuguese Wikipedia can return "Cascavel" meaning "rattlesnake", because the name match is perfect. To reject that kind of false match, the app checks how the article title behaves across languages. A real place name usually stays recognizable through many translations, while a common noun like an animal name changes completely. If the title does not behave like a stable proper noun across languages, the article is rejected.
+The Wikipedia search has its own version of this: if the model returns "Cascavel, Brazil", Portuguese Wikipedia can return "Cascavel" meaning "rattlesnake", because the name match is perfect. To reject that kind of false match, the app checks how the article title behaves across languages. A real place name usually stays recognizable through many translations, while a common noun like an animal name changes completely. If the title does not behave like a stable proper noun across languages, the article is rejected.
 
 ## Built with
 
