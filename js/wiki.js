@@ -429,7 +429,7 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
     });
 
     /*
-     * A very close, high-scoring coordinate match can be accepted directly. Other
+     * A geographically very close, high-scoring coordinate match can be accepted directly. Other
      * candidates need the proper-noun check to avoid generic title matches.
      */
     for (let i = 0; i < scored.length; i++) {
