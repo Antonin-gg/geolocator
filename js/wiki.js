@@ -443,9 +443,54 @@ function pickBestWikiResult(results, query, lat, lng, aiConfidence) {
 }
 
 /**
- * Scores how well a Wikipedia title matches the query.
- * Exact token matches score highest, partial title matches are penalized, and
- * suspicious prefixes or accent loss can reject otherwise tempting matches.
+ * Scores how well a Wikipedia title matches a place query.
+ *
+ * Returns a number from -100 to 100. Negative scores are disqualifying. The
+ * caller combines this with coordinate distance to pick the best Wikipedia
+ * candidate for a given place.
+ *
+ *
+ * Signals used
+ *
+ * Tokens: meaningful words of the query and title, after stripping accents
+ * and filtering short noise. Used by the gating checks to decide which
+ * matching shape applies.
+ *
+ * Raw words: same normalization but without the length and stopword filter.
+ * Raw words preserve short tokens like F.C. or U.K. that token filtering
+ * would erase. They drive the extras penalty in each scoring path. Without
+ * them, "Bangor F.C." would look identical to "Bangor".
+ *
+ * Foreign prefix: words appearing in the title before the place name.
+ * Catches titles like "University of Bangor" that contain the place name
+ * but refer to something else.
+ *
+ * Accent direction: whether the query has diacritics that the title lost.
+ * Used as a disqualifier in the perfect match path to reject near-miss
+ * collisions between different proper nouns.
+ *
+ * Placelike structure: whether the first comma segment of the title matches
+ * exactly the primary tokens. Differentiates place titles ("Bangor, County
+ * Down") from entities sharing the same name ("Bangor F.C.").
+ *
+ *
+ * Matching paths
+ *
+ * Path A, perfect match (100): same meaningful tokens both ways, no foreign
+ * prefix, no hidden raw word extras. Bad accent direction disqualifies.
+ *
+ * Path B, title contains query plus extras: every primary
+ * token appears in the title with extra content alongside. Base score 80,
+ * with 5 points off per extra when extras look like admin context, 15 off
+ * per extra when they look like a descriptive suffix. A foreign prefix
+ * subtracts 35 more.
+ *
+ * Path C, title is a subset of the query: title has fewer
+ * meaningful tokens than the query but all appear in it. Base score 85,
+ * with 15 off per missing query token and 15 off per hidden raw word extra.
+ * Both sides must be comma free.
+ *
+ * If no path applies, returns -100.
  */
 function wikiTitleScore(title, query) {
     const primaryQuery = query.split(",")[0].trim();
@@ -600,7 +645,7 @@ function isProperNounAcrossLanguages(page) {
 }
 
 /**
- * True when the title is structurally a place title: the first comma-segment
+ * Returns true when the title is structurally a place title: the first comma-segment
  * consists of exactly the query's primary tokens, with admin context allowed
  * only after a comma. Differentiates "Tokyo, Japan" (a place) from
  * "Tokyo Tower" (an entity at the place).
